@@ -11,52 +11,43 @@ button,input,select,textarea{font:inherit}
 .app{display:flex;min-height:100vh}
 aside{width:235px;background:#263454;color:#fff;padding:18px;position:sticky;top:0;height:100vh}
 h1{font-size:22px;margin:0 0 22px}
+.brand{display:flex;align-items:flex-start;gap:8px}.brandEmoji{font-size:25px;line-height:1.1}
 .nav{width:100%;padding:11px;border:0;border-radius:8px;background:transparent;color:#e3e8f6;text-align:left;font-size:14px;cursor:pointer;margin:2px 0}
 .nav:hover,.nav.active{background:#3d4d73}
-.status{position:absolute;bottom:18px;font-size:12px;color:#cbd4e9;max-width:195px}
+.status{position:absolute;bottom:90px;font-size:12px;color:#cbd4e9;max-width:195px}
 main{flex:1;padding:26px;max-width:1500px;margin:auto;width:100%}
 header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px}
 h2{margin:0} header p{margin:4px 0;color:#697386}
 .card,.student,.alert{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px #0000000c}
-.card{margin-bottom:14px}
-.alert{border-left:4px solid #dba83d;margin-bottom:16px}
+.card{margin-bottom:14px}.alert{border-left:4px solid #dba83d;margin-bottom:16px}
 .roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
-.student h3{margin:0 0 12px}
-.quick{display:flex;flex-wrap:wrap;gap:6px}
-.quick button{padding:8px;border:1px solid #dce1eb;background:#fafbfe}
-.quick span{font-size:11px;margin-left:3px}
-.noteBtn{margin-top:10px;background:transparent;border:0;color:#425796}
-.out{background:#fff5d8;padding:10px;border-radius:8px}
-.split{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-.add{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+.student h3{margin:0 0 12px}.quick{display:flex;flex-wrap:wrap;gap:6px}
+.quick button{padding:8px;border:1px solid #dce1eb;background:#fafbfe}.quick span{font-size:11px;margin-left:3px}
+.noteBtn{margin-top:10px;background:transparent;border:0;color:#425796}.out{background:#fff5d8;padding:10px;border-radius:8px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:18px}.add{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
 input,select,textarea{padding:9px;border:1px solid #ccd3df;border-radius:7px}
-button{padding:8px 12px;border:1px solid #cbd2df;border-radius:7px;background:#fff;cursor:pointer}
-button:hover{background:#eef2fa}
-button.primary{background:#263454;color:#fff;border-color:#263454}
-button.primary:hover{background:#1e2944}
-textarea{width:100%;min-height:120px}
-table{width:100%;border-collapse:collapse}
-th,td{padding:9px;border-bottom:1px solid #e7eaf0;text-align:left}
-.grade{width:70px}
-.small{font-size:12px;color:#697386}
-.toast{position:fixed;right:20px;top:18px;background:#263454;color:#fff;padding:12px;border-radius:8px;z-index:30}
-.toast button{margin-left:8px;padding:1px 6px}
-.modalbg{position:fixed;inset:0;background:#0008;display:grid;place-items:center;padding:20px;z-index:20}
-.modal{background:#fff;width:min(520px,100%);border-radius:12px;padding:18px}
+button{padding:8px 12px;border:1px solid #cbd2df;border-radius:7px;background:#fff;cursor:pointer}button:hover{background:#eef2fa}
+button.primary{background:#263454;color:#fff;border-color:#263454}button.primary:hover{background:#1e2944}
+textarea{width:100%;min-height:120px}table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #e7eaf0;text-align:left}
+.grade{width:70px}.small{font-size:12px;color:#697386}
+.toast{position:fixed;right:20px;top:18px;background:#263454;color:#fff;padding:12px;border-radius:8px;z-index:30}.toast button{margin-left:8px;padding:1px 6px}
+.modalbg{position:fixed;inset:0;background:#0008;display:grid;place-items:center;padding:20px;z-index:20}.modal{background:#fff;width:min(520px,100%);border-radius:12px;padding:18px}
 .reportgrid{display:flex;gap:10px;flex-wrap:wrap}.stat{background:#f1f4fa;border-radius:9px;padding:12px;min-width:100px;display:flex;flex-direction:column}.stat b{font-size:24px}
 .appFooter{margin-top:32px;padding:14px 0 4px;text-align:center;color:#98a1b2;font-size:10px}
 .viewToggle{display:flex;gap:4px;justify-content:flex-end;margin-bottom:8px}.viewToggle button{font-size:13px}.viewToggle .activeView{background:#263454;color:#fff;border-color:#263454}
 .matrixWrap{background:#fff;border-radius:12px;box-shadow:0 2px 8px #0000000c;overflow:auto;max-height:calc(100vh - 190px)}
-.matrix{min-width:850px;border-collapse:separate;border-spacing:0}.matrix th{position:sticky;top:0;background:#f5f7fb;z-index:2;font-size:12px;white-space:nowrap;text-align:center}.matrix th span{font-weight:500}.matrix td{text-align:center;padding:5px}.matrix tr:hover td{background:#fafbfe}.matrixBtn{width:36px;height:34px;padding:4px;font-size:17px}.stickyName{position:sticky!important;left:0;background:#fff;z-index:3;text-align:left!important;min-width:180px}.matrix th.stickyName{background:#f5f7fb}.studentOut td{background:#fff9e8!important}.studentOut .stickyName{background:#fff9e8!important}.matrix small{color:#9a6b00}
-.userCard{margin-top:18px;padding-top:14px;border-top:1px solid #44557c;font-size:12px}
-.userCard .userName{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:6px 0;color:#fff}
-.userCard button{font-size:12px;padding:6px 9px}
+.matrix{min-width:850px;border-collapse:separate;border-spacing:0}.matrix th{position:sticky;top:0;background:#f5f7fb;z-index:2;font-size:12px;white-space:nowrap;text-align:center}.matrix th span{font-weight:500}.matrix td{text-align:center;padding:5px}.matrix tr:hover td{background:#fafbfe}.matrixBtn{width:36px;height:34px;padding:4px;font-size:17px}
+.stickyName{position:sticky!important;left:0;background:#fff;z-index:3;text-align:left!important;min-width:180px}.matrix th.stickyName{background:#f5f7fb}.studentOut td{background:#fff9e8!important}.studentOut .stickyName{background:#fff9e8!important}.matrix small{color:#9a6b00}
+.userCard{position:absolute;left:18px;right:18px;bottom:18px;padding-top:14px;border-top:1px solid #44557c;font-size:12px}
+.userCard .userName{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:6px 0;color:#fff}.userCard button{font-size:12px;padding:6px 9px}
+.sidebarUser{display:flex;align-items:center;gap:9px}.sidebarAvatar{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#fff2;border:1px solid #ffffff44}
 .loginScreen{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#eef1f8,#f7f8fc)}
-.loginCard{width:min(430px,100%);background:#fff;border-radius:18px;padding:34px;box-shadow:0 12px 35px #26345424;text-align:center}
-.loginCard h1{color:#263454;margin-bottom:8px}.loginCard p{color:#667085;line-height:1.5}
-.googleBtn{margin-top:16px;width:100%;padding:12px;font-weight:650;font-size:16px}
-.loginError{margin-top:14px;color:#a62f2f;font-size:13px}.loadingScreen{min-height:100vh;display:grid;place-items:center;color:#667085}
-@media(max-width:750px){aside{width:62px;padding:8px}aside h1{font-size:0}.nav{font-size:0;text-align:center}.nav:first-letter{font-size:19px}.status,.userCard{display:none}main{padding:14px}.split{grid-template-columns:1fr}.quick span{display:none}}
+.loginCard{width:min(430px,100%);background:#fff;border-radius:18px;padding:34px;box-shadow:0 12px 35px #26345424;text-align:center}.loginCard h1{color:#263454;margin-bottom:8px}.loginCard p{color:#667085;line-height:1.5}
+.googleBtn{margin-top:16px;width:100%;padding:12px;font-weight:650;font-size:16px}.loginError{margin-top:14px;color:#a62f2f;font-size:13px}.loadingScreen{min-height:100vh;display:grid;place-items:center;color:#667085}
+.accountRow{display:flex;align-items:center;gap:12px;margin:8px 0 14px}.accountAvatar{width:52px;height:52px;border-radius:50%;object-fit:cover;background:#eef1f8;border:1px solid #dce1eb}
+.avatarFallback{display:grid;place-items:center;font-size:25px}
+.avatarActions{display:flex;gap:8px;flex-wrap:wrap}.syncTime{margin-top:6px;font-size:12px;color:#697386}
+@media(max-width:750px){aside{width:62px;padding:8px}aside h1{font-size:0}.brandEmoji{font-size:22px}.nav{font-size:0;text-align:center}.nav:first-letter{font-size:19px}.status,.userCard{display:none}main{padding:14px}.split{grid-template-columns:1fr}.quick span{display:none}}
 </style>
 </head>
 <body>
@@ -67,9 +58,6 @@ import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase
 import {getFirestore,doc,getDoc,setDoc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {getAuth,GoogleAuthProvider,onAuthStateChanged,signInWithPopup,signInWithRedirect,getRedirectResult,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-/* =========================
-   FIREBASE SETUP
-   ========================= */
 const firebaseConfig={
   apiKey:"AIzaSyAum-USwVh7epu7X7gMuFjlGzszkPKPA7U",
   authDomain:"teacher-dashboard-b4441.firebaseapp.com",
@@ -87,7 +75,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.3.2";
+const APP_VERSION="1.4.0";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -98,172 +86,103 @@ const buttons=[
  ["sleeping","😴","Sleeping","event"],["refusal","🚫","Not Working","event"],
  ["restroom","🚻","Restroom","timed"]
 ];
-
 const seed={
  classes:[{id:"c1",name:"Period 1 – Honors Precalculus",studentIds:["s1","s2","s3"]}],
  students:[{id:"s1",name:"Abby Smith"},{id:"s2",name:"Ben Jones"},{id:"s3",name:"Chris Brown"}],
  buttons:buttons.map(([id,icon,label,type])=>({id,icon,label,type})),
- events:[],notes:[],schoolDays:[],totalSchoolDays:180,gradeCourses:[]
+ events:[],notes:[],schoolDays:[],totalSchoolDays:180,gradeCourses:[],profileAvatar:""
 };
 
 let data=structuredClone(seed);
 let page="live",selected=null;
 let liveView=localStorage.teacherDashboardLiveView||"cards";
-let currentUser=null,cloudStatus="Waiting for sign-in";
+let currentUser=null,cloudStatus="Waiting for sign-in",lastSyncAt=null;
 let cloudSaveTimer=null,cloudWriteInProgress=false,cloudSavePending=false;
 let authBusy=false,loginError="",initializedUserData=false;
 let toast="";
 
 function localKey(){return currentUser?LOCAL_PREFIX+currentUser.uid:null}
-function loadLocalForUser(){
-  const key=localKey();
-  if(!key)return structuredClone(seed);
-  try{return {...seed,...JSON.parse(localStorage.getItem(key)||"{}")}}
-  catch{return structuredClone(seed)}
-}
-function saveLocal(){
-  const key=localKey();
-  if(key)localStorage.setItem(key,JSON.stringify(data));
-}
+function loadLocalForUser(){const key=localKey();if(!key)return structuredClone(seed);try{return {...seed,...JSON.parse(localStorage.getItem(key)||"{}")}}catch{return structuredClone(seed)}}
+function saveLocal(){const key=localKey();if(key)localStorage.setItem(key,JSON.stringify(data))}
 function userRef(){return currentUser?doc(db,"users",currentUser.uid):null}
 function dashboardRef(){return currentUser?doc(db,"users",currentUser.uid,CLOUD_SUBCOLLECTION,CLOUD_DOCUMENT):null}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function formatSync(value){if(!value)return "Not synced yet";const d=new Date(value);return isNaN(d)?"Not synced yet":d.toLocaleString(undefined,{month:"short",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"})}
+function avatarSrc(){return data.profileAvatar||currentUser?.photoURL||""}
+function avatarHTML(cls="accountAvatar"){const src=avatarSrc();return src?`<img class="${cls}" src="${esc(src)}" alt="Profile picture">`:`<div class="${cls} avatarFallback">👤</div>`}
 
-/* =========================
-   AUTH
-   ========================= */
 window.signIn=async()=>{
-  if(authBusy)return;
-  authBusy=true;loginError="";render();
-  try{
-    await signInWithPopup(auth,provider);
-  }catch(err){
+  if(authBusy)return;authBusy=true;loginError="";render();
+  try{await signInWithPopup(auth,provider)}
+  catch(err){
     console.error("Google sign-in failed:",err);
     if(err.code==="auth/popup-blocked"||err.code==="auth/cancelled-popup-request"){
-      try{await signInWithRedirect(auth,provider);return;}
-      catch(redirectErr){loginError=redirectErr.message||"Google sign-in could not be started.";}
-    }else if(err.code!=="auth/popup-closed-by-user"){
-      loginError=err.message||"Google sign-in failed.";
-    }
-  }finally{authBusy=false;render();}
+      try{await signInWithRedirect(auth,provider);return}
+      catch(redirectErr){loginError=redirectErr.message||"Google sign-in could not be started."}
+    }else if(err.code!=="auth/popup-closed-by-user") loginError=err.message||"Google sign-in failed.";
+  }finally{authBusy=false;render()}
 };
 window.signOut=async()=>{
   if(!confirm("Sign out of Teacher Dashboard? Your cloud data will remain safely stored in your account."))return;
-  try{await signOut(auth);}catch(err){console.error(err);alert("Could not sign out right now.");}
+  try{await signOut(auth)}catch(err){console.error(err);alert("Could not sign out right now.")}
 };
-getRedirectResult(auth).catch(err=>{console.error("Redirect sign-in failed:",err);loginError=err.message||"Google sign-in failed.";render();});
+getRedirectResult(auth).catch(err=>{console.error("Redirect sign-in failed:",err);loginError=err.message||"Google sign-in failed.";render()});
 
 onAuthStateChanged(auth,async user=>{
-  cloudSaveTimer&&clearTimeout(cloudSaveTimer);cloudSaveTimer=null;
-  cloudSavePending=false;initializedUserData=false;
+  cloudSaveTimer&&clearTimeout(cloudSaveTimer);cloudSaveTimer=null;cloudSavePending=false;initializedUserData=false;lastSyncAt=null;
   currentUser=user||null;
-  if(!currentUser){
-    data=structuredClone(seed);
-    cloudStatus="Sign in required";
-    render();return;
-  }
-  data=loadLocalForUser();
-  cloudStatus="Loading your dashboard...";
-  render();
-  await loadCloudData();
+  if(!currentUser){data=structuredClone(seed);cloudStatus="Sign in required";render();return}
+  data=loadLocalForUser();cloudStatus="Loading your dashboard...";render();await loadCloudData();
 });
 
-/* =========================
-   PERSONAL CLOUD STORAGE
-   Every user has a separate path:
-   users/{uid}/dashboards/main
-   ========================= */
 async function loadCloudData(){
   if(!currentUser)return;
   try{
-    const ref=dashboardRef();
-    const snap=await getDoc(ref);
+    const ref=dashboardRef(),snap=await getDoc(ref);
     if(snap.exists()&&snap.data()?.data){
       data={...seed,...snap.data().data};
-      saveLocal();
-      cloudStatus="Firebase synced";
+      lastSyncAt=snap.data().updatedAt||null;
+      saveLocal();cloudStatus="Firebase synced";
     }else{
       data=loadLocalForUser();
       const now=new Date().toISOString();
-      await setDoc(userRef(),{
-        displayName:currentUser.displayName||"",
-        email:currentUser.email||"",
-        createdAt:now,
-        updatedAt:now
-      },{merge:true});
-      await setDoc(ref,{
-        data,
-        ownerUid:currentUser.uid,
-        createdAt:now,
-        updatedAt:now
-      });
-      saveLocal();
-      cloudStatus="Firebase synced — new personal dashboard";
+      await setDoc(userRef(),{displayName:currentUser.displayName||"",email:currentUser.email||"",createdAt:now,updatedAt:now},{merge:true});
+      await setDoc(ref,{data,ownerUid:currentUser.uid,createdAt:now,updatedAt:now});
+      lastSyncAt=now;saveLocal();cloudStatus="Firebase synced — new personal dashboard";
     }
     initializedUserData=true;
-  }catch(err){
-    console.error("Firebase load failed:",err);
-    cloudStatus="Firebase error — using this user's local backup";
-    initializedUserData=true;
-  }
+  }catch(err){console.error("Firebase load failed:",err);cloudStatus="Firebase error — using this user's local backup";initializedUserData=true}
   render();
 }
-
-function save(){
-  saveLocal();
-  if(currentUser&&initializedUserData)queueCloudSave();
-}
-function queueCloudSave(){
-  clearTimeout(cloudSaveTimer);
-  cloudSaveTimer=setTimeout(cloudSaveNow,500);
-}
+function save(){saveLocal();if(currentUser&&initializedUserData)queueCloudSave()}
+function queueCloudSave(){clearTimeout(cloudSaveTimer);cloudSaveTimer=setTimeout(cloudSaveNow,500)}
 async function cloudSaveNow(){
   if(!currentUser||!initializedUserData)return;
-  cloudSavePending=true;
-  if(cloudWriteInProgress)return;
-  cloudWriteInProgress=true;
+  cloudSavePending=true;if(cloudWriteInProgress)return;cloudWriteInProgress=true;
   try{
     while(cloudSavePending){
-      cloudSavePending=false;
-      cloudStatus="Saving to Firebase...";render();
-      await setDoc(dashboardRef(),{
-        data:structuredClone(data),
-        ownerUid:currentUser.uid,
-        updatedAt:new Date().toISOString()
-      },{merge:true});
-      cloudStatus="Firebase synced";
+      cloudSavePending=false;cloudStatus="Saving to Firebase...";render();
+      const now=new Date().toISOString();
+      await setDoc(dashboardRef(),{data:structuredClone(data),ownerUid:currentUser.uid,updatedAt:now},{merge:true});
+      lastSyncAt=now;cloudStatus="Firebase synced";
     }
-  }catch(err){
-    console.error("Firebase save failed:",err);
-    cloudStatus="Saved locally — cloud sync failed";
-  }finally{cloudWriteInProgress=false;render();}
+  }catch(err){console.error("Firebase save failed:",err);cloudStatus="Saved locally — cloud sync failed"}
+  finally{cloudWriteInProgress=false;render()}
 }
 
-/* =========================
-   RENDERING
-   ========================= */
 function render(){
-  if(!currentUser){$("#root").innerHTML=loginHTML();return;}
+  if(!currentUser){$("#root").innerHTML=loginHTML();return}
+  const userLabel=currentUser.displayName||currentUser.email||"Google user";
   $("#root").innerHTML=`<div class="app"><aside>
-    <h1>🎓 Teacher<br>Dashboard</h1>${nav()}
+    <h1 class="brand"><span class="brandEmoji">🍎</span><span>Teacher<br>Dashboard</span></h1>${nav()}
     <div class="status">☁️ ${esc(cloudStatus)}</div>
-    <div class="userCard"><b>Signed in as</b>
-      <span class="userName">${esc(currentUser.displayName||currentUser.email||"Google user")}</span>
+    <div class="userCard"><div class="sidebarUser">${avatarHTML("sidebarAvatar")}<div><b>Signed in as</b><span class="userName">${esc(userLabel)}</span></div></div>
       <button onclick="window.signOut()">Sign out</button>
     </div>
-  </aside><main>${toastHTML()}${pageHTML()}
-    <footer class="appFooter">© 2026 Lindsay Shay &nbsp;•&nbsp; Version ${APP_VERSION}</footer>
-  </main></div>${selected?modalHTML():""}`;
-  document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>{page=b.dataset.page;render();});
-  bind();
+  </aside><main>${toastHTML()}${pageHTML()}<footer class="appFooter">© 2026 Lindsay Shay &nbsp;•&nbsp; Version ${APP_VERSION}</footer></main></div>${selected?modalHTML():""}`;
+  document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>{page=b.dataset.page;render()});bind();
 }
-function loginHTML(){return `<div class="loginScreen"><section class="loginCard">
-  <div style="font-size:48px">🎓</div><h1>Teacher Dashboard</h1>
-  <p>Sign in with Google to securely access your own Teacher Dashboard.</p>
-  <button class="googleBtn primary" onclick="window.signIn()" ${authBusy?"disabled":""}>${authBusy?"Signing in...":"G  Sign in with Google"}</button>
-  ${loginError?`<div class="loginError">${esc(loginError)}</div>`:""}
-  <p class="small" style="margin-top:20px">Each Google account has its own private dashboard and browser backup.</p>
-</section></div>`}
+function loginHTML(){return `<div class="loginScreen"><section class="loginCard"><div style="font-size:48px">🍎</div><h1>Teacher Dashboard</h1><p>Sign in with Google to securely access your own Teacher Dashboard.</p><button class="googleBtn primary" onclick="window.signIn()" ${authBusy?"disabled":""}>${authBusy?"Signing in...":"G  Sign in with Google"}</button>${loginError?`<div class="loginError">${esc(loginError)}</div>`:""}<p class="small" style="margin-top:20px">Each Google account has its own private dashboard and browser backup.</p></section></div>`}
 function nav(){return [["live","🏠","Live Class"],["students","👥","Students & Classes"],["calendar","🗓️","Calendar"],["buttons","⚡","Quick Buttons"],["grades","📚","Grades"],["reports","📊","Reports"],["settings","⚙️","Settings"]].map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
 function currentClass(){return data.classes[0]||{id:"",name:"No class yet",studentIds:[]}}
 function activeEvents(){return data.events.filter(e=>e.type==="timed"&&!e.end)}
@@ -283,32 +202,47 @@ function calendar(){const rows=[...data.schoolDays].sort((a,b)=>a.date.localeCom
 function quickButtons(){return `<header><h2>Quick Buttons</h2></header><section class="card"><h3>Current Buttons</h3>${data.buttons.map(b=>`<p>${b.icon} <b>${esc(b.label)}</b> <span class="small">(${esc(b.type)})</span> <button onclick="window.deleteButton('${b.id}')">Delete</button></p>`).join("")}</section><section class="card"><h3>Add Button</h3><div class="add"><input id="qbIcon" placeholder="⚡" style="width:70px"><input id="qbLabel" placeholder="Label"><select id="qbType"><option value="event">Event</option><option value="timed">Timed / Out of Class</option></select><button onclick="window.addButton()">Add</button></div></section>`}
 function grades(){return `<header><h2>Grades</h2></header><section class="card"><h3>Add Course</h3><div class="add"><input id="courseName" placeholder="Course name"><button onclick="window.addCourse()">Add Course</button></div></section>${data.gradeCourses.map(c=>`<section class="card"><h3>${esc(c.name)}</h3><div class="add"><input id="comp-${c.id}" placeholder="Component"><input id="weight-${c.id}" type="number" min="0" max="100" placeholder="Weight %"><button onclick="window.addComponent('${c.id}')">Add Component</button></div>${c.components.length?`<table><thead><tr><th>Student</th>${c.components.map(x=>`<th>${esc(x.name)}<br><span class="small">${x.weight}%</span></th>`).join("")}</tr></thead><tbody>${data.students.map(s=>`<tr><td>${esc(s.name)}</td>${c.components.map(co=>`<td><input class="grade" value="${esc(c.grades?.[s.id]?.[co.id]??"")}" onchange="window.setGrade('${c.id}','${s.id}','${co.id}',this.value)"></td>`).join("")}</tr>`).join("")}</tbody></table>`:"<p class='small'>Add grading components to begin.</p>"}</section>`).join("")}`}
 function reports(){const sid=window.reportStudent||data.students[0]?.id,s=data.students.find(x=>x.id===sid),ev=data.events.filter(e=>e.studentId===sid),notes=data.notes.filter(n=>n.studentId===sid),opts=data.students.map(st=>`<option value="${st.id}" ${st.id===sid?"selected":""}>${esc(st.name)}</option>`).join("");return `<header><h2>Reports</h2></header><section class="card"><select onchange="window.reportStudent=this.value;render()">${opts}</select><h3>${esc(s?.name||"")}</h3><p><b>Total events:</b> ${ev.length}</p><div class="reportgrid">${data.buttons.filter(b=>b.type==="event").map(b=>`<div class="stat">${b.icon}<b>${ev.filter(e=>e.buttonId===b.id).length}</b><span>${esc(b.label)}</span></div>`).join("")}</div><h4>Out of Class</h4>${ev.filter(e=>e.type==="timed").map(e=>`<p>${e.icon} ${esc(e.label)} — ${new Date(e.start).toLocaleString()} ${e.end?"to "+new Date(e.end).toLocaleString():"(still open)"}</p>`).join("")||"<p>None recorded.</p>"}<h4>Notes</h4>${notes.map(n=>`<p>📝 ${esc(n.text)} <span class="small">${new Date(n.created).toLocaleString()}</span></p>`).join("")||"<p>None recorded.</p>"}</section>`}
-function settings(){const userLabel=currentUser?.displayName||currentUser?.email||"Google user";return `<header><h2>Settings</h2></header><section class="card"><h3>Account</h3><p><b>👤 ${esc(userLabel)}</b></p><p class="small">Your dashboard is private to your signed-in Google account.</p><button onclick="window.signOut()">Sign out</button></section><section class="card"><h3>Data Storage</h3><p><b>☁️ ${esc(cloudStatus)}</b></p><p class="small">Your data is stored at <b>users / your UID / dashboards / main</b>. Each Google account has a separate cloud dashboard and separate local browser backup.</p></section><section class="card"><h3>Keystone Tracking</h3><label>Total school days<br><input type="number" value="${data.totalSchoolDays}" onchange="window.setTotalDays(this.value)"></label></section><section class="card"><h3>Local Data Backup</h3><p class="small">Download a backup before major updates. You can also import it later.</p><button onclick="window.exportData()">⬇ Export Backup</button> <button type="button" onclick="document.getElementById('importFile').click()">⬆ Import Backup</button><input id="importFile" type="file" accept=".json" style="display:none" onchange="window.importData(this)"></section><section class="card"><button onclick="window.resetData()">Reset this dashboard to demo data</button></section>`}
+function settings(){
+ const userLabel=currentUser?.displayName||currentUser?.email||"Google user";
+ return `<header><h2>Settings</h2></header>
+ <section class="card"><h3>Account</h3>
+   <div class="accountRow">${avatarHTML()}<div><b>${esc(userLabel)}</b><div class="small">${esc(currentUser?.email||"")}</div></div></div>
+   <div class="avatarActions"><button type="button" onclick="document.getElementById('avatarFile').click()">📷 Upload a picture</button>${data.profileAvatar?`<button type="button" onclick="window.useGooglePhoto()">Use Google picture</button>`:""}</div>
+   <input id="avatarFile" type="file" accept="image/*" style="display:none" onchange="window.uploadAvatar(this)">
+   <button style="margin-top:12px" onclick="window.signOut()">Sign out</button>
+ </section>
+ <section class="card"><h3>Data Storage</h3>
+   <p><b>☁️ ${esc(cloudStatus)}</b></p>
+   <div class="syncTime"><b>Last sync:</b> ${esc(formatSync(lastSyncAt))}</div>
+ </section>
+ <section class="card"><h3>Keystone Tracking</h3><label>Total school days<br><input type="number" value="${data.totalSchoolDays}" onchange="window.setTotalDays(this.value)"></label></section>
+ <section class="card"><h3>Local Data Backup</h3><p class="small">Download a backup before major updates. You can also import it later.</p><button onclick="window.exportData()">⬇ Export Backup</button> <button type="button" onclick="document.getElementById('importFile').click()">⬆ Import Backup</button><input id="importFile" type="file" accept=".json" style="display:none" onchange="window.importData(this)"></section>
+ <section class="card"><button onclick="window.resetData()">Reset this dashboard to demo data</button></section>`;
+}
 function modalHTML(){return `<div class="modalbg"><div class="modal"><h3>📝 Note for ${esc(selected.student.name)}</h3><textarea id="noteText" placeholder="Optional context or general note..."></textarea><div><button class="primary" onclick="window.saveNote()">Save Note</button><button onclick="window.closeNote()">Cancel</button></div></div></div>`}
-function bind(){document.querySelectorAll("[data-timer]").forEach(el=>{const tick=()=>{const sec=Math.floor((Date.now()-new Date(el.dataset.timer))/1000);el.textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`};tick();setInterval(tick,1000);})}
+function bind(){document.querySelectorAll("[data-timer]").forEach(el=>{const tick=()=>{const sec=Math.floor((Date.now()-new Date(el.dataset.timer))/1000);el.textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`};tick();setInterval(tick,1000)})}
 
-/* =========================
-   DATA ACTIONS
-   ========================= */
 window.setLiveView=v=>{liveView=v;localStorage.teacherDashboardLiveView=v;render()}
 window.record=(sid,bid)=>{const s=data.students.find(x=>x.id===sid),b=data.buttons.find(x=>x.id===bid);if(!s||!b)return;const e={id:uid(),studentId:sid,classId:currentClass().id,buttonId:bid,label:b.label,icon:b.icon,type:b.type,start:new Date().toISOString(),end:null};data.events.push(e);save();toast=`${b.icon} ${b.label} recorded for ${s.name}.`;if(b.type==="event")selected={student:s,eventId:e.id};render()}
 window.returnEvent=(id,status)=>{const e=data.events.find(x=>x.id===id);if(!e)return;e.end=new Date().toISOString();e.status=status;save();render()}
-window.note=(sid,eid)=>{const student=data.students.find(x=>x.id===sid);if(student){selected={student,eventId:eid};render();}}
+window.note=(sid,eid)=>{const student=data.students.find(x=>x.id===sid);if(student){selected={student,eventId:eid};render()}}
 window.closeNote=()=>{selected=null;render()}
-window.saveNote=()=>{const text=$("#noteText")?.value.trim();if(text&&selected){data.notes.push({id:uid(),studentId:selected.student.id,eventId:selected.eventId||null,text,created:new Date().toISOString()});save();toast="Note saved.";selected=null;render();}}
-window.addStudent=()=>{const name=$("#newStudent")?.value.trim();if(name){data.students.push({id:uid(),name});save();render();}}
-window.addClass=()=>{const name=$("#newClass")?.value.trim();if(name){data.classes.push({id:uid(),name,studentIds:[]});save();render();}}
-window.roster=(cid,sid,on)=>{const c=data.classes.find(x=>x.id===cid);if(!c)return;c.studentIds=on?[...new Set([...c.studentIds,sid])]:c.studentIds.filter(x=>x!==sid);save();}
-window.addSchoolDay=()=>{const date=$("#schoolDate")?.value,day=Number($("#schoolDay")?.value);if(date&&day){data.schoolDays.push({date,day});save();render();}}
-window.addButton=()=>{const label=$("#qbLabel")?.value.trim();if(label){data.buttons.push({id:uid(),icon:$("#qbIcon")?.value||"⚡",label,type:$("#qbType")?.value||"event"});save();render();}}
-window.deleteButton=id=>{data.buttons=data.buttons.filter(x=>x.id!==id);save();render();}
-window.addCourse=()=>{const name=$("#courseName")?.value.trim();if(name){data.gradeCourses.push({id:uid(),name,components:[],grades:{}});save();render();}}
-window.addComponent=cid=>{const name=$(`#comp-${cid}`)?.value.trim(),weight=Number($(`#weight-${cid}`)?.value);if(name&&weight){const c=data.gradeCourses.find(x=>x.id===cid);if(c){c.components.push({id:uid(),name,weight});save();render();}}}
-window.setGrade=(cid,sid,coid,val)=>{const c=data.gradeCourses.find(x=>x.id===cid);if(!c)return;c.grades[sid]??={};c.grades[sid][coid]=val;save();}
-window.setTotalDays=v=>{data.totalSchoolDays=Number(v);save();}
-window.exportData=()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`teacher-dashboard-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);}
-window.importData=input=>{const file=input.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{try{const incoming=JSON.parse(e.target.result);if(!confirm("Import this backup and replace the current dashboard data?"))return;data={...seed,...incoming};save();toast="Backup imported successfully.";render();}catch{alert("That file does not appear to be a valid Teacher Dashboard backup.");}};reader.readAsText(file);}
-window.resetData=()=>{if(confirm("Reset all data in your personal dashboard to the demo data?")){data=structuredClone(seed);save();render();}}
+window.saveNote=()=>{const text=$("#noteText")?.value.trim();if(text&&selected){data.notes.push({id:uid(),studentId:selected.student.id,eventId:selected.eventId||null,text,created:new Date().toISOString()});save();toast="Note saved.";selected=null;render()}}
+window.addStudent=()=>{const name=$("#newStudent")?.value.trim();if(name){data.students.push({id:uid(),name});save();render()}}
+window.addClass=()=>{const name=$("#newClass")?.value.trim();if(name){data.classes.push({id:uid(),name,studentIds:[]});save();render()}}
+window.roster=(cid,sid,on)=>{const c=data.classes.find(x=>x.id===cid);if(!c)return;c.studentIds=on?[...new Set([...c.studentIds,sid])]:c.studentIds.filter(x=>x!==sid);save()}
+window.addSchoolDay=()=>{const date=$("#schoolDate")?.value,day=Number($("#schoolDay")?.value);if(date&&day){data.schoolDays.push({date,day});save();render()}}
+window.addButton=()=>{const label=$("#qbLabel")?.value.trim();if(label){data.buttons.push({id:uid(),icon:$("#qbIcon")?.value||"⚡",label,type:$("#qbType")?.value||"event"});save();render()}}
+window.deleteButton=id=>{data.buttons=data.buttons.filter(x=>x.id!==id);save();render()}
+window.addCourse=()=>{const name=$("#courseName")?.value.trim();if(name){data.gradeCourses.push({id:uid(),name,components:[],grades:{}});save();render()}}
+window.addComponent=cid=>{const name=$(`#comp-${cid}`)?.value.trim(),weight=Number($(`#weight-${cid}`)?.value);if(name&&weight){const c=data.gradeCourses.find(x=>x.id===cid);if(c){c.components.push({id:uid(),name,weight});save();render()}}}
+window.setGrade=(cid,sid,coid,val)=>{const c=data.gradeCourses.find(x=>x.id===cid);if(!c)return;c.grades[sid]??={};c.grades[sid][coid]=val;save()}
+window.setTotalDays=v=>{data.totalSchoolDays=Number(v);save()}
+window.uploadAvatar=input=>{const file=input.files?.[0];if(!file)return;if(file.size>900000){alert("Please choose an image smaller than 900 KB so your dashboard stays lightweight.");return}const reader=new FileReader();reader.onload=e=>{data.profileAvatar=e.target.result;save();render()};reader.readAsDataURL(file)}
+window.useGooglePhoto=()=>{data.profileAvatar="";save();render()}
+window.exportData=()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`teacher-dashboard-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url)}
+window.importData=input=>{const file=input.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{try{const incoming=JSON.parse(e.target.result);if(!confirm("Import this backup and replace the current dashboard data?"))return;data={...seed,...incoming};save();toast="Backup imported successfully.";render()}catch{alert("That file does not appear to be a valid Teacher Dashboard backup.")}};reader.readAsText(file)}
+window.resetData=()=>{if(confirm("Reset all data in your personal dashboard to the demo data?")){data=structuredClone(seed);save();render()}}
 
 $("#root").innerHTML=`<div class="loadingScreen">Loading Teacher Dashboard...</div>`;
 </script>
