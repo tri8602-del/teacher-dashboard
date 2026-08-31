@@ -33,7 +33,7 @@ textarea{width:100%;min-height:120px}table{width:100%;border-collapse:collapse}t
 .toast{position:fixed;right:20px;top:18px;background:#263454;color:#fff;padding:12px;border-radius:8px;z-index:30}.toast button{margin-left:8px;padding:1px 6px}
 .modalbg{position:fixed;inset:0;background:#0008;display:grid;place-items:center;padding:20px;z-index:20}.modal{background:#fff;width:min(520px,100%);border-radius:12px;padding:18px}
 .reportgrid{display:flex;gap:10px;flex-wrap:wrap}.stat{background:#f1f4fa;border-radius:9px;padding:12px;min-width:100px;display:flex;flex-direction:column}.stat b{font-size:24px}
-.appFooter{margin-top:32px;padding:14px 0 4px;text-align:center;color:#98a1b2;font-size:10px}
+.calendarSettings{display:flex;gap:18px;align-items:end;flex-wrap:wrap}.calendarSettings label{font-weight:600}.calendarCount{margin-left:auto;background:#f1f4fa;padding:10px 18px;border-radius:9px;display:flex;flex-direction:column;text-align:center}.calendarCount b{font-size:24px}.calHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.calHead h3{margin:0}.weekdays,.calendarGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.weekdays span{text-align:center;font-size:11px;color:#697386;font-weight:700;padding:5px}.calBlank{min-height:82px}.calDay{min-height:82px;text-align:left;padding:7px;display:flex;flex-direction:column;align-items:flex-start;border:1px solid #e0e4ec;background:#fff}.calDay.instructional{border-left:4px solid #6aaa72}.calDay.inservice{border-left:4px solid #9673c5}.calDay.noschool{border-left:4px solid #d06b6b;background:#fffafa}.calDay.outside{background:#f7f8fa;color:#a1a8b5}.calDay.today{outline:2px solid #263454}.dayNum{font-size:10px;color:#697386;margin-top:2px}.calMarks{font-size:14px;margin-top:auto;line-height:1.3}@media(max-width:650px){.calDay,.calBlank{min-height:62px}.calDay{padding:4px;font-size:12px}.calMarks{font-size:11px}.weekdays span{font-size:9px}.calendarSettings{align-items:stretch}.calendarCount{margin-left:0}}.appFooter{margin-top:32px;padding:14px 0 4px;text-align:center;color:#98a1b2;font-size:10px}
 .viewToggle{display:flex;gap:4px;justify-content:flex-end;margin-bottom:8px}.viewToggle button{font-size:13px}.viewToggle .activeView{background:#263454;color:#fff;border-color:#263454}
 .matrixWrap{background:#fff;border-radius:12px;box-shadow:0 2px 8px #0000000c;overflow:auto;max-height:calc(100vh - 190px)}
 .matrix{min-width:850px;border-collapse:separate;border-spacing:0}.matrix th{position:sticky;top:0;background:#f5f7fb;z-index:2;font-size:12px;white-space:nowrap;text-align:center}.matrix th span{font-weight:500}.matrix td{text-align:center;padding:5px}.matrix tr:hover td{background:#fafbfe}.matrixBtn{width:36px;height:34px;padding:4px;font-size:17px}
@@ -75,7 +75,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.4.0";
+const APP_VERSION="1.5.0";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -90,7 +90,7 @@ const seed={
  classes:[{id:"c1",name:"Period 1 – Honors Precalculus",studentIds:["s1","s2","s3"]}],
  students:[{id:"s1",name:"Abby Smith"},{id:"s2",name:"Ben Jones"},{id:"s3",name:"Chris Brown"}],
  buttons:buttons.map(([id,icon,label,type])=>({id,icon,label,type})),
- events:[],notes:[],schoolDays:[],totalSchoolDays:180,gradeCourses:[],profileAvatar:""
+ events:[],notes:[],schoolDays:[],totalSchoolDays:180,gradeCourses:[],profileAvatar:"",calendarSettings:{firstStudentDay:"",lastStudentDay:""},calendarOverrides:{},calendarViewDate:new Date().toISOString().slice(0,7)
 };
 
 let data=structuredClone(seed);
@@ -198,7 +198,86 @@ function live(){
   return `<header><div><h2>${esc(cls.name)}</h2><p>${new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"})}</p></div><div>${toggle}<div class="card">🚪 ${active.length} currently out</div></div></header>${alert}<div class="roster">${roster.map(s=>{const out=active.find(e=>e.studentId===s.id);return `<article class="student"><h3>${esc(s.name)}</h3>${out?`<div class="out">🟡 OUT — <span data-timer="${out.start}"></span><button onclick="window.returnEvent('${out.id}','returned')">Return</button></div>`:`<div class="quick">${data.buttons.map(b=>`<button onclick="window.record('${s.id}','${b.id}')">${b.icon}<span>${esc(b.label)}</span></button>`).join("")}</div>`}<button class="noteBtn" onclick="window.note('${s.id}',null)">📝 Add Note</button></article>`}).join("")}</div>`;
 }
 function students(){return `<header><h2>Students & Classes</h2></header><div class="split"><section class="card"><h3>Students</h3><div class="add"><input id="newStudent" placeholder="Student name"><button onclick="window.addStudent()">Add</button></div>${data.students.map(s=>`<p>${esc(s.name)}</p>`).join("")||"<p>No students yet.</p>"}</section><section class="card"><h3>Classes</h3><div class="add"><input id="newClass" placeholder="Class name"><button onclick="window.addClass()">Add</button></div>${data.classes.map(c=>`<div class="card"><b>${esc(c.name)}</b><div>${data.students.map(s=>`<label class="small"><input type="checkbox" ${c.studentIds.includes(s.id)?"checked":""} onchange="window.roster('${c.id}','${s.id}',this.checked)"> ${esc(s.name)}</label><br>`).join("")}</div></div>`).join("")}</section></div>`}
-function calendar(){const rows=[...data.schoolDays].sort((a,b)=>a.date.localeCompare(b.date));return `<header><h2>Calendar</h2></header><section class="card"><h3>School Days</h3><div class="add"><input id="schoolDate" type="date"><input id="schoolDay" type="number" min="1" placeholder="Day #"><button onclick="window.addSchoolDay()">Add</button></div><table><thead><tr><th>Date</th><th>Day</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.date)}</td><td>${x.day}</td></tr>`).join("")}</tbody></table></section>`}
+function calendar(){
+  data.calendarSettings??={firstStudentDay:"",lastStudentDay:""};
+  data.calendarOverrides??={};
+  let month=data.calendarViewDate||new Date().toISOString().slice(0,7);
+  const [year,mon]=month.split("-").map(Number),first=new Date(year,mon-1,1),days=new Date(year,mon,0).getDate();
+  const prev=new Date(year,mon-2,1),next=new Date(year,mon,1,1);
+  const monthLabel=first.toLocaleDateString(undefined,{month:"long",year:"numeric"});
+  const firstStudent=data.calendarSettings.firstStudentDay,lastStudent=data.calendarSettings.lastStudentDay;
+  let cells="";
+  for(let i=0;i<first.getDay();i++)cells+='<div class="calBlank"></div>';
+  for(let d=1;d<=days;d++){
+    const date=`${year}-${String(mon).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const info=getDateInfo(date),marks=[];
+    if(info.type==="instructional")marks.push("🟢");
+    if(info.type==="inservice")marks.push("🟣");
+    if(info.type==="noschool")marks.push("🔴");
+    if(info.markers.nineWeeks)marks.push("⅟₉");
+    if(info.markers.trimester)marks.push("⅓");
+    if(info.markers.semester)marks.push("½");
+    if(date===firstStudent)marks.push("🎒");
+    if(date===lastStudent)marks.push("🏁");
+    cells+=`<button class="calDay ${info.type} ${date===new Date().toISOString().slice(0,10)?"today":""}" onclick="window.editDate('${date}')"><b>${d}</b>${info.countedDay?`<span class="dayNum">Day ${info.countedDay}</span>`:""}<span class="calMarks">${marks.join(" ")}</span></button>`;
+  }
+  return `<header><div><h2>School Calendar</h2><p>Set your student year, then only change the exceptions.</p></div></header>
+  <section class="card calendarSettings"><div><label>🎒 First Student Day<br><input type="date" value="${esc(firstStudent)}" onchange="window.setCalendarBoundary('firstStudentDay',this.value)"></label></div><div><label>🏁 Last Student Day<br><input type="date" value="${esc(lastStudent)}" onchange="window.setCalendarBoundary('lastStudentDay',this.value)"></label></div><div class="calendarCount"><b>${countedDaysTotal()}</b><span>counted days</span></div></section>
+  <section class="card"><div class="calHead"><button onclick="window.changeMonth(-1)">◀</button><h3>${monthLabel}</h3><button onclick="window.changeMonth(1)">▶</button></div><div class="weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div><div class="calendarGrid">${cells}</div></section>
+  <section class="card small"><b>Legend:</b> 🟢 Instructional (counts + regular schedule) &nbsp; 🟣 In-Service (counts) &nbsp; 🔴 No School &nbsp; 🎒 First Student Day &nbsp; 🏁 Last Student Day<br><br>⅟₉ Beginning of Nine Weeks &nbsp; ⅓ Beginning of Trimester &nbsp; ½ Beginning of Semester</section>`;
+}
+function isoAddDays(date,n){const d=new Date(date+"T12:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
+function isWeekday(date){const d=new Date(date+"T12:00:00").getDay();return d!==0&&d!==6}
+function getDateInfo(date){
+  const set=data.calendarSettings||{},o=(data.calendarOverrides||{})[date]||{};
+  const within=set.firstStudentDay&&set.lastStudentDay&&date>=set.firstStudentDay&&date<=set.lastStudentDay;
+  let type="outside";
+  if(within&&isWeekday(date))type="instructional";
+  if(o.type)type=o.type;
+  if(!within&&o.type==="inservice")type="inservice";
+  const counted=within&&isWeekday(date)&&(type==="instructional"||type==="inservice");
+  return {type,counted,markers:{nineWeeks:!!o.nineWeeks,trimester:!!o.trimester,semester:!!o.semester},schedule:o.schedule|| (type==="instructional"?"regular":"")};
+}
+function countedDaysBefore(date){
+  const set=data.calendarSettings||{};if(!set.firstStudentDay||date<set.firstStudentDay)return 0;
+  let count=0,d=set.firstStudentDay;
+  while(d<=date){if(getDateInfo(d).counted)count++;d=isoAddDays(d,1)}return count;
+}
+function getDateInfoWithNumber(date){const x=getDateInfo(date);return {...x,countedDay:x.counted?countedDaysBefore(date):0}}
+function countedDaysTotal(){const set=data.calendarSettings||{};return set.firstStudentDay&&set.lastStudentDay?countedDaysBefore(set.lastStudentDay):0}
+function getDateInfo(date){
+  const set=data.calendarSettings||{},o=(data.calendarOverrides||{})[date]||{};
+  const within=!!(set.firstStudentDay&&set.lastStudentDay&&date>=set.firstStudentDay&&date<=set.lastStudentDay);
+  let type=(within&&isWeekday(date))?"instructional":"outside";
+  if(o.type)type=o.type;
+  const counted=within&&isWeekday(date)&&(type==="instructional"||type==="inservice");
+  const markers={nineWeeks:!!o.nineWeeks,trimester:!!o.trimester,semester:!!o.semester};
+  const schedule=o.schedule!==undefined?o.schedule:(type==="instructional"?"regular":"");
+  const countedDay=counted?countedDaysBeforeRaw(date):0;
+  return {type,counted,markers,schedule,countedDay};
+}
+function countedDaysBeforeRaw(date){
+ const set=data.calendarSettings||{};if(!set.firstStudentDay||date<set.firstStudentDay)return 0;
+ let count=0,d=set.firstStudentDay;
+ while(d<=date){const o=(data.calendarOverrides||{})[d]||{};const within=d>=set.firstStudentDay&&d<=set.lastStudentDay;let type=(within&&isWeekday(d))?"instructional":"outside";if(o.type)type=o.type;if(within&&isWeekday(d)&&(type==="instructional"||type==="inservice"))count++;d=isoAddDays(d,1)}
+ return count;
+}
+function countedDaysTotal(){const s=data.calendarSettings||{};return s.firstStudentDay&&s.lastStudentDay?countedDaysBeforeRaw(s.lastStudentDay):0}
+window.changeMonth=n=>{const [y,m]=(data.calendarViewDate||new Date().toISOString().slice(0,7)).split("-").map(Number);data.calendarViewDate=new Date(y,m-1+n,1).toISOString().slice(0,7);saveLocal();render()}
+window.setCalendarBoundary=(key,value)=>{data.calendarSettings??={};data.calendarSettings[key]=value;if(key==="firstStudentDay"&&value)data.calendarViewDate=value.slice(0,7);save();render()}
+window.editDate=date=>{window.calendarEditDate=date;renderCalendarModal()}
+function renderCalendarModal(){
+ const date=window.calendarEditDate,info=getDateInfo(date),o=(data.calendarOverrides||{})[date]||{};
+ const label=new Date(date+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+ const options=`<option value="instructional" ${info.type==="instructional"?"selected":""}>Instructional Day</option><option value="inservice" ${info.type==="inservice"?"selected":""}>In-Service Day</option><option value="noschool" ${info.type==="noschool"?"selected":""}>No School / Vacation</option><option value="outside" ${info.type==="outside"?"selected":""}>Outside Student Year</option>`;
+ document.body.insertAdjacentHTML("beforeend",`<div id="calModal" class="modalbg"><div class="modal"><h3>🗓️ ${label}</h3><label>Day Type<br><select id="calType">${options}</select></label><p class="small">Instructional days automatically use the Regular Bell Schedule. In-service days count toward your day number but have no bell schedule.</p><hr><b>Academic Markers</b><label><input id="markNine" type="checkbox" ${o.nineWeeks?"checked":""}> Beginning of Nine Weeks</label><br><label><input id="markTri" type="checkbox" ${o.trimester?"checked":""}> Beginning of Trimester</label><br><label><input id="markSem" type="checkbox" ${o.semester?"checked":""}> Beginning of Semester</label><hr><label>Bell Schedule<br><select id="calSchedule"><option value="">None / Default</option><option value="regular" ${info.schedule==="regular"?"selected":""}>Regular Schedule</option><option value="alternate" ${info.schedule==="alternate"?"selected":""}>Alternate Schedule (coming next)</option></select></label><p class="small">Custom bell schedules will be added in the next version.</p><div style="margin-top:16px"><button class="primary" onclick="window.saveDateDetails('${date}')">Save</button> <button onclick="window.closeCalendarModal()">Cancel</button></div></div></div>`);
+}
+window.closeCalendarModal=()=>document.querySelector("#calModal")?.remove()
+window.saveDateDetails=date=>{
+ data.calendarOverrides??={};const type=$("#calType").value,schedule=$("#calSchedule").value;
+ data.calendarOverrides[date]={type,nineWeeks:$("#markNine").checked,trimester:$("#markTri").checked,semester:$("#markSem").checked,schedule:schedule||undefined};
+ save();window.closeCalendarModal();render();
+}
 function quickButtons(){return `<header><h2>Quick Buttons</h2></header><section class="card"><h3>Current Buttons</h3>${data.buttons.map(b=>`<p>${b.icon} <b>${esc(b.label)}</b> <span class="small">(${esc(b.type)})</span> <button onclick="window.deleteButton('${b.id}')">Delete</button></p>`).join("")}</section><section class="card"><h3>Add Button</h3><div class="add"><input id="qbIcon" placeholder="⚡" style="width:70px"><input id="qbLabel" placeholder="Label"><select id="qbType"><option value="event">Event</option><option value="timed">Timed / Out of Class</option></select><button onclick="window.addButton()">Add</button></div></section>`}
 function grades(){return `<header><h2>Grades</h2></header><section class="card"><h3>Add Course</h3><div class="add"><input id="courseName" placeholder="Course name"><button onclick="window.addCourse()">Add Course</button></div></section>${data.gradeCourses.map(c=>`<section class="card"><h3>${esc(c.name)}</h3><div class="add"><input id="comp-${c.id}" placeholder="Component"><input id="weight-${c.id}" type="number" min="0" max="100" placeholder="Weight %"><button onclick="window.addComponent('${c.id}')">Add Component</button></div>${c.components.length?`<table><thead><tr><th>Student</th>${c.components.map(x=>`<th>${esc(x.name)}<br><span class="small">${x.weight}%</span></th>`).join("")}</tr></thead><tbody>${data.students.map(s=>`<tr><td>${esc(s.name)}</td>${c.components.map(co=>`<td><input class="grade" value="${esc(c.grades?.[s.id]?.[co.id]??"")}" onchange="window.setGrade('${c.id}','${s.id}','${co.id}',this.value)"></td>`).join("")}</tr>`).join("")}</tbody></table>`:"<p class='small'>Add grading components to begin.</p>"}</section>`).join("")}`}
 function reports(){const sid=window.reportStudent||data.students[0]?.id,s=data.students.find(x=>x.id===sid),ev=data.events.filter(e=>e.studentId===sid),notes=data.notes.filter(n=>n.studentId===sid),opts=data.students.map(st=>`<option value="${st.id}" ${st.id===sid?"selected":""}>${esc(st.name)}</option>`).join("");return `<header><h2>Reports</h2></header><section class="card"><select onchange="window.reportStudent=this.value;render()">${opts}</select><h3>${esc(s?.name||"")}</h3><p><b>Total events:</b> ${ev.length}</p><div class="reportgrid">${data.buttons.filter(b=>b.type==="event").map(b=>`<div class="stat">${b.icon}<b>${ev.filter(e=>e.buttonId===b.id).length}</b><span>${esc(b.label)}</span></div>`).join("")}</div><h4>Out of Class</h4>${ev.filter(e=>e.type==="timed").map(e=>`<p>${e.icon} ${esc(e.label)} — ${new Date(e.start).toLocaleString()} ${e.end?"to "+new Date(e.end).toLocaleString():"(still open)"}</p>`).join("")||"<p>None recorded.</p>"}<h4>Notes</h4>${notes.map(n=>`<p>📝 ${esc(n.text)} <span class="small">${new Date(n.created).toLocaleString()}</span></p>`).join("")||"<p>None recorded.</p>"}</section>`}
