@@ -72,7 +72,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 .collapsibleInner{padding:12px}
 .gradeViewControls{display:flex;gap:12px;align-items:end;flex-wrap:wrap}
 
-.classroomTools{margin:18px 0}.toolGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.toolCard{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.toolValue{font-size:30px;font-weight:800;margin:8px 0}.toolControls{display:flex;gap:7px;flex-wrap:wrap;align-items:center}.toolControls input{max-width:90px}.toolResult{min-height:34px;font-weight:700;margin-top:8px}.groupOutput{margin-top:10px}.groupBox{border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0;background:#fafbfe}.displayBtn{white-space:nowrap}
+.classroomTools{margin:18px 0}.toolGrid{display:flex;gap:8px;flex-wrap:wrap}.toolCard{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;flex:1;min-width:175px}.toolCard b{font-size:13px}.toolValue{font-size:24px;font-weight:800;margin:4px 0}.toolControls{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.toolControls input{max-width:70px}.toolResult{min-height:22px;font-weight:700;margin-top:5px;font-size:14px}.groupOutput{margin-top:10px}.groupBox{border:1px solid var(--line);border-radius:10px;padding:8px;margin:6px 0;background:#fafbfe}.displayBtn{white-space:nowrap}.toolDisplayBtns{margin-top:6px}.toolDisplayBtns button{font-size:11px;padding:4px 7px}
 
 </style>
 </style>
@@ -102,7 +102,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.8.0";
+const APP_VERSION="1.8.1";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -181,6 +181,7 @@ function ensureClassroomTools(){
   t.randomStudentId=t.randomStudentId||null;
   t.groups=Array.isArray(t.groups)?t.groups:[];
   data.groupRestrictions=Array.isArray(data.groupRestrictions)?data.groupRestrictions:[];
+  data.students.forEach(s=>s.doNotSeatWith=Array.isArray(s.doNotSeatWith)?s.doNotSeatWith:[]);
 }
 function stopwatchMs(){
   ensureClassroomTools();const t=data.classroomTools.stopwatch;
@@ -209,7 +210,8 @@ function currentToolRoster(){
   return cls?data.students.filter(s=>(cls.studentIds||[]).includes(s.id)):data.students.slice();
 }
 function isRestrictedPair(a,b){
-  return data.groupRestrictions.some(r=>(r.a===a&&r.b===b)||(r.a===b&&r.b===a));
+  const sa=data.students.find(s=>s.id===a),sb=data.students.find(s=>s.id===b);
+  return !!(sa?.doNotSeatWith?.includes(b)||sb?.doNotSeatWith?.includes(a));
 }
 
 function bellScheduleById(id){
@@ -431,14 +433,14 @@ function classroomToolsHTML(cls,block){
   return `<section class="card classroomTools">
     <div class="sectionHeader"><div><h3 style="margin:0">Classroom Tools</h3><p class="small" style="margin:4px 0 0">Use these on your dashboard, or open a clean student-facing display.</p></div><button class="displayBtn" onclick="window.openClassroomDisplay()">↗ Open Classroom Display</button></div>
     <div class="toolGrid" style="margin-top:12px">
-      <div class="toolCard"><b>⏳ Time Left in Class</b><div class="toolValue" data-tool-live="classleft">${left===null?"—":Math.max(0,Math.ceil(left/60000))+" min"}</div><span class="small">${block?esc(block.label):"No active period"}</span></div>
-      <div class="toolCard"><b>⏱ Timer</b><div class="toolValue" data-tool-live="stopwatch">${formatClock(stopwatchMs())}</div><div class="toolControls"><button onclick="window.toggleStopwatch()">${t.stopwatch.running?"Pause":"Start"}</button><button onclick="window.resetStopwatch()">Reset</button></div></div>
-      <div class="toolCard"><b>⏲ Countdown</b><div class="toolValue" data-tool-live="countdown">${formatClock(countdownMs())}</div><div class="toolControls"><input id="countdownMinutes" type="number" min="1" placeholder="min"><button onclick="window.setCountdown()">Set</button><button onclick="window.toggleCountdown()">${t.countdown.running?"Pause":"Start"}</button><button onclick="window.resetCountdown()">Reset</button></div></div>
-      <div class="toolCard"><b>🎲 Random Number</b><div class="toolControls"><input id="rngMin" type="number" value="1"><span>to</span><input id="rngMax" type="number" value="10"><button onclick="window.generateRandomNumber()">Generate</button></div><div class="toolResult" data-tool-result="number">${rng}</div></div>
-      <div class="toolCard"><b>🎯 Random Student</b><div class="toolControls"><button onclick="window.pickRandomStudent()">Pick Student</button></div><div class="toolResult" data-tool-result="student">${picked?esc(studentDisplayName(picked)):"—"}</div></div>
-      <div class="toolCard"><b>👥 Student Groups</b><div class="toolControls"><label class="small">Students per group <input id="groupSize" type="number" min="2" value="3"></label><button onclick="window.generateGroups()">Make Groups</button><button onclick="window.openRestrictionsModal()">Do Not Work With</button></div><div class="toolResult">${groups.length?groups.map((g,i)=>`Group ${i+1}: ${g.map(id=>esc(studentDisplayName(data.students.find(s=>s.id===id)||{}))).join(", ")}`).join("<br>"):"No groups generated yet."}</div></div>
+      <div class="toolCard"><b>⏳ Time Left in Class</b><div class="toolValue" data-tool-live="classleft">${left===null?"—":Math.max(0,Math.ceil(left/60000))+" min"}</div><span class="small">${block?esc(block.label):"No active period"}</span><div class="toolDisplayBtns"><button onclick="window.openClassroomDisplay('classleft')">↗ Display</button></div></div>
+      <div class="toolCard"><b>⏱ Timer</b><div class="toolValue" data-tool-live="stopwatch">${formatClock(stopwatchMs())}</div><div class="toolControls"><button onclick="window.toggleStopwatch()">${t.stopwatch.running?"Pause":"Start"}</button><button onclick="window.resetStopwatch()">Reset</button></div><div class="toolDisplayBtns"><button onclick="window.openClassroomDisplay('stopwatch')">↗ Display</button></div></div>
+      <div class="toolCard"><b>⏲ Countdown</b><div class="toolValue" data-tool-live="countdown">${formatClock(countdownMs())}</div><div class="toolControls"><input id="countdownMinutes" type="number" min="1" placeholder="min"><button onclick="window.setCountdown()">Set</button><button onclick="window.toggleCountdown()">${t.countdown.running?"Pause":"Start"}</button><button onclick="window.resetCountdown()">Reset</button></div><div class="toolDisplayBtns"><button onclick="window.openClassroomDisplay('countdown')">↗ Display</button></div></div>
+      <div class="toolCard"><b>🎲 Random Number</b><div class="toolControls"><input id="rngMin" type="number" value="1"><span>to</span><input id="rngMax" type="number" value="10"><button onclick="window.generateRandomNumber()">Generate</button></div><div class="toolResult" data-tool-result="number">${rng}</div><div class="toolDisplayBtns"><button onclick="window.openClassroomDisplay('number')">↗ Display</button></div></div>
+      <div class="toolCard"><b>🎯 Random Student</b><div class="toolControls"><button onclick="window.pickRandomStudent()">Pick Student</button></div><div class="toolResult" data-tool-result="student">${picked?esc(studentDisplayName(picked)):"—"}</div><div class="toolDisplayBtns"><button onclick="window.openClassroomDisplay('student')">↗ Display</button></div></div>
+      <div class="toolCard"><b>👥 Student Groups</b><div class="toolControls"><label class="small">Students per group <input id="groupSize" type="number" min="2" value="3"></label><button onclick="window.generateGroups()">Make Groups</button></div><div class="toolResult">${groups.length?groups.map((g,i)=>`Group ${i+1}: ${g.map(id=>esc(studentDisplayName(data.students.find(s=>s.id===id)||{}))).join(", ")}`).join("<br>"):"No groups generated yet."}</div></div>
     </div>
-    ${groups.length?`<div class="groupOutput"><button onclick="window.clearGroups()">Clear Groups</button>${groups.map((g,i)=>`<div class="groupBox"><b>Group ${i+1}</b><br>${g.map(id=>esc(studentDisplayName(data.students.find(s=>s.id===id)||{}))).join(" · ")}</div>`).join("")}</div>`:""}
+    ${groups.length?`<div class="groupOutput"><button onclick="window.clearGroups()">Clear Groups</button> <button onclick="window.openClassroomDisplay('groups')">↗ Display Groups</button>${groups.map((g,i)=>`<div class="groupBox"><b>Group ${i+1}</b><br>${g.map(id=>esc(studentDisplayName(data.students.find(s=>s.id===id)||{}))).join(" · ")}</div>`).join("")}</div>`:""}
   </section>`;
 }
 function live(){
@@ -944,10 +946,10 @@ window.saveRestrictions=()=>{
   document.querySelectorAll('input[name="restriction"]:checked').forEach(x=>{const [a,b]=x.value.split("|");data.groupRestrictions.push({a,b});});
   save();document.querySelector("#restrictionModal")?.remove();render();
 }
-window.openClassroomDisplay=()=>{
-  const w=window.open("","teacherDashboardDisplay","width=1100,height=750");
+window.openClassroomDisplay=(mode="all")=>{
+  const w=window.open("","teacherDashboardDisplay_"+mode,"width=1100,height=750");
   if(!w){alert("Your browser blocked the display window. Please allow pop-ups for this site.");return;}
-  w.document.write(`<!doctype html><html><head><title>Teacher Dashboard Display</title><style>body{margin:0;font-family:system-ui,sans-serif;background:#f4f6fb;color:#25324a}.wrap{padding:36px;text-align:center}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px;max-width:1100px;margin:30px auto}.card{background:white;border-radius:20px;padding:28px;box-shadow:0 8px 24px #26345418}.label{font-size:20px;color:#667085}.value{font-size:58px;font-weight:800;margin-top:8px}.groups{text-align:left;max-width:900px;margin:20px auto}.group{background:white;border-radius:14px;padding:16px;margin:10px 0;font-size:22px}</style></head><body><div id="display"></div><script>function update(){const s=window.opener&&window.opener.getClassroomDisplayState?window.opener.getClassroomDisplayState():null;if(!s)return;document.getElementById('display').innerHTML='<div class="wrap"><h1>'+s.className+'</h1><div class="grid"><div class="card"><div class="label">Time Left</div><div class="value">'+s.timeLeft+'</div></div><div class="card"><div class="label">Timer</div><div class="value">'+s.stopwatch+'</div></div><div class="card"><div class="label">Countdown</div><div class="value">'+s.countdown+'</div></div><div class="card"><div class="label">Random Number</div><div class="value">'+s.randomNumber+'</div></div><div class="card"><div class="label">Random Student</div><div class="value" style="font-size:38px">'+s.randomStudent+'</div></div></div>'+(s.groups.length?'<div class="groups"><h2>Groups</h2>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>':'')+'</div>';}update();setInterval(update,500);<\/script></body></html>`);w.document.close();
+  w.document.write(`<!doctype html><html><head><title>Teacher Dashboard Display</title><style>body{margin:0;font-family:system-ui,sans-serif;background:#f4f6fb;color:#25324a}.wrap{padding:20px;text-align:center}.grid{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:1250px;margin:10px auto}.card{background:white;border-radius:12px;padding:10px 14px;min-width:150px;box-shadow:0 5px 16px #26345418}.label{font-size:12px;color:#667085}.value{font-size:26px;font-weight:800;margin-top:2px}.single{min-height:88vh;display:flex;flex-direction:column;justify-content:center;align-items:center}.single .label{font-size:28px}.single .value{font-size:min(24vw,220px)}.single.student .value{font-size:min(12vw,110px)}.groups{text-align:left;max-width:900px;margin:20px auto}.group{background:white;border-radius:14px;padding:16px;margin:10px 0;font-size:22px}</style></head><body><div id="display"></div><script>const mode=${JSON.stringify(mode)};function update(){const s=window.opener&&window.opener.getClassroomDisplayState?window.opener.getClassroomDisplayState():null;if(!s)return;const cards={classleft:['Time Left',s.timeLeft],stopwatch:['Timer',s.stopwatch],countdown:['Countdown',s.countdown],number:['Random Number',s.randomNumber],student:['Random Student',s.randomStudent]};let html='<div class="wrap">';if(mode==='all')html+='<h3>'+s.className+'</h3>';if(mode==='groups'){html+='<div class="groups"><h1>Groups</h1>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>';}else if(mode!=='all'&&cards[mode]){const x=cards[mode];html+='<div class="single '+(mode==='student'?'student':'')+'"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>';}else{html+='<div class="grid">'+Object.values(cards).map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>').join('')+'</div>'+(s.groups.length?'<div class="groups"><h3>Groups</h3>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>':'');}document.getElementById('display').innerHTML=html+'</div>';}update();setInterval(update,500);<\/script></body></html>`);w.document.close();
 }
 window.getClassroomDisplayState=()=>{
   ensureClassroomTools();const cls=currentClass(),picked=data.classroomTools.randomStudentId?data.students.find(s=>s.id===data.classroomTools.randomStudentId):null;
@@ -960,6 +962,15 @@ function scheduleLiveMinuteRefresh(){
   liveMinuteTimer=setTimeout(()=>{if(page==="live")render();scheduleLiveMinuteRefresh();},Math.max(25,delay));
 }
 scheduleLiveMinuteRefresh();
+
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Enter"||e.shiftKey||e.ctrlKey||e.altKey)return;
+  if(e.target?.tagName==="TEXTAREA")return;
+  const modal=e.target?.closest?.(".modal");
+  if(!modal)return;
+  const primary=modal.querySelector("button.primary");
+  if(primary){e.preventDefault();primary.click();}
+});
 
 function bind(){
   document.querySelectorAll("[data-timer]").forEach(el=>{const tick=()=>{const sec=Math.floor((Date.now()-new Date(el.dataset.timer))/1000);el.textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`};tick();setInterval(tick,1000);});
@@ -1053,7 +1064,8 @@ window.openStudentModal=id=>{
       <label style="flex:1;min-width:170px">First Name<br><input id="editStudentFirstName" value="${esc(st.firstName||"")}" style="width:100%"></label>
       <label style="flex:1;min-width:170px">Last Name<br><input id="editStudentLastName" value="${esc(st.lastName||"")}" style="width:100%"></label>
     </div>
-    <span class="sectionLabel">Classes</span><p class="small">Check every class this student belongs to.</p><div class="checkGrid">${data.classes.map(c=>`<label><input type="checkbox" name="studentClass" value="${esc(c.id)}" ${(c.studentIds||[]).includes(st.id)?"checked":""}> ${esc(c.name)}</label>`).join("")||"<span class='small'>No classes yet. Add a class first.</span>"}</div><div style="margin-top:16px"><button class="primary" onclick="window.saveStudent('${st.id}')">Save Student</button> <button onclick="window.closeStudentModal()">Cancel</button></div></div></div>`);
+    <details class="collapsibleFieldset"><summary>Classes</summary><div class="collapsibleInner"><p class="small">Check every class this student belongs to.</p><div class="checkGrid">${data.classes.map(c=>`<label><input type="checkbox" name="studentClass" value="${esc(c.id)}" ${(c.studentIds||[]).includes(st.id)?"checked":""}> ${esc(c.name)}</label>`).join("")||"<span class='small'>No classes yet. Add a class first.</span>"}</div></div></details>
+    <details class="collapsibleFieldset"><summary>Do Not Seat With</summary><div class="collapsibleInner"><p class="small">These restrictions apply across all classes and are used when making groups.</p><div class="checkGrid">${sortedStudents(data.students.filter(other=>other.id!==st.id)).map(other=>`<label><input type="checkbox" name="studentRestriction" value="${esc(other.id)}" ${(st.doNotSeatWith||[]).includes(other.id)?"checked":""}> ${esc(studentDisplayName(other))}</label>`).join("")||"<span class='small'>Add other students first.</span>"}</div></div></details><div style="margin-top:16px"><button class="primary" onclick="window.saveStudent('${st.id}')">Save Student</button> <button onclick="window.closeStudentModal()">Cancel</button></div></div></div>`);
 }
 window.closeStudentModal=()=>document.querySelector("#studentModal")?.remove();
 window.saveStudent=id=>{
@@ -1064,6 +1076,9 @@ window.saveStudent=id=>{
   st.firstName=firstName;st.lastName=lastName;st.name=[firstName,lastName].filter(Boolean).join(" ");
   const selectedIds=[...document.querySelectorAll('input[name="studentClass"]:checked')].map(x=>x.value);
   data.classes.forEach(c=>{const has=selectedIds.includes(c.id);c.studentIds=has?[...new Set([...(c.studentIds||[]),id])]:((c.studentIds||[]).filter(sid=>sid!==id));});
+  const selectedRestrictions=[...document.querySelectorAll('input[name="studentRestriction"]:checked')].map(x=>x.value);
+  st.doNotSeatWith=selectedRestrictions;
+  data.students.forEach(other=>{if(other.id===id)return;other.doNotSeatWith=Array.isArray(other.doNotSeatWith)?other.doNotSeatWith:[];if(selectedRestrictions.includes(other.id)){if(!other.doNotSeatWith.includes(id))other.doNotSeatWith.push(id);}else other.doNotSeatWith=other.doNotSeatWith.filter(x=>x!==id);});
   save();window.closeStudentModal();render();
 }
 window.addStudentFromClassModal=()=>{
