@@ -388,15 +388,17 @@ function classMeta(c){
   return `<div class="classMeta"><span>${esc(ruleText)}</span><span>${esc(termText)}</span></div>`;
 }
 
+function splitStudentName(name){
+  const parts=(name||"").trim().split(/\s+/).filter(Boolean);
+  return {firstName:parts.shift()||"",lastName:parts.join(" ")};
+}
 function studentFirstName(s){
-  if(s.firstName!==undefined)return (s.firstName||"").trim();
-  const parts=(s.name||"").trim().split(/\s+/);
-  return parts.shift()||"";
+  if((s.firstName||"").trim())return s.firstName.trim();
+  return splitStudentName(s.name).firstName;
 }
 function studentLastName(s){
-  if(s.lastName!==undefined)return (s.lastName||"").trim();
-  const parts=(s.name||"").trim().split(/\s+/);
-  return parts.join(" ");
+  if(s.lastName!==undefined && (s.lastName||"").trim())return s.lastName.trim();
+  return splitStudentName(s.name).lastName;
 }
 function studentDisplayName(s){
   const first=studentFirstName(s),last=studentLastName(s);
@@ -405,9 +407,32 @@ function studentDisplayName(s){
 function normalizeStudents(){
   data.students??=[];
   data.students.forEach(s=>{
-    if(s.firstName===undefined)s.firstName=studentFirstName(s);
-    if(s.lastName===undefined)s.lastName=studentLastName(s);
-    s.name=studentDisplayName(s); // compatibility with older event/report data
+    // Repair the accidental V1.6.16 migration that duplicated first names.
+    let first=(s.firstName||"").trim();
+    let last=(s.lastName||"").trim();
+    const current=(s.name||"").trim();
+
+    if(!first && !last){
+      const split=splitStudentName(current);
+      first=split.firstName; last=split.lastName;
+    }else{
+      if(!first) first=splitStudentName(current).firstName;
+      if(!last) last=splitStudentName(current).lastName;
+
+      // Example bad V1.6.16 data: firstName="Abrianna", lastName="Abrianna DeBolt"
+      if(first && last && last.toLowerCase().startsWith(first.toLowerCase()+" ")){
+        last=last.slice(first.length).trim();
+      }
+      // Example bad display name: "Abrianna Abrianna DeBolt"
+      const doubledPrefix=(first+" "+first+" ").toLowerCase();
+      if(first && current.toLowerCase().startsWith(doubledPrefix) && !last){
+        last=current.slice((first+" "+first+" ").length).trim();
+      }
+    }
+
+    s.firstName=first;
+    s.lastName=last;
+    s.name=[first,last].filter(Boolean).join(" ") || current || "Unnamed Student";
   });
 }
 function sortedStudents(list=data.students){
@@ -419,7 +444,6 @@ function sortedStudents(list=data.students){
   });
 }
 
-
 window.toggleStudentsList=()=>{
   const el=document.querySelector("#studentsListCollapsible");
   const btn=document.querySelector("#studentsExpandBtn");
@@ -428,7 +452,27 @@ window.toggleStudentsList=()=>{
   if(btn)btn.textContent=el.classList.contains("open")?"▼ Collapse":"▶ Expand";
 };
 
-function students(){ensureClassFields();return `<header><h2>Students & Classes</h2></header><div class="split"><section class="card"><h3>Students</h3><div class="add"><input id="newStudent" placeholder="Student name"><button onclick="window.addStudent()">Add</button></div>${sortedStudents(data.students).map(st=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0"><span>${esc(st.name)}</span><span style="white-space:nowrap"><button onclick="window.openStudentModal('${st.id}')">Edit</button> <button onclick="window.deleteStudent('${st.id}')">Delete</button></span></div>`).join("")||"<p>No students yet.</p>"}</section><section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3>Classes</h3><button class="primary" onclick="window.openClassModal()">＋ Add Class</button></div>${data.classes.length?data.classes.map(c=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><b>${esc(c.name)}</b>${classMeta(c)}</div><div><button onclick="window.openClassModal('${c.id}')">Edit</button> <button onclick="window.deleteClass('${c.id}')">Delete</button></div></div><details><summary class="small">Students (${c.studentIds.length})</summary><div style="margin-top:8px">${sortedStudents(data.students).map(st=>`<label class="small"><input type="checkbox" ${c.studentIds.includes(st.id)?"checked":""} onchange="window.roster('${c.id}','${st.id}',this.checked)"> ${esc(st.name)}</label><br>`).join("")||"<span class='small'>Add students first.</span>"}</div></details></div>`).join(""):`<div class="classEmpty">No classes yet. Add your first class to get started.</div>`}</section></div>`}
+function students(){
+  ensureClassFields(); normalizeStudents();
+  const studentRows=sortedStudents(data.students).map(st=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0">
+      <span>${esc(st.name)}</span>
+      <span style="white-space:nowrap"><button onclick="window.openStudentModal('${st.id}')">Edit</button> <button onclick="window.deleteStudent('${st.id}')">Delete</button></span>
+    </div>`).join("")||"<p>No students yet.</p>";
+  return `<header><h2>Students & Classes</h2></header>
+  <div class="split">
+    <section class="card">
+      <h3>Students</h3>
+      <div class="add" style="align-items:end;flex-wrap:wrap">
+        <label style="flex:1;min-width:170px">First Name<br><input id="newStudentFirstName" placeholder="First name" style="width:100%"></label>
+        <label style="flex:1;min-width:170px">Last Name<br><input id="newStudentLastName" placeholder="Last name" style="width:100%"></label>
+        <button onclick="window.addStudent()">Add</button>
+      </div>
+      ${studentRows}
+    </section>
+    <section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3>Classes</h3><button class="primary" onclick="window.openClassModal()">＋ Add Class</button></div>${data.classes.length?data.classes.map(c=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><b>${esc(c.name)}</b>${classMeta(c)}</div><div><button onclick="window.openClassModal('${c.id}')">Edit</button> <button onclick="window.deleteClass('${c.id}')">Delete</button></div></div><details><summary class="small">Students (${c.studentIds.length})</summary><div style="margin-top:8px">${sortedStudents(data.students).map(st=>`<label class="small"><input type="checkbox" ${c.studentIds.includes(st.id)?"checked":""} onchange="window.roster('${c.id}','${st.id}',this.checked)"> ${esc(st.name)}</label><br>`).join("")||"<span class='small'>Add students first.</span>"}</div></details></div>`).join(""):`<div class="classEmpty">No classes yet. Add your first class to get started.</div>`}</section>
+  </div>`;
+}
 
 function isoAddDays(date,n){const d=new Date(date+"T12:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
 function isWeekday(date){const d=new Date(date+"T12:00:00").getDay();return d!==0&&d!==6}
@@ -781,7 +825,13 @@ window.saveReportEvent=sid=>{
   save();toast="Event added.";window.closeReportEventModal();render();
 }
 window.deleteEvent=id=>{const e=data.events.find(x=>x.id===id);if(!e)return;if(!confirm("Delete this event?"))return;data.events=data.events.filter(x=>x.id!==id);data.notes=data.notes.filter(n=>n.eventId!==id);save();toast="Event deleted.";render();}
-window.addStudent=()=>{const name=$("#newStudent")?.value.trim();if(name){data.students.push({id:uid(),name});save();render()}}
+window.addStudent=()=>{
+  const firstName=$("#newStudentFirstName")?.value.trim()||"";
+  const lastName=$("#newStudentLastName")?.value.trim()||"";
+  if(!firstName && !lastName){alert("Please enter a first or last name.");return;}
+  data.students.push({id:uid(),firstName,lastName,name:[firstName,lastName].filter(Boolean).join(" ")});
+  save();render();
+}
 window.deleteStudent=id=>{
   const st=data.students.find(x=>x.id===id);if(!st)return;
   if(!confirm(`Delete ${st.name}? This will remove the student from all classes and permanently delete their events and notes.`))return;
@@ -795,19 +845,34 @@ window.deleteStudent=id=>{
 window.openStudentModal=id=>{
   ensureClassFields();document.querySelector("#studentModal")?.remove();
   const st=data.students.find(x=>x.id===id);if(!st)return;
-  document.body.insertAdjacentHTML("beforeend",`<div id="studentModal" class="modalbg"><div class="modal classEditor"><h3>Edit Student</h3><label>Student Name<br><input id="editStudentName" value="${esc(st.name)}" style="width:100%"></label><span class="sectionLabel">Classes</span><p class="small">Check every class this student belongs to.</p><div class="checkGrid">${data.classes.map(c=>`<label><input type="checkbox" name="studentClass" value="${esc(c.id)}" ${(c.studentIds||[]).includes(st.id)?"checked":""}> ${esc(c.name)}</label>`).join("")||"<span class='small'>No classes yet. Add a class first.</span>"}</div><div style="margin-top:16px"><button class="primary" onclick="window.saveStudent('${st.id}')">Save Student</button> <button onclick="window.closeStudentModal()">Cancel</button></div></div></div>`);
+  normalizeStudents();
+  document.body.insertAdjacentHTML("beforeend",`<div id="studentModal" class="modalbg"><div class="modal classEditor"><h3>Edit Student</h3>
+    <div class="add" style="align-items:end;flex-wrap:wrap">
+      <label style="flex:1;min-width:170px">First Name<br><input id="editStudentFirstName" value="${esc(st.firstName||"")}" style="width:100%"></label>
+      <label style="flex:1;min-width:170px">Last Name<br><input id="editStudentLastName" value="${esc(st.lastName||"")}" style="width:100%"></label>
+    </div>
+    <span class="sectionLabel">Classes</span><p class="small">Check every class this student belongs to.</p><div class="checkGrid">${data.classes.map(c=>`<label><input type="checkbox" name="studentClass" value="${esc(c.id)}" ${(c.studentIds||[]).includes(st.id)?"checked":""}> ${esc(c.name)}</label>`).join("")||"<span class='small'>No classes yet. Add a class first.</span>"}</div><div style="margin-top:16px"><button class="primary" onclick="window.saveStudent('${st.id}')">Save Student</button> <button onclick="window.closeStudentModal()">Cancel</button></div></div></div>`);
 }
 window.closeStudentModal=()=>document.querySelector("#studentModal")?.remove();
 window.saveStudent=id=>{
-  const st=data.students.find(x=>x.id===id);if(!st)return;const name=$("#editStudentName")?.value.trim();if(!name){alert("Please enter a student name.");return;}
-  st.name=name;const selectedIds=[...document.querySelectorAll('input[name="studentClass"]:checked')].map(x=>x.value);
+  const st=data.students.find(x=>x.id===id);if(!st)return;
+  const firstName=$("#editStudentFirstName")?.value.trim()||"";
+  const lastName=$("#editStudentLastName")?.value.trim()||"";
+  if(!firstName && !lastName){alert("Please enter a first or last name.");return;}
+  st.firstName=firstName;st.lastName=lastName;st.name=[firstName,lastName].filter(Boolean).join(" ");
+  const selectedIds=[...document.querySelectorAll('input[name="studentClass"]:checked')].map(x=>x.value);
   data.classes.forEach(c=>{const has=selectedIds.includes(c.id);c.studentIds=has?[...new Set([...(c.studentIds||[]),id])]:((c.studentIds||[]).filter(sid=>sid!==id));});
   save();window.closeStudentModal();render();
 }
 window.addStudentFromClassModal=()=>{
-  const input=$("#newStudentInClassModal"),name=input?.value.trim();if(!name)return;const st={id:uid(),name};data.students.push(st);
+  const firstName=$("#newStudentInClassFirstName")?.value.trim()||"";
+  const lastName=$("#newStudentInClassLastName")?.value.trim()||"";
+  if(!firstName&&!lastName)return;
+  const name=[firstName,lastName].filter(Boolean).join(" ");
+  const st={id:uid(),firstName,lastName,name};data.students.push(st);
   const grid=$("#classStudentGrid");if(grid){const empty=grid.querySelector(".emptyStudents");if(empty)empty.remove();const label=document.createElement("label");label.innerHTML=`<input type="checkbox" name="classStudent" value="${esc(st.id)}" checked> ${esc(st.name)}`;grid.appendChild(label);}
-  if(input)input.value="";save();toast=`${name} added. Assignments saved when you save the class.`;
+  const a=$("#newStudentInClassFirstName"),b=$("#newStudentInClassLastName");if(a)a.value="";if(b)b.value="";
+  save();toast=`${name} added. Assignments saved when you save the class.`;
 }
 function ordinal(n){return `${n}${n===1?"st":n===2?"nd":n===3?"rd":"th"}`}
 function ruleEditor(rule,index){
@@ -821,7 +886,7 @@ window.openClassModal=(id="")=>{
   const existing=id?data.classes.find(c=>c.id===id):null,c=existing?structuredClone(existing):{id:"",name:"",studentIds:[],rules:[{id:uid(),periods:[],days:[1,2,3,4,5]}],terms:["fullYear"]};
   const checks=(items,selected,prefix)=>items.map(([v,label])=>`<label><input type="checkbox" name="${prefix}" value="${v}" ${selected.includes(v)?"checked":""}> ${label}</label>`).join("");
   const rules=(c.rules&&c.rules.length)?c.rules:[{id:uid(),periods:c.periods||[],days:c.days||[1,2,3,4,5]}];
-  document.body.insertAdjacentHTML("beforeend",`<div id="classModal" class="modalbg"><div class="modal classEditor"><h3>${existing?"Edit":"Add"} Class</h3><label>Class Name<br><input id="className" value="${esc(c.name)}" placeholder="e.g., Honors Precalculus" style="width:100%"></label><span class="sectionLabel">When does this class meet?</span><p class="small">Add as many scheduling rules as you need. For example: Period 7 on MTWF, plus Periods 6 and 7 on Thursday.</p><div id="classRules">${rules.map(ruleEditor).join("")}</div><button type="button" onclick="window.addClassRule()">＋ Add Another Scheduling Rule</button><span class="sectionLabel">Course Length</span><p class="small">Choose the part(s) of the year when this class is active. Full Year keeps it active all year.</p><div class="checkGrid">${checks(TERM_OPTIONS,c.terms,"term")}</div><span class="sectionLabel">Students in This Class</span><p class="small">Check the students who belong in this class, or add a new student without leaving this screen.</p><div class="add" style="margin:8px 0"><input id="newStudentInClassModal" placeholder="New student name"><button type="button" onclick="window.addStudentFromClassModal()">＋ Add Student</button></div><div id="classStudentGrid" class="checkGrid classStudentGrid">${sortedStudents(data.students).map(st=>`<label><input type="checkbox" name="classStudent" value="${esc(st.id)}" ${(c.studentIds||[]).includes(st.id)?"checked":""}> ${esc(st.name)}</label>`).join("")||"<span class='small emptyStudents'>No students yet.</span>"}</div><div style="margin-top:16px"><button class="primary" onclick="window.saveClass('${c.id}')">Save Class</button> <button onclick="window.closeClassModal()">Cancel</button></div></div></div>`);
+  document.body.insertAdjacentHTML("beforeend",`<div id="classModal" class="modalbg"><div class="modal classEditor"><h3>${existing?"Edit":"Add"} Class</h3><label>Class Name<br><input id="className" value="${esc(c.name)}" placeholder="e.g., Honors Precalculus" style="width:100%"></label><span class="sectionLabel">When does this class meet?</span><p class="small">Add as many scheduling rules as you need. For example: Period 7 on MTWF, plus Periods 6 and 7 on Thursday.</p><div id="classRules">${rules.map(ruleEditor).join("")}</div><button type="button" onclick="window.addClassRule()">＋ Add Another Scheduling Rule</button><span class="sectionLabel">Course Length</span><p class="small">Choose the part(s) of the year when this class is active. Full Year keeps it active all year.</p><div class="checkGrid">${checks(TERM_OPTIONS,c.terms,"term")}</div><span class="sectionLabel">Students in This Class</span><p class="small">Check the students who belong in this class, or add a new student without leaving this screen.</p><div class="add" style="margin:8px 0;align-items:end;flex-wrap:wrap"><label style="flex:1;min-width:150px">First Name<br><input id="newStudentInClassFirstName" placeholder="First name" style="width:100%"></label><label style="flex:1;min-width:150px">Last Name<br><input id="newStudentInClassLastName" placeholder="Last name" style="width:100%"></label><button type="button" onclick="window.addStudentFromClassModal()">＋ Add Student</button></div><div id="classStudentGrid" class="checkGrid classStudentGrid">${sortedStudents(data.students).map(st=>`<label><input type="checkbox" name="classStudent" value="${esc(st.id)}" ${(c.studentIds||[]).includes(st.id)?"checked":""}> ${esc(st.name)}</label>`).join("")||"<span class='small emptyStudents'>No students yet.</span>"}</div><div style="margin-top:16px"><button class="primary" onclick="window.saveClass('${c.id}')">Save Class</button> <button onclick="window.closeClassModal()">Cancel</button></div></div></div>`);
 }
 window.addClassRule=()=>{const box=document.querySelector("#classRules");if(!box)return;const i=box.querySelectorAll(".scheduleRule").length;box.insertAdjacentHTML("beforeend",ruleEditor({id:uid(),periods:[],days:[1,2,3,4,5]},i));}
 window.removeClassRule=btn=>{const rules=document.querySelectorAll("#classRules .scheduleRule");if(rules.length<=1){alert("A class needs at least one scheduling rule. You can leave its periods empty if you do not want it to appear automatically.");return;}btn.closest(".scheduleRule")?.remove();document.querySelectorAll("#classRules .scheduleRule").forEach((el,i)=>{const b=el.querySelector("b");if(b)b.textContent=`Scheduling Rule ${i+1}`;});}
