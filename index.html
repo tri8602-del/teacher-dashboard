@@ -82,6 +82,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 .headerUtilities .utilityCard button{white-space:nowrap}
 @media(max-width:760px){.headerRight{justify-content:flex-start}.headerUtilities{width:100%}}
 
+.activeToolCard{position:relative;padding-right:34px!important}.toolClose{position:absolute;right:5px;top:5px;border:0;background:transparent;font-size:17px;line-height:18px;padding:2px 6px;cursor:pointer}.activeToolControls{display:flex;gap:5px;align-items:center;margin-top:5px}.activeToolControls button{font-size:11px;padding:3px 6px}
 .utilityCard{position:relative;min-width:150px}.utilityMenu{position:absolute;right:0;top:calc(100% + 6px);z-index:20;width:310px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 12px 28px #26345425}.utilityMenu[hidden]{display:none}.utilityMenu .toolBlock{border-bottom:1px solid var(--line);padding:9px 0}.utilityMenu .toolBlock:last-child{border-bottom:0}.utilityMenu h4{margin:0 0 7px;font-size:14px}.compactUtilityValue{font-size:18px;font-weight:800;margin-left:4px}.pvaasGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.pvaasCard{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.pvaasTable td,.pvaasTable th{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
 
 
@@ -113,7 +114,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.9.1";
+const APP_VERSION="1.9.2";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -457,14 +458,14 @@ function pageHTML(){return ({live,students,calendar,buttons:quickButtons,grades,
 function classroomToolsHTML(cls,block){
   ensureClassroomTools();
   const left=timeLeftInBlock(),t=data.classroomTools;
-  const runningTimer=t.stopwatch.running;
-  const runningCountdown=t.countdown.running;
+  const runningTimer=t.stopwatch.visible;
+  const runningCountdown=t.countdown.visible;
   const picked=t.randomStudentId?data.students.find(s=>s.id===t.randomStudentId):null;
   const rng=t.randomNumber===null?"—":t.randomNumber;
   const groups=t.groups||[];
   const activeExtras=[];
-  if(runningTimer)activeExtras.push(`<div class="card"><b>⏱ Timer</b> <span class="compactUtilityValue" data-tool-live="stopwatch">${formatClock(stopwatchMs())}</span></div>`);
-  if(runningCountdown)activeExtras.push(`<div class="card"><b>⏲ Countdown</b> <span class="compactUtilityValue" data-tool-live="countdown">${formatClock(countdownMs())}</span></div>`);
+  if(runningTimer)activeExtras.push(`<div class="card activeToolCard"><button class="toolClose" title="Stop and reset timer" onclick="window.closeActiveTool('stopwatch')">×</button><b>⏱ Timer</b> <span class="compactUtilityValue" data-tool-live="stopwatch">${formatClock(stopwatchMs())}</span><div class="activeToolControls"><button onclick="window.toggleStopwatch()">${t.stopwatch.running?"Pause":"Start"}</button><button onclick="window.resetStopwatch()">Reset</button><button onclick="window.openClassroomDisplay('stopwatch')">↗</button></div></div>`);
+  if(runningCountdown)activeExtras.push(`<div class="card activeToolCard"><button class="toolClose" title="Stop and reset countdown" onclick="window.closeActiveTool('countdown')">×</button><b>⏲ Countdown</b> <span class="compactUtilityValue" data-tool-live="countdown">${formatClock(countdownMs())}</span><div class="activeToolControls"><button onclick="window.toggleCountdown()">${t.countdown.running?"Pause":"Start"}</button><button onclick="window.resetCountdown()">Reset</button><button onclick="window.openClassroomDisplay('countdown')">↗</button></div></div>`);
   return `<div class="card"><b>⏳</b> <span data-tool-live="classleft">${left===null?"—":Math.max(0,Math.ceil(left/60000))}</span> minutes remaining</div>
     ${activeExtras.join("")}
     <div class="card utilityCard"><button type="button" onclick="window.toggleUtilityMenu()">🧰 Additional Tools</button>
@@ -477,6 +478,16 @@ function classroomToolsHTML(cls,block){
       </div>
     </div>`;
 }
+window.closeActiveTool=(which)=>{
+  ensureClassroomTools();
+  const t=data.classroomTools;
+  if(which==="stopwatch"){
+    t.stopwatch.running=false;t.stopwatch.visible=false;t.stopwatch.elapsed=0;t.stopwatch.startedAt=null;
+  }else if(which==="countdown"){
+    t.countdown.running=false;t.countdown.visible=false;t.countdown.duration=0;t.countdown.remaining=0;t.countdown.endsAt=null;
+  }
+  save();render();
+};
 window.toggleUtilityMenu=()=>{const m=$("#utilityMenu");if(m)m.hidden=!m.hidden;}
 function live(){
   const cls=currentClass(),active=activeEvents(),block=currentScheduleBlock();
