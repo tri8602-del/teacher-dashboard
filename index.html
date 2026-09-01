@@ -38,7 +38,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 .grade{width:70px}.small{font-size:12px;color:var(--muted)}
 .toast{position:fixed;right:20px;top:18px;background:var(--nav);color:#fff;padding:12px;border-radius:8px;z-index:40}.toast button{margin-left:8px;padding:1px 6px}
 .modalbg{position:fixed;inset:0;background:#0008;display:grid;place-items:center;padding:20px;z-index:30}.modal{background:#fff;width:min(560px,100%);max-height:90vh;overflow:auto;border-radius:12px;padding:18px}
-.reportgrid{display:flex;gap:10px;flex-wrap:wrap}.stat{background:#f1f4fa;border-radius:9px;padding:12px;min-width:100px;display:flex;flex-direction:column}.stat b{font-size:24px}
+.reportgrid{display:flex;gap:10px;flex-wrap:wrap}.stat{background:#f1f4fa;border-radius:9px;padding:12px;min-width:100px;display:flex;flex-direction:column}.reportControls{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.reportControls label{min-width:180px;flex:1}.reportControls input,.reportControls select{width:100%;box-sizing:border-box}.tableWrap{overflow-x:auto}.reportMatrix{min-width:760px}.reportMatrix th,.reportMatrix td{text-align:center;white-space:nowrap}.reportMatrix th:first-child,.reportMatrix td:first-child{text-align:left;position:sticky;left:0;background:#fff}.reportMatrix th span{font-size:11px;font-weight:500;white-space:normal;display:inline-block;max-width:72px;line-height:1.1}.stat b{font-size:24px}
 .calendarSettings{display:flex;gap:18px;align-items:end;flex-wrap:wrap}.calendarSettings label{font-weight:600}
 .calendarCount{margin-left:auto;background:#f1f4fa;padding:10px 18px;border-radius:9px;display:flex;flex-direction:column;text-align:center}.calendarCount b{font-size:24px}
 .upcomingDates{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px}.upcomingCard{border:1px solid #e0e4ec;border-left:4px solid var(--event-color,#8b6bb8);border-radius:10px;padding:11px;background:#fff}.upcomingCard b{display:block;font-size:13px}.upcomingCard span{display:block;font-size:11px;color:var(--muted);margin-top:3px}.markerPill{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:999px;background:#fff9;border:1px solid #00000012;font-size:10px;font-weight:800;line-height:1.15}.noteSnippet{font-size:10px;margin-top:4px;color:#556070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block}.markerCard{font-size:10px;font-weight:800;margin-right:3px;padding:2px 4px;border-radius:5px;background:#fff;border:1px solid currentColor;display:inline-block;line-height:1.1}
@@ -87,7 +87,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.6.8";
+const APP_VERSION="1.6.9";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -588,12 +588,59 @@ function quickButtons(){return `<header><h2>Quick Buttons</h2></header><section 
 function grades(){return `<header><h2>Grades</h2></header><section class="card"><div class="add"><input id="courseName" placeholder="Course name"><button class="primary" onclick="window.addCourse()">Add course</button></div></section>${data.gradeCourses.map(c=>`<section class="card"><h3>${esc(c.name)}</h3><div class="add"><input id="comp-${c.id}" placeholder="Component"><input id="weight-${c.id}" type="number" placeholder="Weight %" style="width:120px"><button onclick="window.addComponent('${c.id}')">Add component</button></div>${c.components.length?`<table><thead><tr><th>Student</th>${c.components.map(co=>`<th>${esc(co.name)} (${co.weight}%)</th>`).join("")}</tr></thead><tbody>${data.students.map(s=>`<tr><td>${esc(s.name)}</td>${c.components.map(co=>`<td><input class="grade" value="${esc(c.grades?.[s.id]?.[co.id]??"")}" onchange="window.setGrade('${c.id}','${s.id}','${co.id}',this.value)"></td>`).join("")}</tr>`).join("")}</tbody></table>`:"<p class='small'>Add grading components to begin.</p>"}</section>`).join("")}`}
 
 function reports(){
-  const sid=window.reportStudent||data.students[0]?.id,s=data.students.find(x=>x.id===sid),ev=data.events.filter(e=>e.studentId===sid),notes=data.notes.filter(n=>n.studentId===sid);
-  const opts=data.students.map(st=>`<option value="${st.id}" ${st.id===sid?"selected":""}>${esc(st.name)}</option>`).join("");
-  return `<header><h2>Reports</h2></header><section class="card"><select onchange="window.reportStudent=this.value;render()">${opts}</select><h3 style="margin-top:14px">${esc(s?.name||"")}</h3><p><b>Total events:</b> ${ev.length}</p><div class="reportgrid">${data.buttons.filter(b=>b.type==="event").map(b=>`<div class="stat">${b.icon}<b>${ev.filter(e=>e.buttonId===b.id).length}</b><span>${esc(b.label)}</span></div>`).join("")}</div><h4>Out of Class</h4>${ev.filter(e=>e.type==="timed").map(e=>`<p>${e.icon} ${esc(e.label)} — ${new Date(e.start).toLocaleString()} ${e.end?"to "+new Date(e.end).toLocaleString():"(still open)"}</p>`).join("")||"<p>None recorded.</p>"}<h4>Notes</h4>${notes.map(n=>`<p>📝 ${esc(n.text)} <span class="small">${new Date(n.created).toLocaleString()}</span></p>`).join("")||"<p>None recorded.</p>"}</section>`;
-}
+  // Report state is kept separately from the page data so changing a selector
+  // never mutates the actual students/classes.
+  const buttons=(data.buttons||[]);
+  const classes=(data.classes||[]);
+  const mode=window.reportMode||"student";
+  const search=(window.reportSearch||"").trim().toLowerCase();
+  const classFilter=window.reportClassFilter||"all";
+  const classMatches=classes.filter(c=>classFilter==="all"||c.id===classFilter);
+  const allowedIds=classFilter==="all"?null:new Set((classes.find(c=>c.id===classFilter)?.studentIds)||[]);
+  const filteredStudents=(data.students||[]).filter(st=>
+    (!allowedIds||allowedIds.has(st.id)) && (!search||st.name.toLowerCase().includes(search))
+  );
+  const availableStudents=filteredStudents.length?filteredStudents:[];
+  let sid=window.reportStudent;
+  if(!sid||!availableStudents.some(st=>st.id===sid)) sid=availableStudents[0]?.id||data.students[0]?.id||"";
+  window.reportStudent=sid;
+  const selectedStudent=data.students.find(st=>st.id===sid);
+  let reportClassId=window.reportClassId||((classFilter!=="all"&&classes.some(c=>c.id===classFilter))?classFilter:classes[0]?.id||"");
+  if(!classes.some(c=>c.id===reportClassId)) reportClassId=classes[0]?.id||"";
+  window.reportClassId=reportClassId;
+  const selectedClass=classes.find(c=>c.id===reportClassId);
 
-function settings(){
+  const classOptions=`<option value="all">All classes</option>${classes.map(c=>`<option value="${esc(c.id)}" ${c.id===classFilter?"selected":""}>${esc(c.name)}</option>`).join("")}`;
+  const studentOptions=availableStudents.map(st=>`<option value="${esc(st.id)}" ${st.id===sid?"selected":""}>${esc(st.name)}</option>`).join("")||`<option value="">No matching students</option>`;
+  const modeControls=`<div class="reportControls"><label>View<br><select onchange="window.setReportMode(this.value)"><option value="student" ${mode==="student"?"selected":""}>Student Report</option><option value="class" ${mode==="class"?"selected":""}>Class Report</option></select></label><label>Filter by class<br><select onchange="window.setReportClassFilter(this.value)">${classOptions}</select></label><label>Search student<br><input value="${esc(window.reportSearch||"")}" placeholder="Type a student name..." oninput="window.setReportSearch(this.value)"></label></div>`;
+
+  if(mode==="class"){
+    const classChoices=(classFilter!=="all"?classMatches:classes);
+    if(classChoices.length&&!classChoices.some(c=>c.id===reportClassId)){reportClassId=classChoices[0].id;window.reportClassId=reportClassId;}
+    const cls=classes.find(c=>c.id===reportClassId);
+    const roster=(data.students||[]).filter(st=>(cls?.studentIds||[]).includes(st.id)&&(!search||st.name.toLowerCase().includes(search)));
+    const classSelect=`<label>Class<br><select onchange="window.setReportClass(this.value)">${classChoices.map(c=>`<option value="${esc(c.id)}" ${c.id===reportClassId?"selected":""}>${esc(c.name)}</option>`).join("")}</select></label>`;
+    const matrixButtons=buttons;
+    const count=(studentId,buttonId)=>data.events.filter(e=>e.studentId===studentId&&e.classId===reportClassId&&e.buttonId===buttonId).length;
+    return `<header><h2>Reports</h2><p class="small">See individual totals or a whole-class behavior matrix.</p></header><section class="card">${modeControls}<div class="reportControls" style="margin-top:10px">${classSelect}</div><h3 style="margin-top:18px">${esc(cls?.name||"Class Report")}</h3><p class="small">${roster.length} student${roster.length===1?"":"s"} shown. Counts include events recorded while this class was active.</p><div class="tableWrap"><table class="reportMatrix"><thead><tr><th>Student</th>${matrixButtons.map(b=>`<th title="${esc(b.label)}">${b.icon}<br><span>${esc(b.label)}</span></th>`).join("")}<th>Total</th></tr></thead><tbody>${roster.map(st=>{const total=data.events.filter(e=>e.studentId===st.id&&e.classId===reportClassId).length;return `<tr><td><b>${esc(st.name)}</b></td>${matrixButtons.map(b=>`<td>${count(st.id,b.id)}</td>`).join("")}<td><b>${total}</b></td></tr>`}).join("")||`<tr><td colspan="${matrixButtons.length+2}" class="small">No students match this class/filter.</td></tr>`}</tbody></table></div></section>`;
+  }
+
+  const student=selectedStudent;
+  const allStudentEvents=student?data.events.filter(e=>e.studentId===student.id):[];
+  const shownEvents=classFilter==="all"?allStudentEvents:allStudentEvents.filter(e=>e.classId===classFilter);
+  const studentClassIds=new Set([...(classes.filter(c=>(c.studentIds||[]).includes(student?.id)).map(c=>c.id)),...allStudentEvents.map(e=>e.classId).filter(Boolean)]);
+  const studentClasses=classes.filter(c=>studentClassIds.has(c.id));
+  const notes=student?data.notes.filter(n=>n.studentId===student.id):[];
+  const countButton=(events,bid)=>events.filter(e=>e.buttonId===bid).length;
+  return `<header><h2>Reports</h2><p class="small">Filter by class, search students, and compare totals across classes.</p></header><section class="card">${modeControls}<div class="reportControls" style="margin-top:10px"><label>Student<br><select onchange="window.setReportStudent(this.value)">${studentOptions}</select></label></div>${student?`<h3 style="margin-top:18px">${esc(student.name)}</h3><p><b>${classFilter==="all"?"Total events across all classes":"Events in selected class"}:</b> ${shownEvents.length}</p><div class="reportgrid">${buttons.map(b=>`<div class="stat">${b.icon}<b>${countButton(shownEvents,b.id)}</b><span>${esc(b.label)}</span></div>`).join("")}</div><h4>Breakdown by Class</h4><div class="tableWrap"><table class="reportMatrix"><thead><tr><th>Class</th>${buttons.map(b=>`<th title="${esc(b.label)}">${b.icon}<br><span>${esc(b.label)}</span></th>`).join("")}<th>Total</th></tr></thead><tbody>${studentClasses.map(c=>{const ev=allStudentEvents.filter(e=>e.classId===c.id);return `<tr><td><b>${esc(c.name)}</b></td>${buttons.map(b=>`<td>${countButton(ev,b.id)}</td>`).join("")}<td><b>${ev.length}</b></td></tr>`}).join("")||`<tr><td colspan="${buttons.length+2}" class="small">No class data yet.</td></tr>`}</tbody></table></div><h4>Notes</h4>${notes.map(n=>`<p>📝 ${esc(n.text)} <span class="small">${new Date(n.created).toLocaleString()}</span></p>`).join("")||"<p>None recorded.</p>"}`:"<p>No students match your current filter.</p>"}</section>`;
+}
+window.setReportMode=v=>{window.reportMode=v;render();}
+window.setReportClassFilter=v=>{window.reportClassFilter=v;render();}
+window.setReportSearch=v=>{window.reportSearch=v;render(); const input=document.querySelector('.reportControls input'); if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length);}}
+window.setReportStudent=v=>{window.reportStudent=v;render();}
+window.setReportClass=v=>{window.reportClassId=v;render();}
+
+function settings({
   const userLabel=currentUser?.displayName||currentUser?.email||"Google user";
   return `<header><h2>Settings</h2></header>
   <section class="card"><h3>Account</h3><div class="accountRow">${avatarHTML()}<div><b>${esc(userLabel)}</b><div class="small">${esc(currentUser?.email||"")}</div></div></div>
