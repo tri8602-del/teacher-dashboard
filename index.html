@@ -114,7 +114,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.9.6";
+const APP_VERSION="1.9.7";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -638,6 +638,20 @@ function baseDateType(date){
   const s=data.calendarSettings||{};
   const within=!!(s.firstStudentDay&&s.lastStudentDay&&date>=s.firstStudentDay&&date<=s.lastStudentDay);
   return within&&isWeekday(date)?"instructional":"outside";
+}
+
+// Shared school-year helpers. These read directly from calendar settings and
+// overrides so the Calendar and PVAAS pages use the same counting rules.
+function schoolStartDate(){return (data.calendarSettings||{}).firstStudentDay||""}
+function schoolEndDate(){return (data.calendarSettings||{}).lastStudentDay||""}
+function isInstructionalOrInServiceDay(date){
+  const o=(data.calendarOverrides||{})[date]||{};
+  const type=o.type||baseDateType(date);
+  return isWeekday(date)&&(type==="instructional"||type==="inservice");
+}
+function isPreStudentInService(date){
+  const start=schoolStartDate();
+  return !!(start&&date<start);
 }
 function getDateInfo(date){
   const o=(data.calendarOverrides||{})[date]||{};
