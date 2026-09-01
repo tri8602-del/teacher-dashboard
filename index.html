@@ -56,6 +56,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 .loginCard{width:min(430px,100%);background:#fff;border-radius:18px;padding:34px;box-shadow:0 12px 35px #26345424;text-align:center}.loginCard h1{color:var(--nav);margin-bottom:8px}.loginCard p{color:#667085;line-height:1.5}
 .googleBtn{margin-top:16px;width:100%;padding:12px;font-weight:650;font-size:16px}.loginError{margin-top:14px;color:#a62f2f;font-size:13px}.loadingScreen{min-height:100vh;display:grid;place-items:center;color:#667085}
 .accountRow{display:flex;align-items:center;gap:12px;margin:8px 0 14px}.accountAvatar{width:52px;height:52px;border-radius:50%;object-fit:cover;background:#eef1f8;border:1px solid #dce1eb}.avatarFallback{display:grid;place-items:center;font-size:25px}.avatarActions{display:flex;gap:8px;flex-wrap:wrap}.syncTime{margin-top:6px;font-size:12px;color:#697386}
+.classMeta{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.classMeta span{font-size:11px;background:#f1f4fa;border:1px solid #e0e4ec;border-radius:999px;padding:3px 7px;color:#556070}.classEditor{max-width:720px}.checkGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:7px;margin:8px 0}.checkGrid label{font-size:13px;padding:6px 8px;border:1px solid #e0e4ec;border-radius:8px;background:#fafbfe}.sectionLabel{font-weight:800;margin-top:14px;display:block}.classEmpty{padding:18px;text-align:center;color:#697386}.noActiveClass{padding:26px;text-align:center;color:#697386}.classStatus{font-size:12px;color:#697386;margin-top:4px}
 @media(max-width:750px){aside{width:62px;padding:8px}aside .brand span:last-child{display:none}.brandEmoji{font-size:22px}.nav{font-size:0;text-align:center}.nav:first-letter{font-size:19px}.status,.userCard{display:none}main{padding:14px}.split{grid-template-columns:1fr}.quick span{display:none}}
 @media(max-width:650px){.calDay,.calBlank{min-height:62px}.calDay{padding:4px;font-size:12px}.calMarks{font-size:11px}.weekdays span{font-size:9px}.calendarSettings{align-items:stretch}.calendarCount{margin-left:0}}
 </style>
@@ -85,7 +86,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.6.1";
+const APP_VERSION="1.6.2";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -98,7 +99,7 @@ const defaultButtons=[
 ];
 
 const seed={
- classes:[{id:"c1",name:"Period 1 – Honors Precalculus",studentIds:["s1","s2","s3"]}],
+ classes:[{id:"c1",name:"Honors Precalculus",studentIds:["s1","s2","s3"],periods:[1],days:[1,2,3,4,5],terms:["fullYear"]}],
  students:[{id:"s1",name:"Abby Smith"},{id:"s2",name:"Ben Jones"},{id:"s3",name:"Chris Brown"}],
  buttons:defaultButtons.map(([id,icon,label,type])=>({id,icon,label,type})),
  events:[],notes:[],schoolDays:[],totalSchoolDays:178,gradeCourses:[],
@@ -138,6 +139,15 @@ function ensureBellSchedules(){
     data.bellSchedules.unshift(defaultBellSchedules().find(s=>s.id==="regular"));
   }
 }
+function ensureClassFields(){
+  if(!Array.isArray(data.classes))data.classes=[];
+  data.classes.forEach(c=>{
+    c.studentIds=Array.isArray(c.studentIds)?c.studentIds:[];
+    c.periods=Array.isArray(c.periods)?c.periods:[];
+    c.days=Array.isArray(c.days)&&c.days.length?c.days:[1,2,3,4,5];
+    c.terms=Array.isArray(c.terms)&&c.terms.length?c.terms:["fullYear"];
+  });
+}
 function bellScheduleById(id){
   ensureBellSchedules();
   return data.bellSchedules.find(s=>s.id===id)||data.bellSchedules.find(s=>s.id==="regular");
@@ -154,7 +164,7 @@ function bellScheduleOptions(selectedId){
 function loadLocalForUser(){
   const key=localKey();
   if(!key)return structuredClone(seed);
-  try{const loaded={...seed,...JSON.parse(localStorage.getItem(key)||"{}")}; if(!Array.isArray(loaded.bellSchedules)||!loaded.bellSchedules.length)loaded.bellSchedules=defaultBellSchedules(); return loaded}catch{return structuredClone(seed)}
+  try{const loaded={...seed,...JSON.parse(localStorage.getItem(key)||"{}")}; if(!Array.isArray(loaded.bellSchedules)||!loaded.bellSchedules.length)loaded.bellSchedules=defaultBellSchedules(); if(!Array.isArray(loaded.classes))loaded.classes=[]; return loaded}catch{return structuredClone(seed)}
 }
 function saveLocal(){const key=localKey();if(key)localStorage.setItem(key,JSON.stringify(data))}
 function dashboardRef(){return currentUser?doc(db,"users",currentUser.uid,CLOUD_SUBCOLLECTION,CLOUD_DOCUMENT):null}
@@ -264,23 +274,66 @@ function render(){
 }
 function loginHTML(){return `<div class="loginScreen"><section class="loginCard"><div style="font-size:48px">🍎</div><h1>Teacher Dashboard</h1><p>Sign in with Google to securely access your own Teacher Dashboard.</p><button class="googleBtn primary" onclick="window.signIn()" ${authBusy?"disabled":""}>${authBusy?"Signing in...":"G  Sign in with Google"}</button>${loginError?`<div class="loginError">${esc(loginError)}</div>`:""}<p class="small" style="margin-top:20px">Each Google account has its own private dashboard and browser backup.</p></section></div>`}
 function nav(){return [["live","🏠","Live Class"],["students","👥","Students & Classes"],["calendar","🗓️","Calendar"],["buttons","⚡","Quick Buttons"],["grades","📚","Grades"],["reports","📊","Reports"],["settings","⚙️","Settings"]].map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
-function currentClass(){return data.classes[0]||{id:"",name:"No class yet",studentIds:[]}}
+function classPeriodNumber(label){const m=String(label||"").match(/^(\d+)(?:st|nd|rd|th)?\s+Period\b/i);return m?Number(m[1]):null}
+function timeToMinutes(value,previous=-1){
+  const m=String(value||"").trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);if(!m)return null;
+  let h=Number(m[1]),min=Number(m[2]||0),ampm=(m[3]||"").toLowerCase();
+  if(ampm){if(h===12)h=0;if(ampm==="pm")h+=12;}else{let raw=h*60+min;if(previous>=0&&raw+360<previous)raw+=720;return raw;}
+  return h*60+min;
+}
+function currentScheduleBlock(date=new Date()){
+  const info=getDateInfo(todayISO());if(info.type!=="instructional")return null;
+  const schedule=bellScheduleById(info.schedule||"regular"),now=date.getHours()*60+date.getMinutes();let previous=-1;
+  for(const row of schedule.periods||[]){let begin=timeToMinutes(row[1],previous);if(begin===null)continue;let end=timeToMinutes(row[2],begin);if(end!==null&&end<begin)end+=720;previous=end??begin;if(end!==null&&now>=begin&&now<end)return {label:row[0],period:classPeriodNumber(row[0]),schedule};}
+  return null;
+}
+function markerIndex(key,date){
+  const dates=Object.keys(data.calendarOverrides||{}).filter(d=>d<=date&&(data.calendarOverrides[d]||{})[key]).sort();
+  return dates.length||0;
+}
+function currentTermCodes(date=todayISO()){
+  return {q:markerIndex("nineWeeks",date),t:markerIndex("trimester",date),s:markerIndex("semester",date)};
+}
+function classIsActiveToday(c,date=todayISO()){
+  const info=getDateInfo(date);if(info.type!=="instructional")return false;
+  const weekday=new Date(date+"T12:00:00").getDay();if(!(c.days||[1,2,3,4,5]).includes(weekday))return false;
+  const terms=c.terms||["fullYear"];if(terms.includes("fullYear"))return true;
+  const cur=currentTermCodes(date),hasMarkers=cur.q||cur.t||cur.s;
+  if(!hasMarkers)return true;
+  return terms.includes(`q${cur.q}`)||terms.includes(`t${cur.t}`)||terms.includes(`s${cur.s}`);
+}
+function currentClass(){
+  ensureClassFields();const block=currentScheduleBlock();
+  if(!block?.period)return null;
+  return data.classes.find(c=>classIsActiveToday(c)&&c.periods.includes(block.period))||null;
+}
 function activeEvents(){return data.events.filter(e=>e.type==="timed"&&!e.end)}
 function toastHTML(){return toast?`<div class="toast">${esc(toast)} <button onclick="window.clearToast()">×</button></div>`:""}
 window.clearToast=()=>{toast="";render()}
 function pageHTML(){return ({live,students,calendar,buttons:quickButtons,grades,reports,settings})[page]()}
 
 function live(){
-  const cls=currentClass(),roster=data.students.filter(s=>cls.studentIds.includes(s.id)),active=activeEvents();
+  const cls=currentClass(),active=activeEvents(),block=currentScheduleBlock();
   const toggle=`<div class="viewToggle"><button class="${liveView==="cards"?"activeView":""}" onclick="window.setLiveView('cards')">▦ Cards</button><button class="${liveView==="matrix"?"activeView":""}" onclick="window.setLiveView('matrix')">▤ Matrix</button></div>`;
-  const alert=active.length?`<div class="alert"><b>Students currently out:</b>${active.map(e=>{const s=data.students.find(x=>x.id===e.studentId);return `<div style="padding:8px 0">${esc(s?.name)} — ${e.icon} ${esc(e.label)} <span data-timer="${e.start}"></span> <button onclick="window.returnEvent('${e.id}','returned')">↩ Return</button></div>`}).join("")}</div>`:"";
+  const alert=active.length?`<div class="alert"><b>Students currently out:</b>${active.map(e=>{const st=data.students.find(x=>x.id===e.studentId);return `<div style="padding:8px 0">${esc(st?.name)} — ${e.icon} ${esc(e.label)} <span data-timer="${e.start}"></span> <button onclick="window.returnEvent('${e.id}','returned')">↩ Return</button></div>`}).join("")}</div>`:"";
   const todaysNotes=calendarNotesFor(todayISO());
   const dailyNotes=todaysNotes.length?`<section class="card todayNotes"><h3>📌 Today's Notes</h3><ul>${todaysNotes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul></section>`:"";
-  if(liveView==="matrix")return `<header><div><h2>${esc(cls.name)}</h2><p>${new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"})}</p></div><div>${toggle}<div class="card">🚪 ${active.length} currently out</div></div></header>${dailyNotes}${alert}<div class="matrixWrap"><table class="matrix"><thead><tr><th class="stickyName">Student</th>${data.buttons.map(b=>`<th title="${esc(b.label)}">${b.icon}<br><span>${b.label==="Excessive Talking"?"Excessive<br>Talking":esc(b.label)}</span></th>`).join("")}<th>📝<br><span>Note</span></th></tr></thead><tbody>${roster.map(s=>{const out=active.some(e=>e.studentId===s.id);return `<tr class="${out?"studentOut":""}"><td class="stickyName"><b>${esc(s.name)}</b>${out?"<br><small>Currently out</small>":""}</td>${data.buttons.map(b=>`<td><button class="matrixBtn" title="${esc(b.label)}" onclick="window.record('${s.id}','${b.id}')">${b.icon}</button></td>`).join("")}<td><button onclick="window.note('${s.id}',null)">📝</button></td></tr>`}).join("")}</tbody></table></div>`;
-  return `<header><div><h2>${esc(cls.name)}</h2><p>${new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"})}</p></div><div>${toggle}</div></header>${dailyNotes}${alert}<div class="roster">${roster.map(s=>`<article class="student"><h3>${esc(s.name)}</h3><div class="quick">${data.buttons.map(b=>`<button onclick="window.record('${s.id}','${b.id}')">${b.icon}<span>${esc(b.label)}</span></button>`).join("")}</div><button class="noteBtn" onclick="window.note('${s.id}',null)">📝 Add Note</button></article>`).join("")}</div>`;
+  const dateLine=new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+  if(!cls)return `<header><div><h2>No class right now</h2><p>${dateLine}${block?` · ${esc(block.label)}`:""}</p></div><div>${toggle}<div class="card">🚪 ${active.length} currently out</div></div></header>${dailyNotes}${alert}<section class="card noActiveClass"><b>${block?`No class is assigned to ${esc(block.label)}.`:"There is no active class during this time."}</b><p class="small">Add a class and choose its period(s), meeting days, and term in Students & Classes.</p></section>`;
+  const roster=data.students.filter(st=>cls.studentIds.includes(st.id));
+  if(liveView==="matrix")return `<header><div><h2>${esc(cls.name)}</h2><p>${dateLine}${block?` · ${esc(block.label)}`:""}</p></div><div>${toggle}<div class="card">🚪 ${active.length} currently out</div></div></header>${dailyNotes}${alert}<div class="matrixWrap"><table class="matrix"><thead><tr><th class="stickyName">Student</th>${data.buttons.map(b=>`<th title="${esc(b.label)}">${b.icon}<br><span>${b.label==="Excessive Talking"?"Excessive<br>Talking":esc(b.label)}</span></th>`).join("")}<th>📝<br><span>Note</span></th></tr></thead><tbody>${roster.map(st=>{const out=active.some(e=>e.studentId===st.id);return `<tr class="${out?"studentOut":""}"><td class="stickyName"><b>${esc(st.name)}</b>${out?"<br><small>Currently out</small>":""}</td>${data.buttons.map(b=>`<td><button class="matrixBtn" title="${esc(b.label)}" onclick="window.record('${st.id}','${b.id}')">${b.icon}</button></td>`).join("")}<td><button onclick="window.note('${st.id}',null)">📝</button></td></tr>`}).join("")}</tbody></table></div>`;
+  return `<header><div><h2>${esc(cls.name)}</h2><p>${dateLine}${block?` · ${esc(block.label)}`:""}</p></div><div>${toggle}</div></header>${dailyNotes}${alert}<div class="roster">${roster.map(st=>`<article class="student"><h3>${esc(st.name)}</h3><div class="quick">${data.buttons.map(b=>`<button onclick="window.record('${st.id}','${b.id}')">${b.icon}<span>${esc(b.label)}</span></button>`).join("")}</div><button class="noteBtn" onclick="window.note('${st.id}',null)">📝 Add Note</button></article>`).join("")}</div>`;
 }
 
-function students(){return `<header><h2>Students & Classes</h2></header><div class="split"><section class="card"><h3>Students</h3><div class="add"><input id="newStudent" placeholder="Student name"><button onclick="window.addStudent()">Add</button></div>${data.students.map(s=>`<p>${esc(s.name)}</p>`).join("")||"<p>No students yet.</p>"}</section><section class="card"><h3>Classes</h3><div class="add"><input id="newClass" placeholder="Class name"><button onclick="window.addClass()">Add</button></div>${data.classes.map(c=>`<div class="card"><b>${esc(c.name)}</b><div>${data.students.map(s=>`<label class="small"><input type="checkbox" ${c.studentIds.includes(s.id)?"checked":""} onchange="window.roster('${c.id}','${s.id}',this.checked)"> ${esc(s.name)}</label><br>`).join("")}</div></div>`).join("")}</section></div>`}
+const DAY_NAMES=[[1,"Mon"],[2,"Tue"],[3,"Wed"],[4,"Thu"],[5,"Fri"]];
+const TERM_OPTIONS=[["fullYear","Full Year"],["q1","Quarter 1"],["q2","Quarter 2"],["q3","Quarter 3"],["q4","Quarter 4"],["t1","Trimester 1"],["t2","Trimester 2"],["t3","Trimester 3"],["s1","Semester 1"],["s2","Semester 2"]];
+function classMeta(c){
+  const periodText=(c.periods||[]).length?`Period${c.periods.length>1?"s":""} ${(c.periods||[]).join(", ")}`:"No period assigned";
+  const dayText=DAY_NAMES.filter(([d])=>(c.days||[]).includes(d)).map(([,n])=>n).join(" · ")||"No meeting days";
+  const termText=(c.terms||["fullYear"]).map(t=>TERM_OPTIONS.find(x=>x[0]===t)?.[1]||t).join(" · ");
+  return `<div class="classMeta"><span>${esc(periodText)}</span><span>${esc(dayText)}</span><span>${esc(termText)}</span></div>`;
+}
+function students(){ensureClassFields();return `<header><h2>Students & Classes</h2></header><div class="split"><section class="card"><h3>Students</h3><div class="add"><input id="newStudent" placeholder="Student name"><button onclick="window.addStudent()">Add</button></div>${data.students.map(st=>`<p>${esc(st.name)}</p>`).join("")||"<p>No students yet.</p>"}</section><section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3>Classes</h3><button class="primary" onclick="window.openClassModal()">＋ Add Class</button></div>${data.classes.length?data.classes.map(c=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><b>${esc(c.name)}</b>${classMeta(c)}</div><div><button onclick="window.openClassModal('${c.id}')">Edit</button> <button onclick="window.deleteClass('${c.id}')">Delete</button></div></div><details><summary class="small">Students (${c.studentIds.length})</summary><div style="margin-top:8px">${data.students.map(st=>`<label class="small"><input type="checkbox" ${c.studentIds.includes(st.id)?"checked":""} onchange="window.roster('${c.id}','${st.id}',this.checked)"> ${esc(st.name)}</label><br>`).join("")||"<span class='small'>Add students first.</span>"}</div></details></div>`).join(""):`<div class="classEmpty">No classes yet. Add your first class to get started.</div>`}</section></div>`}
 
 function isoAddDays(date,n){const d=new Date(date+"T12:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
 function isWeekday(date){const d=new Date(date+"T12:00:00").getDay();return d!==0&&d!==6}
@@ -503,13 +556,32 @@ function modalHTML(){return `<div class="modalbg"><div class="modal"><h3>📝 No
 function bind(){document.querySelectorAll("[data-timer]").forEach(el=>{const tick=()=>{const sec=Math.floor((Date.now()-new Date(el.dataset.timer))/1000);el.textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`};tick();setInterval(tick,1000);})}
 
 window.setLiveView=v=>{liveView=v;localStorage.teacherDashboardLiveView=v;render()}
-window.record=(sid,bid)=>{const s=data.students.find(x=>x.id===sid),b=data.buttons.find(x=>x.id===bid);if(!s||!b)return;const e={id:uid(),studentId:sid,classId:currentClass().id,buttonId:bid,label:b.label,icon:b.icon,type:b.type,start:new Date().toISOString(),end:null};data.events.push(e);save();toast=`${b.icon} ${b.label} recorded for ${s.name}.`;if(b.type==="event")selected={student:s,eventId:e.id};render()}
+window.record=(sid,bid)=>{const s=data.students.find(x=>x.id===sid),b=data.buttons.find(x=>x.id===bid),cls=currentClass();if(!s||!b||!cls)return;const e={id:uid(),studentId:sid,classId:cls.id,buttonId:bid,label:b.label,icon:b.icon,type:b.type,start:new Date().toISOString(),end:null};data.events.push(e);save();toast=`${b.icon} ${b.label} recorded for ${s.name}.`;if(b.type==="event")selected={student:s,eventId:e.id};render()}
 window.returnEvent=(id,status)=>{const e=data.events.find(x=>x.id===id);if(!e)return;e.end=new Date().toISOString();e.status=status;save();render()}
 window.note=(sid,eid)=>{const student=data.students.find(x=>x.id===sid);if(student){selected={student,eventId:eid};render()}}
 window.closeNote=()=>{selected=null;render()}
 window.saveNote=()=>{const text=$("#noteText")?.value.trim();if(text&&selected){data.notes.push({id:uid(),studentId:selected.student.id,eventId:selected.eventId||null,text,created:new Date().toISOString()});save();toast="Note saved.";selected=null;render()}}
 window.addStudent=()=>{const name=$("#newStudent")?.value.trim();if(name){data.students.push({id:uid(),name});save();render()}}
-window.addClass=()=>{const name=$("#newClass")?.value.trim();if(name){data.classes.push({id:uid(),name,studentIds:[]});save();render()}}
+window.openClassModal=(id="")=>{
+  ensureClassFields();document.querySelector("#classModal")?.remove();
+  const existing=id?data.classes.find(c=>c.id===id):null,c=existing?structuredClone(existing):{id:"",name:"",studentIds:[],periods:[],days:[1,2,3,4,5],terms:["fullYear"]};
+  const checks=(items,selected,prefix)=>items.map(([v,label])=>`<label><input type="checkbox" name="${prefix}" value="${v}" ${selected.includes(v)?"checked":""}> ${label}</label>`).join("");
+  document.body.insertAdjacentHTML("beforeend",`<div id="classModal" class="modalbg"><div class="modal classEditor"><h3>${existing?"Edit":"Add"} Class</h3><label>Class Name<br><input id="className" value="${esc(c.name)}" placeholder="e.g., Honors Precalculus" style="width:100%"></label><span class="sectionLabel">Periods</span><p class="small">Check the period(s) when this class meets. The Live Class page will use the selected bell schedule to know when to show it.</p><div class="checkGrid">${checks(Array.from({length:9},(_,i)=>[i+1,`${i+1}${i===0?"st":i===1?"nd":i===2?"rd":"th"} Period`]),c.periods.map(String),"period")}</div><span class="sectionLabel">Meeting Days</span><p class="small">Classes default to Monday–Friday. Uncheck days for classes that meet less often.</p><div class="checkGrid">${checks(DAY_NAMES.map(([d,n])=>[d,n]),c.days.map(String),"day")}</div><span class="sectionLabel">Course Length</span><p class="small">Choose the part(s) of the year when this class is active. Full Year keeps it active all year.</p><div class="checkGrid">${checks(TERM_OPTIONS,c.terms,"term")}</div><div style="margin-top:16px"><button class="primary" onclick="window.saveClass('${c.id}')">Save Class</button> <button onclick="window.closeClassModal()">Cancel</button></div></div></div>`);
+}
+window.closeClassModal=()=>document.querySelector("#classModal")?.remove();
+window.saveClass=oldId=>{
+  const name=("#className"&&$("#className")?.value||"").trim();if(!name){alert("Please enter a class name.");return;}
+  const vals=n=>[...document.querySelectorAll(`input[name="${n}"]:checked`)].map(x=>x.value);
+  const periods=vals("period").map(Number),days=vals("day").map(Number),terms=vals("term");
+  if(!periods.length){if(!confirm("No period is selected, so this class will not automatically appear on the Live Class page. Save anyway?"))return;}
+  if(!days.length){alert("Please choose at least one meeting day.");return;}
+  if(!terms.length){alert("Please choose at least one course length option.");return;}
+  const item={id:oldId||uid(),name,studentIds:oldId?(data.classes.find(c=>c.id===oldId)?.studentIds||[]):[],periods,days,terms};
+  if(oldId){const i=data.classes.findIndex(c=>c.id===oldId);if(i>=0)data.classes[i]=item;}else data.classes.push(item);
+  save();window.closeClassModal();render();
+}
+window.deleteClass=id=>{const c=data.classes.find(x=>x.id===id);if(!c)return;if(!confirm(`Delete ${c.name}? This will not delete the students themselves.`))return;data.classes=data.classes.filter(x=>x.id!==id);save();render();}
+window.addClass=()=>window.openClassModal();
 window.roster=(cid,sid,on)=>{const c=data.classes.find(x=>x.id===cid);if(!c)return;c.studentIds=on?[...new Set([...c.studentIds,sid])]:c.studentIds.filter(x=>x!==sid);save()}
 window.addButton=()=>{const label=$("#qbLabel")?.value.trim();if(label){data.buttons.push({id:uid(),icon:$("#qbIcon")?.value||"⚡",label,type:$("#qbType")?.value||"event"});save();render()}}
 window.deleteButton=id=>{data.buttons=data.buttons.filter(x=>x.id!==id);save();render()}
