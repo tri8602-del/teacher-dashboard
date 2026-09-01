@@ -87,7 +87,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.6.9";
+const APP_VERSION="1.6.10";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -640,7 +640,7 @@ window.setReportSearch=v=>{window.reportSearch=v;render(); const input=document.
 window.setReportStudent=v=>{window.reportStudent=v;render();}
 window.setReportClass=v=>{window.reportClassId=v;render();}
 
-function settings({
+function settings(){
   const userLabel=currentUser?.displayName||currentUser?.email||"Google user";
   return `<header><h2>Settings</h2></header>
   <section class="card"><h3>Account</h3><div class="accountRow">${avatarHTML()}<div><b>${esc(userLabel)}</b><div class="small">${esc(currentUser?.email||"")}</div></div></div>
