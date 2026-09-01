@@ -66,6 +66,11 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 <style>
 .studentListCollapsible{display:none;margin-top:12px}.studentListCollapsible.open{display:block}
 .sectionHeader{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+
+.collapsibleFieldset{border:1px solid var(--border,#ddd);border-radius:10px;margin:10px 0;padding:0;overflow:hidden}
+.collapsibleFieldset summary{cursor:pointer;padding:12px;font-weight:700;background:rgba(0,0,0,.03)}
+.collapsibleInner{padding:12px}
+.gradeViewControls{display:flex;gap:12px;align-items:end;flex-wrap:wrap}
 </style>
 </style>
 </head>
@@ -94,7 +99,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.7.0";
+const APP_VERSION="1.7.1";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -737,21 +742,29 @@ function grades(){
   const courses=gradeEligibleClasses();
   const selectedId=window.gradeCourseId&&courses.some(c=>c.id===window.gradeCourseId)?window.gradeCourseId:courses[0]?.id||"";
   window.gradeCourseId=selectedId;
+  window.gradeViewMode=window.gradeViewMode||"class";
   const c=courses.find(x=>x.id===selectedId);
   if(!c)return `<header><h2>Grades</h2></header><section class="card"><h3>📚 Grades</h3><p>No eligible graded Full-Year or Semester courses yet.</p><p class="small">Edit a class and check <b>This is a graded course</b>. Trimester courses are intentionally excluded.</p></section>`;
   c.grades??={};
   const comps=gradeComponents(c);
-  const students=sortedStudents(data.students.filter(s=>(c.studentIds||[]).includes(s.id)));
+  const allStudents=sortedStudents(data.students.filter(s=>(c.studentIds||[]).includes(s.id)));
+  const selectedStudentId=window.gradeStudentId&&allStudents.some(s=>s.id===window.gradeStudentId)?window.gradeStudentId:allStudents[0]?.id||"";
+  window.gradeStudentId=selectedStudentId;
+  const students=window.gradeViewMode==="student"?allStudents.filter(s=>s.id===selectedStudentId):allStudents;
   const options=courses.map(x=>`<option value="${esc(x.id)}" ${x.id===c.id?"selected":""}>${esc(x.name)}</option>`).join("");
-  return `<header><h2>Grades</h2><p class="small">Current Average automatically uses only grades entered so far.</p></header>
-  <section class="card"><label>Select Course<br><select onchange="window.selectGradeCourse(this.value)">${options}</select></label>
-  <button style="margin-left:10px" onclick="window.openGradeSettings('${c.id}')">⚙ Grade Settings</button>
+  const studentOptions=allStudents.map(s=>`<option value="${esc(s.id)}" ${s.id===selectedStudentId?"selected":""}>${esc(s.lastName||studentLastName(s))}, ${esc(s.firstName||studentFirstName(s))}</option>`).join("");
+  return `<header><h2>Grades</h2><p class="small">Current Average updates instantly as you enter or change grades. Blank future grades never count as zeros.</p></header>
+  <section class="card"><div class="gradeViewControls">
+    <label>Select Course<br><select onchange="window.selectGradeCourse(this.value)">${options}</select></label>
+    <label>View<br><select onchange="window.setGradeView(this.value)"><option value="class" ${window.gradeViewMode==="class"?"selected":""}>Class Grades</option><option value="student" ${window.gradeViewMode==="student"?"selected":""}>One Student</option></select></label>
+    ${window.gradeViewMode==="student"?`<label>Student<br><select onchange="window.selectGradeStudent(this.value)">${studentOptions}</select></label>`:""}
+    <button onclick="window.openGradeSettings('${c.id}')">⚙ Grade Settings</button>
+  </div>
   <div class="small" style="margin-top:10px">Midterm: <b>${c.giveMidterm?"Yes":"No"}</b> &nbsp; Final: <b>${c.giveFinal?"Yes":"No"}</b>${c.usesRecommendations?" &nbsp; • Recommendations enabled":""}</div></section>
-  <section class="card"><h3>${esc(c.name)}</h3>
+  <section class="card"><h3>${esc(c.name)}${window.gradeViewMode==="student"&&students[0]?` — ${esc(students[0].name)}`:""}</h3>
   <div style="overflow:auto"><table><thead><tr><th>Student</th>${comps.map(x=>`<th>${x.label}</th>`).join("")}<th>Current Average</th>${c.usesRecommendations?"<th>Recommendation</th>":""}</tr></thead>
-  <tbody>${students.map(s=>{const avg=currentAverage(c,s.id);return `<tr><td>${esc(s.name)}</td>${comps.map(x=>`<td><input class="grade" type="number" min="0" max="100" step="0.01" value="${esc(c.grades?.[s.id]?.[x.id]??"")}" onchange="window.setCourseGrade('${c.id}','${s.id}','${x.id}',this.value)"></td>`).join("")}<td><b>${avg===""?"—":avg.toFixed(2)+"%"}</b></td>${c.usesRecommendations?`<td>${esc(recommendationFor(c,avg)||"—")}</td>`:""}</tr>`}).join("")||`<tr><td colspan="${comps.length+2+(c.usesRecommendations?1:0)}">No students are assigned to this class.</td></tr>`}</tbody></table></div></section>`;
+  <tbody>${students.map(s=>{const avg=currentAverage(c,s.id);return `<tr><td>${esc(s.name)}</td>${comps.map(x=>`<td><input class="grade" type="number" min="0" max="100" step="0.01" value="${esc(c.grades?.[s.id]?.[x.id]??"")}" oninput="window.setCourseGrade('${c.id}','${s.id}','${x.id}',this.value,true)"></td>`).join("")}<td class="currentAvg"><b>${avg===""?"—":avg.toFixed(2)+"%"}</b></td>${c.usesRecommendations?`<td class="recommendationCell">${esc(recommendationFor(c,avg)||"—")}</td>`:""}</tr>`}).join("")||`<tr><td colspan="${comps.length+2+(c.usesRecommendations?1:0)}">No students are assigned to this class.</td></tr>`}</tbody></table></div></section>`;
 }
-
 function reports(){
   // Report state is kept separately from the page data so changing a selector
   // never mutates the actual students/classes.
@@ -944,12 +957,12 @@ window.openClassModal=(id="")=>{
   const existing=id?data.classes.find(c=>c.id===id):null,c=existing?structuredClone(existing):{id:"",name:"",studentIds:[],rules:[{id:uid(),periods:[],days:[1,2,3,4,5]}],terms:["fullYear"]};
   const checks=(items,selected,prefix)=>items.map(([v,label])=>`<label><input type="checkbox" name="${prefix}" value="${v}" ${selected.includes(v)?"checked":""}> ${label}</label>`).join("");
   const rules=(c.rules&&c.rules.length)?c.rules:[{id:uid(),periods:c.periods||[],days:c.days||[1,2,3,4,5]}];
-  document.body.insertAdjacentHTML("beforeend",`<div id="classModal" class="modalbg"><div class="modal classEditor"><h3>${existing?"Edit":"Add"} Class</h3><label>Class Name<br><input id="className" value="${esc(c.name)}" placeholder="e.g., Honors Precalculus" style="width:100%"></label><span class="sectionLabel">When does this class meet?</span><p class="small">Add as many scheduling rules as you need. For example: Period 7 on MTWF, plus Periods 6 and 7 on Thursday.</p><div id="classRules">${rules.map(ruleEditor).join("")}</div><button type="button" onclick="window.addClassRule()">＋ Add Another Scheduling Rule</button><span class="sectionLabel">Course Length</span><p class="small">Choose the part(s) of the year when this class is active. Full Year keeps it active all year.</p><div class="checkGrid">${checks(TERM_OPTIONS,c.terms,"term")}</div><span class="sectionLabel">Grading</span><div class="checkGrid">
+  document.body.insertAdjacentHTML("beforeend",`<div id="classModal" class="modalbg"><div class="modal classEditor"><h3>${existing?"Edit":"Add"} Class</h3><label>Class Name<br><input id="className" value="${esc(c.name)}" placeholder="e.g., Honors Precalculus" style="width:100%"></label><span class="sectionLabel">When does this class meet?</span><p class="small">Add as many scheduling rules as you need. For example: Period 7 on MTWF, plus Periods 6 and 7 on Thursday.</p><div id="classRules">${rules.map(ruleEditor).join("")}</div><button type="button" onclick="window.addClassRule()">＋ Add Another Scheduling Rule</button></div></details><details class="collapsibleFieldset"><summary>Course Length</summary><div class="collapsibleInner"><p class="small">Choose the part(s) of the year when this class is active. Full Year keeps it active all year.</p><div class="checkGrid">${checks(TERM_OPTIONS,c.terms,"term")}</div></div></details><details class="collapsibleFieldset"><summary>Grading</summary><div class="collapsibleInner"><div class="checkGrid">
 <label><input id="classGraded" type="checkbox" ${c.graded?"checked":""}> This is a graded course</label>
 <label><input id="classMidterm" type="checkbox" ${c.giveMidterm?"checked":""}> Give Midterm</label>
 <label><input id="classFinal" type="checkbox" ${c.giveFinal?"checked":""}> Give Final</label>
 <label><input id="classRecommendations" type="checkbox" ${c.usesRecommendations?"checked":""}> Uses Recommendations</label>
-</div><p class="small">Midterm and Final can be changed anytime without deleting grades. Trimester courses will not appear in the Grades tab.</p><span class="sectionLabel">Students in This Class</span><p class="small">Check the students who belong in this class, or add a new student without leaving this screen.</p><div class="add" style="margin:8px 0;align-items:end;flex-wrap:wrap"><label style="flex:1;min-width:150px">First Name<br><input id="newStudentInClassFirstName" placeholder="First name" style="width:100%"></label><label style="flex:1;min-width:150px">Last Name<br><input id="newStudentInClassLastName" placeholder="Last name" style="width:100%"></label><button type="button" onclick="window.addStudentFromClassModal()">＋ Add Student</button></div><div id="classStudentGrid" class="checkGrid classStudentGrid">${sortedStudents(data.students).map(st=>`<label><input type="checkbox" name="classStudent" value="${esc(st.id)}" ${(c.studentIds||[]).includes(st.id)?"checked":""}> ${esc(st.name)}</label>`).join("")||"<span class='small emptyStudents'>No students yet.</span>"}</div><div style="margin-top:16px"><button class="primary" onclick="window.saveClass('${c.id}')">Save Class</button> <button onclick="window.closeClassModal()">Cancel</button></div></div></div>`);
+</div><p class="small">Midterm and Final can be changed anytime without deleting grades. Trimester courses will not appear in the Grades tab.</p><span class="sectionLabel">Students in This Class</span><p class="small">Check the students who belong in this class, or add a new student without leaving this screen.</p><div class="add" style="margin:8px 0;align-items:end;flex-wrap:wrap"><label style="flex:1;min-width:150px">First Name<br><input id="newStudentInClassFirstName" placeholder="First name" style="width:100%"></label><label style="flex:1;min-width:150px">Last Name<br><input id="newStudentInClassLastName" placeholder="Last name" style="width:100%"></label><button type="button" onclick="window.addStudentFromClassModal()">＋ Add Student</button></div><div id="classStudentGrid" class="checkGrid classStudentGrid">${sortedStudents(data.students).map(st=>`<label><input type="checkbox" name="classStudent" value="${esc(st.id)}" ${(c.studentIds||[]).includes(st.id)?"checked":""}> ${esc(st.name)}</label>`).join("")||"<span class='small emptyStudents'>No students yet.</span>"}</div></div></details><div style="margin-top:16px"><button class="primary" onclick="window.saveClass('${c.id}')">Save Class</button> <button onclick="window.closeClassModal()">Cancel</button></div></div></div>`);
 }
 window.addClassRule=()=>{const box=document.querySelector("#classRules");if(!box)return;const i=box.querySelectorAll(".scheduleRule").length;box.insertAdjacentHTML("beforeend",ruleEditor({id:uid(),periods:[],days:[1,2,3,4,5]},i));}
 window.removeClassRule=btn=>{const rules=document.querySelectorAll("#classRules .scheduleRule");if(rules.length<=1){alert("A class needs at least one scheduling rule. You can leave its periods empty if you do not want it to appear automatically.");return;}btn.closest(".scheduleRule")?.remove();document.querySelectorAll("#classRules .scheduleRule").forEach((el,i)=>{const b=el.querySelector("b");if(b)b.textContent=`Scheduling Rule ${i+1}`;});}
@@ -989,19 +1002,27 @@ window.saveButtonEdit=id=>{
 }
 window.deleteButton=id=>{data.buttons=data.buttons.filter(x=>x.id!==id);save();render()}
 window.moveButton=(id,dir)=>{const i=data.buttons.findIndex(x=>x.id===id),j=i+dir;if(i<0||j<0||j>=data.buttons.length)return;[data.buttons[i],data.buttons[j]]=[data.buttons[j],data.buttons[i]];save();render()}
-window.selectGradeCourse=id=>{window.gradeCourseId=id;render();}
-window.setCourseGrade=(cid,sid,key,val)=>{const c=data.classes.find(x=>x.id===cid);if(!c)return;c.grades??={};c.grades[sid]??={};c.grades[sid][key]=val===""?"":Number(val);save();render();}
+window.selectGradeCourse=id=>{window.gradeCourseId=id;window.gradeStudentId="";render();}
+window.setGradeView=mode=>{window.gradeViewMode=mode;render();}
+window.selectGradeStudent=id=>{window.gradeStudentId=id;render();}
+window.setCourseGrade=(cid,sid,key,val,live=false)=>{
+ const c=data.classes.find(x=>x.id===cid);if(!c)return;c.grades??={};c.grades[sid]??={};c.grades[sid][key]=val===""?"":Number(val);save();
+ const row=document.querySelector(`input[oninput*="'${cid}','${sid}'"]`)?.closest("tr");
+ if(row){const avg=currentAverage(c,sid);const a=row.querySelector(".currentAvg");if(a)a.innerHTML=`<b>${avg===""?"—":avg.toFixed(2)+"%"}</b>`;const r=row.querySelector(".recommendationCell");if(r)r.textContent=recommendationFor(c,avg)||"—";}
+}
 window.openGradeSettings=id=>{
   const c=data.classes.find(x=>x.id===id);if(!c)return;
   document.querySelector("#gradeSettingsModal")?.remove();
   const rules=(c.recommendationRules||[]).map((r,i)=>recommendationRuleEditor(r,i)).join("");
   document.body.insertAdjacentHTML("beforeend",`<div id="gradeSettingsModal" class="modalbg"><div class="modal classEditor"><h3>⚙ ${esc(c.name)} Grade Settings</h3>
+  <details class="collapsibleFieldset" open><summary>Grading Options</summary><div class="collapsibleInner">
   <label><input id="gsGraded" type="checkbox" ${c.graded?"checked":""}> This is a graded course</label><br>
   <label><input id="gsMidterm" type="checkbox" ${c.giveMidterm?"checked":""}> Give Midterm</label><br>
   <label><input id="gsFinal" type="checkbox" ${c.giveFinal?"checked":""}> Give Final</label><br>
   <label><input id="gsRecommendations" type="checkbox" ${c.usesRecommendations?"checked":""}> Uses Recommendations</label>
-  <hr><h4>🎓 Recommendation Rules</h4><p class="small">Rules are evaluated from top to bottom. The first matching rule wins.</p>
-  <div id="recommendationRules">${rules}</div><button type="button" onclick="window.addRecommendationRule()">＋ Add Rule</button>
+  </div></details>
+  <details class="collapsibleFieldset"><summary>🎓 Recommendation Rules</summary><div class="collapsibleInner"><p class="small">Rules are evaluated from top to bottom. The first matching rule wins.</p>
+  <div id="recommendationRules">${rules}</div><button type="button" onclick="window.addRecommendationRule()">＋ Add Rule</button></div></details>
   <div style="margin-top:16px"><button class="primary" onclick="window.saveGradeSettings('${c.id}')">Save Settings</button> <button onclick="window.closeGradeSettings()">Cancel</button></div></div></div>`);
 }
 function recommendationRuleEditor(r={},i=0){return `<div class="card recommendationRule" style="padding:10px;margin:8px 0"><select class="rrOp" onchange="window.toggleRecommendationBetween(this)"><option value="lte" ${(r.op||"lte")==="lte"?"selected":""}>Less than or equal to</option><option value="between" ${r.op==="between"?"selected":""}>Between</option><option value="gte" ${r.op==="gte"?"selected":""}>Greater than or equal to</option></select>
