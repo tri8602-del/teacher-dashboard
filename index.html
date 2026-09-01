@@ -59,7 +59,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 .loginCard{width:min(430px,100%);background:#fff;border-radius:18px;padding:34px;box-shadow:0 12px 35px #26345424;text-align:center}.loginCard h1{color:var(--nav);margin-bottom:8px}.loginCard p{color:#667085;line-height:1.5}
 .googleBtn{margin-top:16px;width:100%;padding:12px;font-weight:650;font-size:16px}.loginError{margin-top:14px;color:#a62f2f;font-size:13px}.loadingScreen{min-height:100vh;display:grid;place-items:center;color:#667085}
 .accountRow{display:flex;align-items:center;gap:12px;margin:8px 0 14px}.accountAvatar{width:52px;height:52px;border-radius:50%;object-fit:cover;background:#eef1f8;border:1px solid #dce1eb}.avatarFallback{display:grid;place-items:center;font-size:25px}.avatarActions{display:flex;gap:8px;flex-wrap:wrap}.syncTime{margin-top:6px;font-size:12px;color:#697386}
-.classMeta{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.classMeta span{font-size:11px;background:#f1f4fa;border:1px solid #e0e4ec;border-radius:999px;padding:3px 7px;color:#556070}.classEditor{max-width:720px}.checkGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:7px;margin:8px 0}.checkGrid label{font-size:13px;padding:6px 8px;border:1px solid #e0e4ec;border-radius:8px;background:#fafbfe}.sectionLabel{font-weight:800;margin-top:14px;display:block}.classEmpty{padding:18px;text-align:center;color:#697386}.noActiveClass{padding:26px;text-align:center;color:#697386}.classStatus{font-size:12px;color:#697386;margin-top:4px}
+.classMeta{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.classMeta span{font-size:11px;background:#f1f4fa;border:1px solid #e0e4ec;border-radius:999px;padding:3px 7px;color:#556070}.classEditor{max-width:760px}.checkGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:7px;margin:8px 0}.checkGrid label{font-size:13px;padding:6px 8px;border:1px solid #e0e4ec;border-radius:8px;background:#fafbfe}.courseEditorSection{border:1px solid #e0e4ec;border-radius:12px;padding:16px;margin:14px 0;background:#fff}.courseEditorSection h4{margin:0 0 6px;font-size:17px}.courseEditorSection .small{margin:0 0 12px}.courseLengthRow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.courseLengthRow label{font-weight:700}.courseLengthRow select{min-width:210px}.scheduleRule{padding:16px!important;margin:12px 0}.scheduleRuleHeader{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}.periodGrid{grid-template-columns:repeat(4,minmax(0,1fr))}.dayGrid{grid-template-columns:repeat(5,minmax(0,1fr))}@media(max-width:650px){.periodGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.dayGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.courseLengthRow select{width:100%}}.sectionLabel{font-weight:800;margin-top:14px;display:block}.classEmpty{padding:18px;text-align:center;color:#697386}.noActiveClass{padding:26px;text-align:center;color:#697386}.classStatus{font-size:12px;color:#697386;margin-top:4px}
 @media(max-width:750px){aside{width:62px;padding:8px}aside .brand span:last-child{display:none}.brandEmoji{font-size:22px}.nav{font-size:0;text-align:center}.nav:first-letter{font-size:19px}.status,.userCard{display:none}main{padding:14px}.split{grid-template-columns:1fr}.quick span{display:none}}
 @media(max-width:650px){.calDay,.calBlank{min-height:62px}.calDay{padding:4px;font-size:12px}.calMarks{font-size:11px}.weekdays span{font-size:9px}.calendarSettings{align-items:stretch}.calendarCount{margin-left:0}}
 
@@ -99,7 +99,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.7.1";
+const APP_VERSION="1.7.2";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -160,7 +160,7 @@ function ensureClassFields(){
     c.days=Array.isArray(c.days)&&c.days.length?c.days:[1,2,3,4,5];
     c.rules=Array.isArray(c.rules)&&c.rules.length?c.rules:[{id:"legacy",periods:[...c.periods],days:[...c.days]}];
     c.rules=c.rules.map((r,i)=>({id:r.id||`rule-${i}`,periods:Array.isArray(r.periods)?r.periods.map(Number):[],days:Array.isArray(r.days)&&r.days.length?r.days.map(Number):[1,2,3,4,5]}));
-    c.terms=Array.isArray(c.terms)&&c.terms.length?c.terms:["fullYear"];
+    c.terms=Array.isArray(c.terms)&&c.terms.length?[c.terms[0]]:["fullYear"];
     c.graded=!!c.graded;
     c.giveMidterm=c.giveMidterm!==undefined?!!c.giveMidterm:true;
     c.giveFinal=c.giveFinal!==undefined?!!c.giveFinal:true;
@@ -946,23 +946,76 @@ window.addStudentFromClassModal=()=>{
   save();toast=`${name} added. Assignments saved when you save the class.`;
 }
 function ordinal(n){return `${n}${n===1?"st":n===2?"nd":n===3?"rd":"th"}`}
-function ruleEditor(rule,index){
-  const r=rule||{id:uid(),periods:[],days:[1,2,3,4,5]};
-  const p=Array.from({length:9},(_,i)=>i+1).map(n=>`<label><input type="checkbox" name="rule-period-${index}" value="${n}" ${(r.periods||[]).includes(n)?"checked":""}> ${ordinal(n)} Period</label>`).join("");
+function ruleEditor(r,index){
+  const p=[1,2,3,4,5,6,7,8,9].map(n=>`<label><input type="checkbox" name="rule-period-${index}" value="${n}" ${(r.periods||[]).includes(n)?"checked":""}> ${ordinal(n)} Period</label>`).join("");
   const d=DAY_NAMES.map(([day,name])=>`<label><input type="checkbox" name="rule-day-${index}" value="${day}" ${(r.days||[]).includes(day)?"checked":""}> ${name}</label>`).join("");
-  return `<div class="card scheduleRule" data-rule-id="${esc(r.id)}"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><b>Scheduling Rule ${index+1}</b><button type="button" onclick="window.removeClassRule(this)">Remove Rule</button></div><span class="sectionLabel">Periods</span><div class="checkGrid">${p}</div><span class="sectionLabel">Meeting Days</span><div class="checkGrid">${d}</div></div>`;
+  return `<div class="card scheduleRule" data-rule-id="${esc(r.id)}">
+    <div class="scheduleRuleHeader"><b>Scheduling Rule ${index+1}</b><button type="button" onclick="window.removeClassRule(this)">Remove Rule</button></div>
+    <span class="sectionLabel">Periods</span><div class="checkGrid periodGrid">${p}</div>
+    <span class="sectionLabel">Meeting Days</span><div class="checkGrid dayGrid">${d}</div>
+  </div>`;
 }
 window.openClassModal=(id="")=>{
   ensureClassFields();document.querySelector("#classModal")?.remove();
-  const existing=id?data.classes.find(c=>c.id===id):null,c=existing?structuredClone(existing):{id:"",name:"",studentIds:[],rules:[{id:uid(),periods:[],days:[1,2,3,4,5]}],terms:["fullYear"]};
-  const checks=(items,selected,prefix)=>items.map(([v,label])=>`<label><input type="checkbox" name="${prefix}" value="${v}" ${selected.includes(v)?"checked":""}> ${label}</label>`).join("");
+  const existing=id?data.classes.find(c=>c.id===id):null;
+  const c=existing?structuredClone(existing):{id:"",name:"",studentIds:[],rules:[{id:uid(),periods:[],days:[1,2,3,4,5]}],terms:["fullYear"],graded:false,giveMidterm:true,giveFinal:true,usesRecommendations:false};
   const rules=(c.rules&&c.rules.length)?c.rules:[{id:uid(),periods:c.periods||[],days:c.days||[1,2,3,4,5]}];
-  document.body.insertAdjacentHTML("beforeend",`<div id="classModal" class="modalbg"><div class="modal classEditor"><h3>${existing?"Edit":"Add"} Class</h3><label>Class Name<br><input id="className" value="${esc(c.name)}" placeholder="e.g., Honors Precalculus" style="width:100%"></label><span class="sectionLabel">When does this class meet?</span><p class="small">Add as many scheduling rules as you need. For example: Period 7 on MTWF, plus Periods 6 and 7 on Thursday.</p><div id="classRules">${rules.map(ruleEditor).join("")}</div><button type="button" onclick="window.addClassRule()">＋ Add Another Scheduling Rule</button></div></details><details class="collapsibleFieldset"><summary>Course Length</summary><div class="collapsibleInner"><p class="small">Choose the part(s) of the year when this class is active. Full Year keeps it active all year.</p><div class="checkGrid">${checks(TERM_OPTIONS,c.terms,"term")}</div></div></details><details class="collapsibleFieldset"><summary>Grading</summary><div class="collapsibleInner"><div class="checkGrid">
-<label><input id="classGraded" type="checkbox" ${c.graded?"checked":""}> This is a graded course</label>
-<label><input id="classMidterm" type="checkbox" ${c.giveMidterm?"checked":""}> Give Midterm</label>
-<label><input id="classFinal" type="checkbox" ${c.giveFinal?"checked":""}> Give Final</label>
-<label><input id="classRecommendations" type="checkbox" ${c.usesRecommendations?"checked":""}> Uses Recommendations</label>
-</div><p class="small">Midterm and Final can be changed anytime without deleting grades. Trimester courses will not appear in the Grades tab.</p><span class="sectionLabel">Students in This Class</span><p class="small">Check the students who belong in this class, or add a new student without leaving this screen.</p><div class="add" style="margin:8px 0;align-items:end;flex-wrap:wrap"><label style="flex:1;min-width:150px">First Name<br><input id="newStudentInClassFirstName" placeholder="First name" style="width:100%"></label><label style="flex:1;min-width:150px">Last Name<br><input id="newStudentInClassLastName" placeholder="Last name" style="width:100%"></label><button type="button" onclick="window.addStudentFromClassModal()">＋ Add Student</button></div><div id="classStudentGrid" class="checkGrid classStudentGrid">${sortedStudents(data.students).map(st=>`<label><input type="checkbox" name="classStudent" value="${esc(st.id)}" ${(c.studentIds||[]).includes(st.id)?"checked":""}> ${esc(st.name)}</label>`).join("")||"<span class='small emptyStudents'>No students yet.</span>"}</div></div></details><div style="margin-top:16px"><button class="primary" onclick="window.saveClass('${c.id}')">Save Class</button> <button onclick="window.closeClassModal()">Cancel</button></div></div></div>`);
+  const selectedTerm=(c.terms&&c.terms[0])||"fullYear";
+  const termOptions=TERM_OPTIONS.map(([v,label])=>`<option value="${v}" ${v===selectedTerm?"selected":""}>${label}</option>`).join("");
+  const studentChecks=sortedStudents(data.students).map(st=>`<label><input type="checkbox" name="classStudent" value="${esc(st.id)}" ${(c.studentIds||[]).includes(st.id)?"checked":""}> ${esc(st.name)}</label>`).join("")||"<span class='small emptyStudents'>No students yet.</span>";
+  document.body.insertAdjacentHTML("beforeend",`
+    <div id="classModal" class="modalbg"><div class="modal classEditor">
+      <h3>${existing?"Edit":"Add"} Class</h3>
+
+      <section class="courseEditorSection">
+        <h4>Course Information</h4>
+        <label>Class Name<br><input id="className" value="${esc(c.name)}" placeholder="e.g., Honors Precalculus" style="width:100%"></label>
+      </section>
+
+      <section class="courseEditorSection">
+        <h4>Course Length</h4>
+        <p class="small">Choose when this course is active. A class has one course length.</p>
+        <div class="courseLengthRow">
+          <label for="classTerm">Course Length</label>
+          <select id="classTerm">${termOptions}</select>
+        </div>
+      </section>
+
+      <section class="courseEditorSection">
+        <h4>Scheduling Rules</h4>
+        <p class="small">Add as many scheduling rules as you need. For example: Period 7 on MTWF, plus Periods 6 and 7 on Thursday.</p>
+        <div id="classRules">${rules.map(ruleEditor).join("")}</div>
+        <button type="button" onclick="window.addClassRule()">＋ Add Scheduling Rule</button>
+      </section>
+
+      <details class="collapsibleFieldset">
+        <summary>Grading</summary>
+        <div class="collapsibleInner">
+          <div class="checkGrid">
+            <label><input id="classGraded" type="checkbox" ${c.graded?"checked":""}> This is a graded course</label>
+            <label><input id="classMidterm" type="checkbox" ${c.giveMidterm?"checked":""}> Give Midterm</label>
+            <label><input id="classFinal" type="checkbox" ${c.giveFinal?"checked":""}> Give Final</label>
+            <label><input id="classRecommendations" type="checkbox" ${c.usesRecommendations?"checked":""}> Uses Recommendations</label>
+          </div>
+          <p class="small">Midterm and Final can be changed anytime without deleting grades. Trimester courses will not appear in the Grades tab.</p>
+        </div>
+      </details>
+
+      <details class="collapsibleFieldset">
+        <summary>Students in This Class</summary>
+        <div class="collapsibleInner">
+          <p class="small">Check the students who belong in this class, or add a new student without leaving this screen.</p>
+          <div class="add" style="margin:8px 0;align-items:end;flex-wrap:wrap">
+            <label style="flex:1;min-width:150px">First Name<br><input id="newStudentInClassFirstName" placeholder="First name" style="width:100%"></label>
+            <label style="flex:1;min-width:150px">Last Name<br><input id="newStudentInClassLastName" placeholder="Last name" style="width:100%"></label>
+            <button type="button" onclick="window.addStudentFromClassModal()">＋ Add Student</button>
+          </div>
+          <div id="classStudentGrid" class="checkGrid classStudentGrid">${studentChecks}</div>
+        </div>
+      </details>
+
+      <div style="margin-top:16px"><button class="primary" onclick="window.saveClass('${c.id}')">Save Class</button> <button onclick="window.closeClassModal()">Cancel</button></div>
+    </div></div>`);
 }
 window.addClassRule=()=>{const box=document.querySelector("#classRules");if(!box)return;const i=box.querySelectorAll(".scheduleRule").length;box.insertAdjacentHTML("beforeend",ruleEditor({id:uid(),periods:[],days:[1,2,3,4,5]},i));}
 window.removeClassRule=btn=>{const rules=document.querySelectorAll("#classRules .scheduleRule");if(rules.length<=1){alert("A class needs at least one scheduling rule. You can leave its periods empty if you do not want it to appear automatically.");return;}btn.closest(".scheduleRule")?.remove();document.querySelectorAll("#classRules .scheduleRule").forEach((el,i)=>{const b=el.querySelector("b");if(b)b.textContent=`Scheduling Rule ${i+1}`;});}
@@ -972,7 +1025,7 @@ window.saveClass=oldId=>{
   const ruleEls=[...document.querySelectorAll("#classRules .scheduleRule")];
   const rules=ruleEls.map((el,i)=>({id:el.dataset.ruleId||uid(),periods:[...el.querySelectorAll(`input[name^="rule-period-"]:checked`)].map(x=>Number(x.value)),days:[...el.querySelectorAll(`input[name^="rule-day-"]:checked`)].map(x=>Number(x.value))}));
   if(rules.some(r=>!r.days.length)){alert("Each scheduling rule needs at least one meeting day.");return;}
-  const terms=[...document.querySelectorAll('input[name="term"]:checked')].map(x=>x.value);if(!terms.length){alert("Please choose at least one course length option.");return;}
+  const selectedTerm=$("#classTerm")?.value||"fullYear";const terms=[selectedTerm];
   if(rules.every(r=>!r.periods.length)&&!confirm("No periods are selected, so this class will not automatically appear on the Live Class page. Save anyway?"))return;
   const old=data.classes.find(c=>c.id===oldId);
   const studentIds=[...document.querySelectorAll('input[name="classStudent"]:checked')].map(x=>x.value);
