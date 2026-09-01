@@ -114,7 +114,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.9.4";
+const APP_VERSION="1.9.5";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -400,7 +400,7 @@ function pvaasTotalDays(){
 function pvaas(){
   ensureClassFields();
   const classes=data.classes.filter(c=>c.pvaasReported);
-  return `<header><div><h2>PVAAS Reporting</h2><p>Enrollment periods determine your instructional responsibility for each student.</p></div></header>
+  return `<header><div><h2>PVAAS Reporting</h2><p>Enrollment periods determine your instructional responsibility for each student. Only classes checked for PVAAS are included below.</p></div></header>
   <section class="card"><h3>PVAAS Courses</h3><p class="small">Each course can be marked as reported or not reported for PVAAS.</p>
   ${data.classes.map(c=>`<label style="display:block;margin:8px 0"><input type="checkbox" ${c.pvaasReported?"checked":""} onchange="window.setPvaasCourse('${c.id}',this.checked)"> ${esc(c.name)} — Report to PVAAS</label>`).join("")||"<p>No courses yet.</p>"}</section>
   ${classes.map(cls=>{const students=sortedStudents(data.students.filter(st=>(cls.studentIds||[]).includes(st.id)));const total=pvaasTotalDays();
@@ -429,7 +429,7 @@ function render(){
   bind();
 }
 function loginHTML(){return `<div class="loginScreen"><section class="loginCard"><div style="font-size:48px">🍎</div><h1>Teacher Dashboard</h1><p>Sign in with Google to securely access your own Teacher Dashboard.</p><button class="googleBtn primary" onclick="window.signIn()" ${authBusy?"disabled":""}>${authBusy?"Signing in...":"G  Sign in with Google"}</button>${loginError?`<div class="loginError">${esc(loginError)}</div>`:""}<p class="small" style="margin-top:20px">Each Google account has its own private dashboard and browser backup.</p></section></div>`}
-function nav(){return [["live","🏠","Live Class"],["students","👥","Students & Classes"],["calendar","🗓️","Calendar"],["buttons","⚡","Quick Buttons"],["grades","📚","Grades"],["reports","📊","Reports"],["settings","⚙️","Settings"]].map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
+function nav(){return [["live","🏠","Live Class"],["students","👥","Students & Classes"],["calendar","🗓️","Calendar"],["buttons","⚡","Quick Buttons"],["grades","📚","Grades"],["reports","📊","Reports"],["pvaas","📈","PVAAS Reporting"],["settings","⚙️","Settings"]].map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
 function classPeriodNumber(label){const m=String(label||"").match(/^(\d+)(?:st|nd|rd|th)?\s+Period\b/i);return m?Number(m[1]):null}
 function timeToMinutes(value,previous=-1){
   const m=String(value||"").trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);if(!m)return null;
@@ -484,7 +484,7 @@ function recentEventsHTML(){
 window.toggleRecentEvents=()=>{window.recentEventsExpanded=!(window.recentEventsExpanded===true);render();}
 function toastHTML(){return toast?`<div class="toast">${esc(toast)} <button onclick="window.clearToast()">×</button></div>`:""}
 window.clearToast=()=>{toast="";render()}
-function pageHTML(){return ({live,students,calendar,buttons:quickButtons,grades,reports,settings})[page]()}
+function pageHTML(){return ({live,students,calendar,buttons:quickButtons,grades,reports,pvaas,settings})[page]()}
 
 function classroomToolsHTML(cls,block){
   ensureClassroomTools();
@@ -758,7 +758,8 @@ function calendar(){
     const typeTag=info.type==="inservice"?`<span class="calendarTypeTag">In-Service</span>`:info.type==="noschool"?`<span class="calendarTypeTag">No School</span>`:"";
     const altTag=info.schedule&&info.schedule!=="regular"?`<span class="altScheduleTag">${esc(bellScheduleName(info.schedule))}</span>`:"";
     const dayStyle=`--cal-color:${appearance.color};--cal-bg:${appearance.background};`;
-    cells+=`<button class="calDay ${info.type} ${info.schedule==="alternate"?"alternate":""} ${date===todayISO()?"today":""}" style="${dayStyle}" onclick="window.editDate('${date}')"><b>${d}</b>${info.countedDay?`<span class="dayNum">Day ${info.countedDay}</span>`:""}${typeTag}${altTag}<span class="calMarks">${marks.join("")}</span>${notes.length?`<span class="noteSnippet" title="${esc(notes[0])}">${esc(notes[0])}</span>`:""}</button>`;
+    const progress=calendarDayProgress(date);
+    cells+=`<button class="calDay ${info.type} ${info.schedule==="alternate"?"alternate":""} ${date===todayISO()?"today":""}" style="${dayStyle}" onclick="window.editDate('${date}')"><b>${d}</b>${progress?`<span class="dayProgress">${progress}</span>`:""}${typeTag}${altTag}<span class="calMarks">${marks.join("")}</span>${notes.length?`<span class="noteSnippet" title="${esc(notes[0])}">${esc(notes[0])}</span>`:""}</button>`;
   }
   const upcoming=upcomingCalendarEvents();
   const upcomingHTML=upcoming.length?`<section class="upcomingDates">${upcoming.map(e=>`<div class="upcomingCard" style="--event-color:${e.color}"><b>${esc(e.label)}</b><span>${new Date(e.date+"T12:00:00").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})} · ${esc(e.kind)}</span></div>`).join("")}</section>`:`<section class="card small">No upcoming calendar events yet.</section>`;
