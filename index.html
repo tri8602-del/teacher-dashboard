@@ -41,6 +41,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 .reportgrid{display:flex;gap:10px;flex-wrap:wrap}.stat{background:#f1f4fa;border-radius:9px;padding:12px;min-width:100px;display:flex;flex-direction:column}.stat b{font-size:24px}
 .calendarSettings{display:flex;gap:18px;align-items:end;flex-wrap:wrap}.calendarSettings label{font-weight:600}
 .calendarCount{margin-left:auto;background:#f1f4fa;padding:10px 18px;border-radius:9px;display:flex;flex-direction:column;text-align:center}.calendarCount b{font-size:24px}
+.upcomingDates{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px}.upcomingCard{border:1px solid #e0e4ec;border-left:4px solid var(--event-color,#8b6bb8);border-radius:10px;padding:11px;background:#fff}.upcomingCard b{display:block;font-size:13px}.upcomingCard span{display:block;font-size:11px;color:var(--muted);margin-top:3px}.markerPill{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:999px;background:#fff9;border:1px solid #00000012;font-size:10px;font-weight:800;line-height:1.15}.noteSnippet{font-size:10px;margin-top:4px;color:#556070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block}.markerCard{font-size:10px;font-weight:800;margin-right:3px;padding:2px 4px;border-radius:5px;background:#fff;border:1px solid currentColor;display:inline-block;line-height:1.1}
 .calHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.calHead h3{margin:0}
 .weekdays,.calendarGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.weekdays span{text-align:center;font-size:11px;color:var(--muted);font-weight:700;padding:5px}
 .calBlank{min-height:82px}.calDay{min-height:82px;text-align:left;padding:7px;display:flex;flex-direction:column;align-items:flex-start;border:1px solid #e0e4ec;border-left:4px solid var(--cal-color,#e0e4ec);background:var(--cal-bg,#fff)}
@@ -86,7 +87,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.6.3";
+const APP_VERSION="1.6.4";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -170,6 +171,7 @@ function loadLocalForUser(){
 }
 function saveLocal(){const key=localKey();if(key)localStorage.setItem(key,JSON.stringify(data))}
 function dashboardRef(){return currentUser?doc(db,"users",currentUser.uid,CLOUD_SUBCOLLECTION,CLOUD_DOCUMENT):null}
+function cloudDataPayload(){const payload=structuredClone(data);delete payload.profileAvatar;return payload}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function formatSync(value){
   if(!value)return "Not synced yet";
@@ -189,13 +191,13 @@ async function loadCloudData(){
   try{
     const snap=await getDoc(dashboardRef());
     if(snap.exists()&&snap.data()?.data){
-      data={...seed,...snap.data().data}; ensureBellSchedules();
+      data={...seed,...snap.data().data,profileAvatar:(loadLocalForUser().profileAvatar||snap.data().data?.profileAvatar||"")}; ensureBellSchedules();
       lastSyncAt=snap.data().updatedAt||null;
       cloudStatus="Firebase synced";
       saveLocal();
     }else{
       cloudStatus="Firebase synced";
-      await setDoc(dashboardRef(),{data:structuredClone(data),ownerUid:currentUser.uid,updatedAt:new Date().toISOString()},{merge:true});
+      await setDoc(dashboardRef(),{data:cloudDataPayload(),ownerUid:currentUser.uid,updatedAt:new Date().toISOString()},{merge:true});
       lastSyncAt=new Date().toISOString();
     }
   }catch(err){
@@ -209,8 +211,10 @@ async function loadCloudData(){
 function save(){
   saveLocal();
   if(!currentUser||!initializedUserData)return;
+  cloudSavePending=true;
+  cloudStatus="Saving to Firebase...";
   clearTimeout(cloudSaveTimer);
-  cloudSaveTimer=setTimeout(syncCloud,500);
+  cloudSaveTimer=setTimeout(syncCloud,350);
 }
 async function syncCloud(){
   if(!currentUser||cloudWriteInProgress)return;
@@ -223,7 +227,7 @@ async function syncCloud(){
       cloudStatus="Saving to Firebase...";
       render();
       const now=new Date().toISOString();
-      await setDoc(dashboardRef(),{data:structuredClone(data),ownerUid:currentUser.uid,updatedAt:now},{merge:true});
+      await setDoc(dashboardRef(),{data:cloudDataPayload(),ownerUid:currentUser.uid,updatedAt:now},{merge:true});
       lastSyncAt=now;
       cloudStatus="Firebase synced";
     }
@@ -417,6 +421,23 @@ function calendarAppearance(date,info){
 function todayISO(){return new Date().toISOString().slice(0,10)}
 function calendarNotesFor(date){return ((data.calendarOverrides||{})[date]||{}).notes||[]}
 
+function academicMarkerHTML(kind,color,index){
+  const defs={nineWeeks:["¼",`Begin Quarter ${index||""}`],endNineWeeks:["¼✓",`End Quarter ${index||""}`],trimester:["T",`Begin Trimester ${index||""}`],endTrimester:["T✓",`End Trimester ${index||""}`],semester:["S",`Begin Semester ${index||""}`],endSemester:["S✓",`End Semester ${index||""}`]};
+  const [symbol,title]=defs[kind];
+  return `<span class="markerCard" style="color:${color}" title="${title}">${symbol}</span>`;
+}
+function upcomingCalendarEvents(limit=8){
+  const today=todayISO(), events=[];
+  Object.keys(data.calendarOverrides||{}).filter(d=>d>=today).sort().forEach(date=>{
+    const o=data.calendarOverrides[date]||{}, info=getDateInfo(date);
+    if(info.schedule&&info.schedule!=="regular")events.push({date,label:bellScheduleName(info.schedule),kind:"Alternate Bell Schedule",color:eventColor(date,"alternateSchedule")});
+    [["endNineWeeks","End of Nine Weeks","endNineWeeks"],["nineWeeks","Beginning of Nine Weeks","nineWeeks"],["endTrimester","End of Trimester","endTrimester"],["trimester","Beginning of Trimester","trimester"],["endSemester","End of Semester","endSemester"],["semester","Beginning of Semester","semester"]].forEach(([key,label,colorKey])=>{if(o[key])events.push({date,label,kind:"Academic Marker",color:eventColor(date,colorKey)})});
+    if((o.notes||[]).length)events.push({date,label:o.notes[0],kind:"Note",color:eventColor(date,"note")});
+    if(info.type==="inservice")events.push({date,label:"In-Service Day",kind:"School Calendar",color:eventColor(date,"inservice")});
+    if(info.type==="noschool")events.push({date,label:"No School",kind:"School Calendar",color:eventColor(date,"noschool")});
+  });
+  return events.sort((a,b)=>a.date.localeCompare(b.date)).slice(0,limit);
+}
 function calendar(){
   data.calendarSettings??={firstStudentDay:"",lastStudentDay:""};
   data.calendarOverrides??={};
@@ -429,24 +450,27 @@ function calendar(){
   for(let d=1;d<=days;d++){
     const date=`${year}-${String(mon).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
     const info=getDateInfo(date),marks=[],notes=calendarNotesFor(date),appearance=calendarAppearance(date,info);
-    if(info.markers.nineWeeks)marks.push(`<span class="calMark" style="color:${eventColor(date,"nineWeeks")}" title="Beginning of Nine Weeks">⅟₉</span>`);
-    if(info.markers.endNineWeeks)marks.push(`<span class="calMark" style="color:${eventColor(date,"endNineWeeks")}" title="End of Nine Weeks">⅟₉</span>`);
-    if(info.markers.trimester)marks.push(`<span class="calMark" style="color:${eventColor(date,"trimester")}" title="Beginning of Trimester">⅓</span>`);
-    if(info.markers.endTrimester)marks.push(`<span class="calMark" style="color:${eventColor(date,"endTrimester")}" title="End of Trimester">⅓</span>`);
-    if(info.markers.semester)marks.push(`<span class="calMark" style="color:${eventColor(date,"semester")}" title="Beginning of Semester">½</span>`);
-    if(info.markers.endSemester)marks.push(`<span class="calMark" style="color:${eventColor(date,"endSemester")}" title="End of Semester">½</span>`);
+    if(info.markers.nineWeeks)marks.push(academicMarkerHTML("nineWeeks",eventColor(date,"nineWeeks"),markerIndex("nineWeeks",date)));
+    if(info.markers.endNineWeeks)marks.push(academicMarkerHTML("endNineWeeks",eventColor(date,"endNineWeeks"),markerIndex("endNineWeeks",date)));
+    if(info.markers.trimester)marks.push(academicMarkerHTML("trimester",eventColor(date,"trimester"),markerIndex("trimester",date)));
+    if(info.markers.endTrimester)marks.push(academicMarkerHTML("endTrimester",eventColor(date,"endTrimester"),markerIndex("endTrimester",date)));
+    if(info.markers.semester)marks.push(academicMarkerHTML("semester",eventColor(date,"semester"),markerIndex("semester",date)));
+    if(info.markers.endSemester)marks.push(academicMarkerHTML("endSemester",eventColor(date,"endSemester"),markerIndex("endSemester",date)));
     if(date===firstStudent)marks.push("🎒");
     if(date===lastStudent)marks.push("🏁");
     if(notes.length)marks.push(`<span class="calMark" style="color:${eventColor(date,"note")}" title="${notes.length} note${notes.length===1?"":"s"}">📝</span>`);
     const typeTag=info.type==="inservice"?`<span class="calendarTypeTag">In-Service</span>`:info.type==="noschool"?`<span class="calendarTypeTag">No School</span>`:"";
     const altTag=info.schedule&&info.schedule!=="regular"?`<span class="altScheduleTag">${esc(bellScheduleName(info.schedule))}</span>`:"";
     const dayStyle=`--cal-color:${appearance.color};--cal-bg:${appearance.background};`;
-    cells+=`<button class="calDay ${info.type} ${info.schedule==="alternate"?"alternate":""} ${date===todayISO()?"today":""}" style="${dayStyle}" onclick="window.editDate('${date}')"><b>${d}</b>${info.countedDay?`<span class="dayNum">Day ${info.countedDay}</span>`:""}${typeTag}${altTag}<span class="calMarks">${marks.join("")}</span>${notes.length?`<span class="calNote">${notes.length} note${notes.length===1?"":"s"}</span>`:""}</button>`;
+    cells+=`<button class="calDay ${info.type} ${info.schedule==="alternate"?"alternate":""} ${date===todayISO()?"today":""}" style="${dayStyle}" onclick="window.editDate('${date}')"><b>${d}</b>${info.countedDay?`<span class="dayNum">Day ${info.countedDay}</span>`:""}${typeTag}${altTag}<span class="calMarks">${marks.join("")}</span>${notes.length?`<span class="noteSnippet" title="${esc(notes[0])}">📝 ${esc(notes[0])}</span>`:""}</button>`;
   }
+  const upcoming=upcomingCalendarEvents();
+  const upcomingHTML=upcoming.length?`<section class="upcomingDates">${upcoming.map(e=>`<div class="upcomingCard" style="--event-color:${e.color}"><b>${esc(e.label)}</b><span>${new Date(e.date+"T12:00:00").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})} · ${esc(e.kind)}</span></div>`).join("")}</section>`:`<section class="card small">No upcoming calendar events yet.</section>`;
   return `<header><div><h2>School Calendar</h2><p>Set your student year, then only change the exceptions.</p></div></header>
-  <section class="card calendarSettings"><div><label>🎒 First Student Day<br><input type="date" value="${esc(firstStudent)}" onchange="window.setCalendarBoundary('firstStudentDay',this.value)"></label></div><div><label>🏁 Last Student Day<br><input type="date" value="${esc(lastStudent)}" onchange="window.setCalendarBoundary('lastStudentDay',this.value)"></label></div><div class="calendarCount"><b>${countedDaysTotal()}</b><span>counted days</span></div></section><section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h3 style="margin:0">🕐 Bell Schedules</h3><p class="small" style="margin:6px 0 0">Regular is the default for instructional days. Choose a different schedule only when that day is an exception.</p></div><button class="primary" onclick="window.openBellScheduleModal()">＋ Add Custom Schedule</button></div><div class="bellScheduleList">${bellSchedulesList()}</div></section>
+  <section class="card calendarSettings"><div><label>🎒 First Student Day<br><input type="date" value="${esc(firstStudent)}" onchange="window.setCalendarBoundary('firstStudentDay',this.value)"></label></div><div><label>🏁 Last Student Day<br><input type="date" value="${esc(lastStudent)}" onchange="window.setCalendarBoundary('lastStudentDay',this.value)"></label></div><div class="calendarCount"><b>${countedDaysTotal()}</b><span>counted days</span></div></section>${upcomingHTML}
   <section class="card"><div class="calHead"><button onclick="window.changeMonth(-1)">◀</button><h3>${monthLabel}</h3><button onclick="window.changeMonth(1)">▶</button></div><div class="weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div><div class="calendarGrid">${cells}</div></section>
-  <section class="card small"><b>Legend:</b> <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().instructional};background:${hexToRgba(calendarColors().instructional,.11)}"></span> Instructional (counts + regular schedule) &nbsp; <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().inservice};background:${hexToRgba(calendarColors().inservice,.11)}"></span> In-Service (counts) &nbsp; <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().noschool};background:${hexToRgba(calendarColors().noschool,.11)}"></span> No School &nbsp; <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().alternateSchedule};background:${hexToRgba(calendarColors().alternateSchedule,.11)}"></span> Alternate Bell Schedule<br><br><span style="color:${calendarColors().nineWeeks}">⅟₉</span> Beginning of Nine Weeks &nbsp; <span style="color:${calendarColors().endNineWeeks}">⅟₉</span> End of Nine Weeks &nbsp; <span style="color:${calendarColors().trimester}">⅓</span> Beginning of Trimester &nbsp; <span style="color:${calendarColors().endTrimester}">⅓</span> End of Trimester &nbsp; <span style="color:${calendarColors().semester}">½</span> Beginning of Semester &nbsp; <span style="color:${calendarColors().endSemester}">½</span> End of Semester &nbsp; 🎒 First Student Day &nbsp; 🏁 Last Student Day &nbsp; 📝 Notes</section>`;
+  <section class="card small"><b>Legend:</b> <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().instructional};background:${hexToRgba(calendarColors().instructional,.11)}"></span> Instructional &nbsp; <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().inservice};background:${hexToRgba(calendarColors().inservice,.11)}"></span> In-Service &nbsp; <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().noschool};background:${hexToRgba(calendarColors().noschool,.11)}"></span> No School &nbsp; <span class="markerCard" style="color:${calendarColors().nineWeeks}">¼</span> Beginning Nine Weeks &nbsp; <span class="markerCard" style="color:${calendarColors().endNineWeeks}">¼✓</span> End Nine Weeks &nbsp; <span class="markerCard" style="color:${calendarColors().trimester}">T</span> Beginning Trimester &nbsp; <span class="markerCard" style="color:${calendarColors().endTrimester}">T✓</span> End Trimester &nbsp; <span class="markerCard" style="color:${calendarColors().semester}">S</span> Beginning Semester &nbsp; <span class="markerCard" style="color:${calendarColors().endSemester}">S✓</span> End Semester &nbsp; 🎒 First Student Day &nbsp; 🏁 Last Student Day</section>
+  <section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h3 style="margin:0">🕐 Bell Schedules</h3><p class="small" style="margin:6px 0 0">Regular is the default for instructional days. Choose a different schedule only when that day is an exception.</p></div><button class="primary" onclick="window.openBellScheduleModal()">＋ Add Custom Schedule</button></div><div class="bellScheduleList">${bellSchedulesList()}</div></section>`;
 }
 function bellSchedulesList(){
   ensureBellSchedules();
@@ -618,7 +642,7 @@ window.setGrade=(cid,sid,coid,val)=>{const c=data.gradeCourses.find(x=>x.id===ci
 window.setTotalDays=v=>{data.totalSchoolDays=Number(v);save()}
 window.uploadAvatar=input=>{
   const file=input.files?.[0];if(!file)return;
-  if(file.size>900000){alert("Please choose an image smaller than 900 KB so your dashboard stays lightweight.");input.value="";return}
+  if(file.size>500000){alert("Please choose an image smaller than 500 KB so your dashboard stays lightweight.");input.value="";return}
   const reader=new FileReader();
   reader.onload=e=>{data.profileAvatar=e.target.result;save();render()};
   reader.readAsDataURL(file);
