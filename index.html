@@ -87,7 +87,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.6.6";
+const APP_VERSION="1.6.7";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -480,11 +480,10 @@ function calendar(){
     if(info.markers.endSemester)marks.push(academicMarkerHTML("endSemester",eventColor(date,"endSemester"),markerIndex("endSemester",date)));
     if(date===firstStudent)marks.push("🎒");
     if(date===lastStudent)marks.push("🏁");
-    if(notes.length)marks.push(`<span class="calMark" style="color:${eventColor(date,"note")}" title="${notes.length} note${notes.length===1?"":"s"}">📝</span>`);
     const typeTag=info.type==="inservice"?`<span class="calendarTypeTag">In-Service</span>`:info.type==="noschool"?`<span class="calendarTypeTag">No School</span>`:"";
     const altTag=info.schedule&&info.schedule!=="regular"?`<span class="altScheduleTag">${esc(bellScheduleName(info.schedule))}</span>`:"";
     const dayStyle=`--cal-color:${appearance.color};--cal-bg:${appearance.background};`;
-    cells+=`<button class="calDay ${info.type} ${info.schedule==="alternate"?"alternate":""} ${date===todayISO()?"today":""}" style="${dayStyle}" onclick="window.editDate('${date}')"><b>${d}</b>${info.countedDay?`<span class="dayNum">Day ${info.countedDay}</span>`:""}${typeTag}${altTag}<span class="calMarks">${marks.join("")}</span>${notes.length?`<span class="noteSnippet" title="${esc(notes[0])}">📝 ${esc(notes[0])}</span>`:""}</button>`;
+    cells+=`<button class="calDay ${info.type} ${info.schedule==="alternate"?"alternate":""} ${date===todayISO()?"today":""}" style="${dayStyle}" onclick="window.editDate('${date}')"><b>${d}</b>${info.countedDay?`<span class="dayNum">Day ${info.countedDay}</span>`:""}${typeTag}${altTag}<span class="calMarks">${marks.join("")}</span>${notes.length?`<span class="noteSnippet" title="${esc(notes[0])}">${esc(notes[0])}</span>`:""}</button>`;
   }
   const upcoming=upcomingCalendarEvents();
   const upcomingHTML=upcoming.length?`<section class="upcomingDates">${upcoming.map(e=>`<div class="upcomingCard" style="--event-color:${e.color}"><b>${esc(e.label)}</b><span>${new Date(e.date+"T12:00:00").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})} · ${esc(e.kind)}</span></div>`).join("")}</section>`:`<section class="card small">No upcoming calendar events yet.</section>`;
@@ -637,7 +636,7 @@ window.openClassModal=(id="")=>{
   const existing=id?data.classes.find(c=>c.id===id):null,c=existing?structuredClone(existing):{id:"",name:"",studentIds:[],rules:[{id:uid(),periods:[],days:[1,2,3,4,5]}],terms:["fullYear"]};
   const checks=(items,selected,prefix)=>items.map(([v,label])=>`<label><input type="checkbox" name="${prefix}" value="${v}" ${selected.includes(v)?"checked":""}> ${label}</label>`).join("");
   const rules=(c.rules&&c.rules.length)?c.rules:[{id:uid(),periods:c.periods||[],days:c.days||[1,2,3,4,5]}];
-  document.body.insertAdjacentHTML("beforeend",`<div id="classModal" class="modalbg"><div class="modal classEditor"><h3>${existing?"Edit":"Add"} Class</h3><label>Class Name<br><input id="className" value="${esc(c.name)}" placeholder="e.g., Honors Precalculus" style="width:100%"></label><span class="sectionLabel">When does this class meet?</span><p class="small">Add as many scheduling rules as you need. For example: Period 7 on MTWF, plus Periods 6 and 7 on Thursday.</p><div id="classRules">${rules.map(ruleEditor).join("")}</div><button type="button" onclick="window.addClassRule()">＋ Add Another Scheduling Rule</button><span class="sectionLabel">Course Length</span><p class="small">Choose the part(s) of the year when this class is active. Full Year keeps it active all year.</p><div class="checkGrid">${checks(TERM_OPTIONS,c.terms,"term")}</div><div style="margin-top:16px"><button class="primary" onclick="window.saveClass('${c.id}')">Save Class</button> <button onclick="window.closeClassModal()">Cancel</button></div></div></div>`);
+  document.body.insertAdjacentHTML("beforeend",`<div id="classModal" class="modalbg"><div class="modal classEditor"><h3>${existing?"Edit":"Add"} Class</h3><label>Class Name<br><input id="className" value="${esc(c.name)}" placeholder="e.g., Honors Precalculus" style="width:100%"></label><span class="sectionLabel">When does this class meet?</span><p class="small">Add as many scheduling rules as you need. For example: Period 7 on MTWF, plus Periods 6 and 7 on Thursday.</p><div id="classRules">${rules.map(ruleEditor).join("")}</div><button type="button" onclick="window.addClassRule()">＋ Add Another Scheduling Rule</button><span class="sectionLabel">Course Length</span><p class="small">Choose the part(s) of the year when this class is active. Full Year keeps it active all year.</p><div class="checkGrid">${checks(TERM_OPTIONS,c.terms,"term")}</div><span class="sectionLabel">Students in This Class</span><p class="small">Check the students who belong in this class. You can change this anytime.</p><div class="checkGrid classStudentGrid">${data.students.map(st=>`<label><input type="checkbox" name="classStudent" value="${esc(st.id)}" ${(c.studentIds||[]).includes(st.id)?"checked":""}> ${esc(st.name)}</label>`).join("")||"<span class='small'>Add students on the Students page first.</span>"}</div><div style="margin-top:16px"><button class="primary" onclick="window.saveClass('${c.id}')">Save Class</button> <button onclick="window.closeClassModal()">Cancel</button></div></div></div>`);
 }
 window.addClassRule=()=>{const box=document.querySelector("#classRules");if(!box)return;const i=box.querySelectorAll(".scheduleRule").length;box.insertAdjacentHTML("beforeend",ruleEditor({id:uid(),periods:[],days:[1,2,3,4,5]},i));}
 window.removeClassRule=btn=>{const rules=document.querySelectorAll("#classRules .scheduleRule");if(rules.length<=1){alert("A class needs at least one scheduling rule. You can leave its periods empty if you do not want it to appear automatically.");return;}btn.closest(".scheduleRule")?.remove();document.querySelectorAll("#classRules .scheduleRule").forEach((el,i)=>{const b=el.querySelector("b");if(b)b.textContent=`Scheduling Rule ${i+1}`;});}
@@ -650,13 +649,14 @@ window.saveClass=oldId=>{
   const terms=[...document.querySelectorAll('input[name="term"]:checked')].map(x=>x.value);if(!terms.length){alert("Please choose at least one course length option.");return;}
   if(rules.every(r=>!r.periods.length)&&!confirm("No periods are selected, so this class will not automatically appear on the Live Class page. Save anyway?"))return;
   const old=data.classes.find(c=>c.id===oldId);
-  const item={id:oldId||uid(),name,studentIds:old?.studentIds||[],rules,periods:[...new Set(rules.flatMap(r=>r.periods))],days:[...new Set(rules.flatMap(r=>r.days))],terms};
+  const studentIds=[...document.querySelectorAll('input[name="classStudent"]:checked')].map(x=>x.value);
+  const item={id:oldId||uid(),name,studentIds,rules,periods:[...new Set(rules.flatMap(r=>r.periods))],days:[...new Set(rules.flatMap(r=>r.days))],terms};
   if(oldId){const i=data.classes.findIndex(c=>c.id===oldId);if(i>=0)data.classes[i]=item;}else data.classes.push(item);
   save();window.closeClassModal();render();
 }
 window.deleteClass=id=>{const c=data.classes.find(x=>x.id===id);if(!c)return;if(!confirm(`Delete ${c.name}? This will not delete the students themselves.`))return;data.classes=data.classes.filter(x=>x.id!==id);save();render();}
 window.addClass=()=>window.openClassModal();
-window.roster=(cid,sid,on)=>{const c=data.classes.find(x=>x.id===cid);if(!c)return;c.studentIds=on?[...new Set([...c.studentIds,sid])]:c.studentIds.filter(x=>x!==sid);save()}
+window.roster=(cid,sid,on)=>{const c=data.classes.find(x=>x.id===cid);if(!c)return;c.studentIds=on?[...new Set([...(c.studentIds||[]),sid])]:((c.studentIds||[]).filter(x=>x!==sid));save();toast=on?"Student assigned to class.":"Student removed from class.";render()}
 window.addButton=()=>{const label=$("#qbLabel")?.value.trim();if(label){data.buttons.push({id:uid(),icon:$("#qbIcon")?.value||"⚡",label,type:$("#qbType")?.value||"event"});save();render()}}
 window.deleteButton=id=>{data.buttons=data.buttons.filter(x=>x.id!==id);save();render()}
 window.addCourse=()=>{const name=$("#courseName")?.value.trim();if(name){data.gradeCourses.push({id:uid(),name,components:[],grades:{}});save();render()}}
