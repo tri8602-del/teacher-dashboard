@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Teacher Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Ctext y=%2754%27 font-size=%2758%27%3E🍎%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Ctext y=%2754%27 font-size=%2758%27%3E🍎%3C/text%3E%3C/svg%3E">
 <style>
 *{box-sizing:border-box}
 :root{--nav:#263454;--nav2:#3d4d73;--bg:#f4f6fb;--text:#202532;--muted:#697386;--line:#dce1eb}
@@ -87,7 +89,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.6.10";
+const APP_VERSION="1.6.11";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
