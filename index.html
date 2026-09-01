@@ -82,7 +82,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 .headerUtilities .utilityCard button{white-space:nowrap}
 @media(max-width:760px){.headerRight{justify-content:flex-start}.headerUtilities{width:100%}}
 
-.dayProgress{position:absolute;top:4px;right:4px;font-size:10px;font-weight:800;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:7px;padding:2px 5px;line-height:1.1;z-index:2}.calDay{position:relative}.activeToolCard{position:relative;padding-right:34px!important}.toolClose{position:absolute;right:5px;top:5px;border:0;background:transparent;font-size:17px;line-height:18px;padding:2px 6px;cursor:pointer}.activeToolControls{display:flex;gap:5px;align-items:center;margin-top:5px}.activeToolControls button{font-size:11px;padding:3px 6px}
+.calendarDay,.calendar-cell,.calDay{position:relative}.dayProgress{position:absolute;top:4px;right:4px;font-size:10px;font-weight:800;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:7px;padding:2px 5px;line-height:1.1;z-index:2}.calDay{position:relative}.activeToolCard{position:relative;padding-right:34px!important}.toolClose{position:absolute;right:5px;top:5px;border:0;background:transparent;font-size:17px;line-height:18px;padding:2px 6px;cursor:pointer}.activeToolControls{display:flex;gap:5px;align-items:center;margin-top:5px}.activeToolControls button{font-size:11px;padding:3px 6px}
 .utilityCard{position:relative;min-width:150px}.utilityMenu{position:absolute;right:0;top:calc(100% + 6px);z-index:20;width:310px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 12px 28px #26345425}.utilityMenu[hidden]{display:none}.utilityMenu .toolBlock{border-bottom:1px solid var(--line);padding:9px 0}.utilityMenu .toolBlock:last-child{border-bottom:0}.utilityMenu h4{margin:0 0 7px;font-size:14px}.compactUtilityValue{font-size:18px;font-weight:800;margin-left:4px}.pvaasGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.pvaasCard{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.pvaasTable td,.pvaasTable th{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
 
 
@@ -114,7 +114,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.9.3";
+const APP_VERSION="1.9.4";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -377,13 +377,44 @@ function instructionalResponsibilityDays(cls,studentId){
   }
   return {count,total:178};
 }
+function classEnrollmentPeriods(cls,studentId){
+  cls.enrollmentPeriods=Array.isArray(cls.enrollmentPeriods)?cls.enrollmentPeriods:[];
+  let periods=cls.enrollmentPeriods.filter(p=>p.studentId===studentId);
+  if(!periods.length){
+    periods=[{id:"ep_"+Math.random().toString(36).slice(2),studentId,start:schoolStartDate()||"",end:schoolEndDate()||""}];
+    cls.enrollmentPeriods.push(...periods);
+  }
+  return periods;
+}
+function pvaasDaysForPeriod(start,end){
+  if(!start||!end)return 0; let n=0;
+  for(let d=new Date(start+"T12:00:00");d<=new Date(end+"T12:00:00");d.setDate(d.getDate()+1)){
+    const iso=d.toISOString().slice(0,10);
+    if(isInstructionalOrInServiceDay(iso)&&!isPreStudentInService(iso))n++;
+  } return n;
+}
+function pvaasTotalDays(){
+  const start=schoolStartDate(),end=schoolEndDate(); return start&&end?pvaasDaysForPeriod(start,end):178;
+}
+
 function pvaas(){
   ensureClassFields();
   const classes=data.classes.filter(c=>c.pvaasReported);
-  return `<header><div><h2>PVAAS</h2><p>Track courses reported for PVAAS and each student's instructional responsibility.</p></div></header>
-  <section class="card"><h3>PVAAS Courses</h3><p class="small">Mark whether a course is reported for PVAAS in the course editor. Responsibility is calculated as qualifying days on the roster ÷ 178.</p>${data.classes.map(c=>`<label style="display:block;margin:8px 0"><input type="checkbox" ${c.pvaasReported?"checked":""} onchange="window.setPvaasCourse('${c.id}',this.checked)"> ${esc(c.name)}</label>`).join("")||"<p>No courses yet.</p>"}</section>
-  ${classes.map(cls=>{const students=sortedStudents(data.students.filter(s=>(cls.studentIds||[]).includes(s.id)));return `<section class="card"><h3>${esc(cls.name)}</h3><table class="pvaasTable"><thead><tr><th>Student</th><th>Responsibility Days</th><th>Percentage</th></tr></thead><tbody>${students.map(st=>{const r=instructionalResponsibilityDays(cls,st.id);const pct=r.total?Math.round(r.count/r.total*1000)/10:0;return `<tr><td>${esc(studentDisplayName(st))}</td><td>${r.count} / 178</td><td>${pct}%</td></tr>`}).join("")||"<tr><td colspan='3'>No students.</td></tr>"}</tbody></table></section>`}).join("")}`;}
+  return `<header><div><h2>PVAAS Reporting</h2><p>Enrollment periods determine your instructional responsibility for each student.</p></div></header>
+  <section class="card"><h3>PVAAS Courses</h3><p class="small">Each course can be marked as reported or not reported for PVAAS.</p>
+  ${data.classes.map(c=>`<label style="display:block;margin:8px 0"><input type="checkbox" ${c.pvaasReported?"checked":""} onchange="window.setPvaasCourse('${c.id}',this.checked)"> ${esc(c.name)} — Report to PVAAS</label>`).join("")||"<p>No courses yet.</p>"}</section>
+  ${classes.map(cls=>{const students=sortedStudents(data.students.filter(st=>(cls.studentIds||[]).includes(st.id)));const total=pvaasTotalDays();
+    return `<section class="card"><h3>${esc(cls.name)}</h3><p class="small">Default enrollment runs from the first school day to the last school day. Add another period if a student leaves and later returns.</p>
+    ${students.map(st=>{const periods=classEnrollmentPeriods(cls,st.id);const days=periods.reduce((sum,p)=>sum+pvaasDaysForPeriod(p.start,p.end),0);const pct=total?Math.round(days/total*1000)/10:0;
+      return `<div class="pvaasCard"><h4>${esc(studentDisplayName(st))}</h4>
+      <div id="pvaasPeriods_${cls.id}_${st.id}">${periods.map((p,i)=>`<div class="enrollmentRow"><label>Enroll <input type="date" value="${p.start||""}" onchange="window.updateEnrollmentPeriod('${cls.id}','${p.id}','start',this.value)"></label><label>Unenroll <input type="date" value="${p.end||""}" onchange="window.updateEnrollmentPeriod('${cls.id}','${p.id}','end',this.value)"></label>${periods.length>1?`<button type="button" onclick="window.removeEnrollmentPeriod('${cls.id}','${p.id}')">Remove</button>`:""}</div>`).join("")}</div>
+      <button type="button" onclick="window.addEnrollmentPeriod('${cls.id}','${st.id}')">+ Add Enrollment Period</button>
+      <div class="small" style="margin-top:8px"><b>${days} / ${total} days — ${pct}% responsibility</b></div></div>`;}).join("")||"<p>No students in this class.</p>"}</section>`}).join("")}`;}
 window.setPvaasCourse=(id,value)=>{const c=data.classes.find(x=>x.id===id);if(c){c.pvaasReported=value;save();render();}};
+window.updateEnrollmentPeriod=(classId,periodId,field,value)=>{const c=data.classes.find(x=>x.id===classId);if(!c)return;c.enrollmentPeriods=c.enrollmentPeriods||[];const p=c.enrollmentPeriods.find(x=>x.id===periodId);if(p){p[field]=value;save();render();}};
+window.addEnrollmentPeriod=(classId,studentId)=>{const c=data.classes.find(x=>x.id===classId);if(!c)return;c.enrollmentPeriods=c.enrollmentPeriods||[];c.enrollmentPeriods.push({id:"ep_"+Math.random().toString(36).slice(2),studentId,start:"",end:schoolEndDate()||""});save();render();};
+window.removeEnrollmentPeriod=(classId,periodId)=>{const c=data.classes.find(x=>x.id===classId);if(!c)return;c.enrollmentPeriods=(c.enrollmentPeriods||[]).filter(p=>p.id!==periodId);save();render();};
+
 function render(){
   ensureClassroomTools();
   if(!currentUser){$("#root").innerHTML=loginHTML();return}
@@ -693,14 +724,16 @@ function upcomingCalendarEvents(limit=8){
   return events.sort((a,b)=>a.date.localeCompare(b.date)).slice(0,limit);
 }
 function calendarDayProgress(iso){
-  if(!isInstructionalOrInServiceDay(iso)||isPreStudentInService(iso))return null;
-  const start=schoolStartDate(),end=schoolEndDate();if(!start||!end)return null;
-  let n=0,total=0;
+  const start=schoolStartDate(),end=schoolEndDate();
+  if(!start||!end||iso<start||iso>end)return null;
+  let current=0,total=0;
   for(let d=new Date(start+"T12:00:00");d<=new Date(end+"T12:00:00");d.setDate(d.getDate()+1)){
     const x=d.toISOString().slice(0,10);
-    if(isInstructionalOrInServiceDay(x)&&!isPreStudentInService(x)){total++;if(x<=iso)n++;}
+    if(isInstructionalOrInServiceDay(x)&&!isPreStudentInService(x)){
+      total++; if(x<=iso)current++;
+    }
   }
-  return n?`${n}/${Math.max(0,total-n)}`:null;
+  return current?`${current}/${Math.max(0,total-current)}`:null;
 }
 function calendar(){
   data.calendarSettings??={firstStudentDay:"",lastStudentDay:""};
