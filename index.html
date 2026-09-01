@@ -87,7 +87,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.6.5";
+const APP_VERSION="1.6.6";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -172,11 +172,21 @@ function loadLocalForUser(){
 function saveLocal(){const key=localKey();if(key)localStorage.setItem(key,JSON.stringify(data))}
 function dashboardRef(){return currentUser?doc(db,"users",currentUser.uid,CLOUD_SUBCOLLECTION,CLOUD_DOCUMENT):null}
 function cloudDataPayload(){
-  // Firestore rejects `undefined` anywhere inside nested objects. JSON serialization
-  // also gives us a clean plain-data snapshot for the cloud document.
+  // Keep the dashboard as JSON in Firestore. This avoids Firestore's nested-array
+  // restriction (bell schedule rows are arrays inside an array) and strips undefined.
   const payload=JSON.parse(JSON.stringify(data));
   delete payload.profileAvatar;
-  return payload;
+  return JSON.stringify(payload);
+}
+function cloudRecord(){
+  return {dataJson:cloudDataPayload(),ownerUid:currentUser.uid,updatedAt:new Date().toISOString(),appVersion:APP_VERSION};
+}
+function parseCloudDashboard(record){
+  if(record?.dataJson){
+    try{return JSON.parse(record.dataJson)}catch(err){console.error("Could not parse cloud dashboard:",err)}
+  }
+  // Backward compatibility with older versions that stored a Firestore object.
+  return record?.data||null;
 }
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function formatSync(value){
@@ -196,15 +206,21 @@ async function loadCloudData(){
   data=loadLocalForUser();
   try{
     const snap=await getDoc(dashboardRef());
-    if(snap.exists()&&snap.data()?.data){
-      data={...seed,...snap.data().data,profileAvatar:(loadLocalForUser().profileAvatar||snap.data().data?.profileAvatar||"")}; ensureBellSchedules();
+    // Only the new JSON format is loaded automatically. Older Firestore data may be
+    // stale from before bell schedules were added, so this device's current local data
+    // is preserved and migrated to the new format instead of being overwritten.
+    const cloudDashboard=(snap.exists()&&snap.data()?.dataJson)?parseCloudDashboard(snap.data()):null;
+    if(cloudDashboard){
+      const localAvatar=loadLocalForUser().profileAvatar||"";
+      data={...seed,...cloudDashboard,profileAvatar:localAvatar}; ensureBellSchedules(); ensureClassFields();
       lastSyncAt=snap.data().updatedAt||null;
       cloudStatus="Firebase synced";
       saveLocal();
     }else{
       cloudStatus="Firebase synced";
-      await setDoc(dashboardRef(),{data:cloudDataPayload(),ownerUid:currentUser.uid,updatedAt:new Date().toISOString()},{merge:true});
-      lastSyncAt=new Date().toISOString();
+      const record=cloudRecord();
+      await setDoc(dashboardRef(),record,{merge:true});
+      lastSyncAt=record.updatedAt;
     }
   }catch(err){
     console.error(err);
@@ -232,9 +248,9 @@ async function syncCloud(){
       cloudSavePending=false;
       cloudStatus="Saving to Firebase...";
       render();
-      const now=new Date().toISOString();
-      await setDoc(dashboardRef(),{data:cloudDataPayload(),ownerUid:currentUser.uid,updatedAt:now},{merge:true});
-      lastSyncAt=now;
+      const record=cloudRecord();
+      await setDoc(dashboardRef(),record,{merge:true});
+      lastSyncAt=record.updatedAt;
       cloudStatus="Firebase synced";
     }
   }catch(err){
@@ -428,7 +444,7 @@ function todayISO(){return new Date().toISOString().slice(0,10)}
 function calendarNotesFor(date){return ((data.calendarOverrides||{})[date]||{}).notes||[]}
 
 function academicMarkerHTML(kind,color,index){
-  const defs={nineWeeks:["Q-Beg",`Begin Quarter ${index||""}`],endNineWeeks:["Q-End",`End Quarter ${index||""}`],trimester:["T",`Begin Trimester ${index||""}`],endTrimester:["T✓",`End Trimester ${index||""}`],semester:["S",`Begin Semester ${index||""}`],endSemester:["S✓",`End Semester ${index||""}`]};
+  const defs={nineWeeks:["Q-Beg",`Begin Quarter ${index||""}`],endNineWeeks:["Q-End",`End Quarter ${index||""}`],trimester:["T-Beg",`Begin Trimester ${index||""}`],endTrimester:["T-End",`End Trimester ${index||""}`],semester:["S-Beg",`Begin Semester ${index||""}`],endSemester:["S-End",`End Semester ${index||""}`]};
   const [symbol,title]=defs[kind];
   return `<span class="markerCard" style="color:${color}" title="${title}">${symbol}</span>`;
 }
@@ -475,7 +491,7 @@ function calendar(){
   return `<header><div><h2>School Calendar</h2><p>Set your student year, then only change the exceptions.</p></div></header>
   <section class="card calendarSettings"><div><label>🎒 First Student Day<br><input type="date" value="${esc(firstStudent)}" onchange="window.setCalendarBoundary('firstStudentDay',this.value)"></label></div><div><label>🏁 Last Student Day<br><input type="date" value="${esc(lastStudent)}" onchange="window.setCalendarBoundary('lastStudentDay',this.value)"></label></div><div class="calendarCount"><b>${countedDaysTotal()}</b><span>counted days</span></div></section>${upcomingHTML}
   <section class="card"><div class="calHead"><button onclick="window.changeMonth(-1)">◀</button><h3>${monthLabel}</h3><button onclick="window.changeMonth(1)">▶</button></div><div class="weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div><div class="calendarGrid">${cells}</div></section>
-  <section class="card small"><b>Legend:</b> <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().instructional};background:${hexToRgba(calendarColors().instructional,.11)}"></span> Instructional &nbsp; <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().inservice};background:${hexToRgba(calendarColors().inservice,.11)}"></span> In-Service &nbsp; <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().noschool};background:${hexToRgba(calendarColors().noschool,.11)}"></span> No School &nbsp; <span class="markerCard" style="color:${calendarColors().nineWeeks}">Q-Beg</span> Beginning Nine Weeks &nbsp; <span class="markerCard" style="color:${calendarColors().endNineWeeks}">Q-End</span> End Nine Weeks &nbsp; <span class="markerCard" style="color:${calendarColors().trimester}">T</span> Beginning Trimester &nbsp; <span class="markerCard" style="color:${calendarColors().endTrimester}">T✓</span> End Trimester &nbsp; <span class="markerCard" style="color:${calendarColors().semester}">S</span> Beginning Semester &nbsp; <span class="markerCard" style="color:${calendarColors().endSemester}">S✓</span> End Semester &nbsp; 🎒 First Student Day &nbsp; 🏁 Last Student Day</section>
+  <section class="card small"><b>Legend:</b> <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().instructional};background:${hexToRgba(calendarColors().instructional,.11)}"></span> Instructional &nbsp; <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().inservice};background:${hexToRgba(calendarColors().inservice,.11)}"></span> In-Service &nbsp; <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().noschool};background:${hexToRgba(calendarColors().noschool,.11)}"></span> No School &nbsp; <span class="markerCard" style="color:${calendarColors().nineWeeks}">Q-Beg</span> Beginning Nine Weeks &nbsp; <span class="markerCard" style="color:${calendarColors().endNineWeeks}">Q-End</span> End Nine Weeks &nbsp; <span class="markerCard" style="color:${calendarColors().trimester}">T-Beg</span> Beginning Trimester &nbsp; <span class="markerCard" style="color:${calendarColors().endTrimester}">T-End</span> End Trimester &nbsp; <span class="markerCard" style="color:${calendarColors().semester}">S-Beg</span> Beginning Semester &nbsp; <span class="markerCard" style="color:${calendarColors().endSemester}">S-End</span> End Semester &nbsp; 🎒 First Student Day &nbsp; 🏁 Last Student Day</section>
   <section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h3 style="margin:0">🕐 Bell Schedules</h3><p class="small" style="margin:6px 0 0">Regular is the default for instructional days. Choose a different schedule only when that day is an exception.</p></div><button class="primary" onclick="window.openBellScheduleModal()">＋ Add Custom Schedule</button></div><div class="bellScheduleList">${bellSchedulesList()}</div></section>`;
 }
 function bellSchedulesList(){
