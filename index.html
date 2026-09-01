@@ -86,7 +86,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.6.2";
+const APP_VERSION="1.6.3";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -145,6 +145,8 @@ function ensureClassFields(){
     c.studentIds=Array.isArray(c.studentIds)?c.studentIds:[];
     c.periods=Array.isArray(c.periods)?c.periods:[];
     c.days=Array.isArray(c.days)&&c.days.length?c.days:[1,2,3,4,5];
+    c.rules=Array.isArray(c.rules)&&c.rules.length?c.rules:[{id:"legacy",periods:[...c.periods],days:[...c.days]}];
+    c.rules=c.rules.map((r,i)=>({id:r.id||`rule-${i}`,periods:Array.isArray(r.periods)?r.periods.map(Number):[],days:Array.isArray(r.days)&&r.days.length?r.days.map(Number):[1,2,3,4,5]}));
     c.terms=Array.isArray(c.terms)&&c.terms.length?c.terms:["fullYear"];
   });
 }
@@ -296,16 +298,20 @@ function currentTermCodes(date=todayISO()){
 }
 function classIsActiveToday(c,date=todayISO()){
   const info=getDateInfo(date);if(info.type!=="instructional")return false;
-  const weekday=new Date(date+"T12:00:00").getDay();if(!(c.days||[1,2,3,4,5]).includes(weekday))return false;
   const terms=c.terms||["fullYear"];if(terms.includes("fullYear"))return true;
   const cur=currentTermCodes(date),hasMarkers=cur.q||cur.t||cur.s;
   if(!hasMarkers)return true;
   return terms.includes(`q${cur.q}`)||terms.includes(`t${cur.t}`)||terms.includes(`s${cur.s}`);
 }
+function classHasRuleNow(c,weekday,period){
+  const rules=(c.rules&&c.rules.length)?c.rules:[{periods:c.periods||[],days:c.days||[1,2,3,4,5]}];
+  return rules.some(r=>(r.days||[]).includes(weekday)&&(r.periods||[]).includes(period));
+}
 function currentClass(){
   ensureClassFields();const block=currentScheduleBlock();
   if(!block?.period)return null;
-  return data.classes.find(c=>classIsActiveToday(c)&&c.periods.includes(block.period))||null;
+  const weekday=new Date(todayISO()+"T12:00:00").getDay();
+  return data.classes.find(c=>classIsActiveToday(c)&&classHasRuleNow(c,weekday,block.period))||null;
 }
 function activeEvents(){return data.events.filter(e=>e.type==="timed"&&!e.end)}
 function toastHTML(){return toast?`<div class="toast">${esc(toast)} <button onclick="window.clearToast()">×</button></div>`:""}
@@ -328,12 +334,12 @@ function live(){
 const DAY_NAMES=[[1,"Mon"],[2,"Tue"],[3,"Wed"],[4,"Thu"],[5,"Fri"]];
 const TERM_OPTIONS=[["fullYear","Full Year"],["q1","Quarter 1"],["q2","Quarter 2"],["q3","Quarter 3"],["q4","Quarter 4"],["t1","Trimester 1"],["t2","Trimester 2"],["t3","Trimester 3"],["s1","Semester 1"],["s2","Semester 2"]];
 function classMeta(c){
-  const periodText=(c.periods||[]).length?`Period${c.periods.length>1?"s":""} ${(c.periods||[]).join(", ")}`:"No period assigned";
-  const dayText=DAY_NAMES.filter(([d])=>(c.days||[]).includes(d)).map(([,n])=>n).join(" · ")||"No meeting days";
+  const rules=(c.rules&&c.rules.length)?c.rules:[{periods:c.periods||[],days:c.days||[]}];
+  const ruleText=rules.map(r=>{const ds=DAY_NAMES.filter(([d])=>(r.days||[]).includes(d)).map(([,n])=>n).join("");const ps=(r.periods||[]).join(", ");return `${ds||"No days"}: Period${(r.periods||[]).length===1?"":"s"} ${ps||"—"}`}).join(" | ");
   const termText=(c.terms||["fullYear"]).map(t=>TERM_OPTIONS.find(x=>x[0]===t)?.[1]||t).join(" · ");
-  return `<div class="classMeta"><span>${esc(periodText)}</span><span>${esc(dayText)}</span><span>${esc(termText)}</span></div>`;
+  return `<div class="classMeta"><span>${esc(ruleText)}</span><span>${esc(termText)}</span></div>`;
 }
-function students(){ensureClassFields();return `<header><h2>Students & Classes</h2></header><div class="split"><section class="card"><h3>Students</h3><div class="add"><input id="newStudent" placeholder="Student name"><button onclick="window.addStudent()">Add</button></div>${data.students.map(st=>`<p>${esc(st.name)}</p>`).join("")||"<p>No students yet.</p>"}</section><section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3>Classes</h3><button class="primary" onclick="window.openClassModal()">＋ Add Class</button></div>${data.classes.length?data.classes.map(c=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><b>${esc(c.name)}</b>${classMeta(c)}</div><div><button onclick="window.openClassModal('${c.id}')">Edit</button> <button onclick="window.deleteClass('${c.id}')">Delete</button></div></div><details><summary class="small">Students (${c.studentIds.length})</summary><div style="margin-top:8px">${data.students.map(st=>`<label class="small"><input type="checkbox" ${c.studentIds.includes(st.id)?"checked":""} onchange="window.roster('${c.id}','${st.id}',this.checked)"> ${esc(st.name)}</label><br>`).join("")||"<span class='small'>Add students first.</span>"}</div></details></div>`).join(""):`<div class="classEmpty">No classes yet. Add your first class to get started.</div>`}</section></div>`}
+function students(){ensureClassFields();return `<header><h2>Students & Classes</h2></header><div class="split"><section class="card"><h3>Students</h3><div class="add"><input id="newStudent" placeholder="Student name"><button onclick="window.addStudent()">Add</button></div>${data.students.map(st=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0"><span>${esc(st.name)}</span><button onclick="window.deleteStudent('${st.id}')">Delete</button></div>`).join("")||"<p>No students yet.</p>"}</section><section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3>Classes</h3><button class="primary" onclick="window.openClassModal()">＋ Add Class</button></div>${data.classes.length?data.classes.map(c=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><b>${esc(c.name)}</b>${classMeta(c)}</div><div><button onclick="window.openClassModal('${c.id}')">Edit</button> <button onclick="window.deleteClass('${c.id}')">Delete</button></div></div><details><summary class="small">Students (${c.studentIds.length})</summary><div style="margin-top:8px">${data.students.map(st=>`<label class="small"><input type="checkbox" ${c.studentIds.includes(st.id)?"checked":""} onchange="window.roster('${c.id}','${st.id}',this.checked)"> ${esc(st.name)}</label><br>`).join("")||"<span class='small'>Add students first.</span>"}</div></details></div>`).join(""):`<div class="classEmpty">No classes yet. Add your first class to get started.</div>`}</section></div>`}
 
 function isoAddDays(date,n){const d=new Date(date+"T12:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
 function isWeekday(date){const d=new Date(date+"T12:00:00").getDay();return d!==0&&d!==6}
@@ -562,21 +568,42 @@ window.note=(sid,eid)=>{const student=data.students.find(x=>x.id===sid);if(stude
 window.closeNote=()=>{selected=null;render()}
 window.saveNote=()=>{const text=$("#noteText")?.value.trim();if(text&&selected){data.notes.push({id:uid(),studentId:selected.student.id,eventId:selected.eventId||null,text,created:new Date().toISOString()});save();toast="Note saved.";selected=null;render()}}
 window.addStudent=()=>{const name=$("#newStudent")?.value.trim();if(name){data.students.push({id:uid(),name});save();render()}}
+window.deleteStudent=id=>{
+  const st=data.students.find(x=>x.id===id);if(!st)return;
+  if(!confirm(`Delete ${st.name}? This will remove the student from all classes and permanently delete their events and notes.`))return;
+  data.students=data.students.filter(x=>x.id!==id);
+  data.classes.forEach(c=>c.studentIds=(c.studentIds||[]).filter(sid=>sid!==id));
+  data.events=data.events.filter(e=>e.studentId!==id);
+  data.notes=data.notes.filter(n=>n.studentId!==id);
+  (data.gradeCourses||[]).forEach(c=>{if(c.grades)delete c.grades[id]});
+  save();render();
+}
+function ordinal(n){return `${n}${n===1?"st":n===2?"nd":n===3?"rd":"th"}`}
+function ruleEditor(rule,index){
+  const r=rule||{id:uid(),periods:[],days:[1,2,3,4,5]};
+  const p=Array.from({length:9},(_,i)=>i+1).map(n=>`<label><input type="checkbox" name="rule-period-${index}" value="${n}" ${(r.periods||[]).includes(n)?"checked":""}> ${ordinal(n)} Period</label>`).join("");
+  const d=DAY_NAMES.map(([day,name])=>`<label><input type="checkbox" name="rule-day-${index}" value="${day}" ${(r.days||[]).includes(day)?"checked":""}> ${name}</label>`).join("");
+  return `<div class="card scheduleRule" data-rule-id="${esc(r.id)}"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><b>Scheduling Rule ${index+1}</b><button type="button" onclick="window.removeClassRule(this)">Remove Rule</button></div><span class="sectionLabel">Periods</span><div class="checkGrid">${p}</div><span class="sectionLabel">Meeting Days</span><div class="checkGrid">${d}</div></div>`;
+}
 window.openClassModal=(id="")=>{
   ensureClassFields();document.querySelector("#classModal")?.remove();
-  const existing=id?data.classes.find(c=>c.id===id):null,c=existing?structuredClone(existing):{id:"",name:"",studentIds:[],periods:[],days:[1,2,3,4,5],terms:["fullYear"]};
+  const existing=id?data.classes.find(c=>c.id===id):null,c=existing?structuredClone(existing):{id:"",name:"",studentIds:[],rules:[{id:uid(),periods:[],days:[1,2,3,4,5]}],terms:["fullYear"]};
   const checks=(items,selected,prefix)=>items.map(([v,label])=>`<label><input type="checkbox" name="${prefix}" value="${v}" ${selected.includes(v)?"checked":""}> ${label}</label>`).join("");
-  document.body.insertAdjacentHTML("beforeend",`<div id="classModal" class="modalbg"><div class="modal classEditor"><h3>${existing?"Edit":"Add"} Class</h3><label>Class Name<br><input id="className" value="${esc(c.name)}" placeholder="e.g., Honors Precalculus" style="width:100%"></label><span class="sectionLabel">Periods</span><p class="small">Check the period(s) when this class meets. The Live Class page will use the selected bell schedule to know when to show it.</p><div class="checkGrid">${checks(Array.from({length:9},(_,i)=>[i+1,`${i+1}${i===0?"st":i===1?"nd":i===2?"rd":"th"} Period`]),c.periods.map(String),"period")}</div><span class="sectionLabel">Meeting Days</span><p class="small">Classes default to Monday–Friday. Uncheck days for classes that meet less often.</p><div class="checkGrid">${checks(DAY_NAMES.map(([d,n])=>[d,n]),c.days.map(String),"day")}</div><span class="sectionLabel">Course Length</span><p class="small">Choose the part(s) of the year when this class is active. Full Year keeps it active all year.</p><div class="checkGrid">${checks(TERM_OPTIONS,c.terms,"term")}</div><div style="margin-top:16px"><button class="primary" onclick="window.saveClass('${c.id}')">Save Class</button> <button onclick="window.closeClassModal()">Cancel</button></div></div></div>`);
+  const rules=(c.rules&&c.rules.length)?c.rules:[{id:uid(),periods:c.periods||[],days:c.days||[1,2,3,4,5]}];
+  document.body.insertAdjacentHTML("beforeend",`<div id="classModal" class="modalbg"><div class="modal classEditor"><h3>${existing?"Edit":"Add"} Class</h3><label>Class Name<br><input id="className" value="${esc(c.name)}" placeholder="e.g., Honors Precalculus" style="width:100%"></label><span class="sectionLabel">When does this class meet?</span><p class="small">Add as many scheduling rules as you need. For example: Period 7 on MTWF, plus Periods 6 and 7 on Thursday.</p><div id="classRules">${rules.map(ruleEditor).join("")}</div><button type="button" onclick="window.addClassRule()">＋ Add Another Scheduling Rule</button><span class="sectionLabel">Course Length</span><p class="small">Choose the part(s) of the year when this class is active. Full Year keeps it active all year.</p><div class="checkGrid">${checks(TERM_OPTIONS,c.terms,"term")}</div><div style="margin-top:16px"><button class="primary" onclick="window.saveClass('${c.id}')">Save Class</button> <button onclick="window.closeClassModal()">Cancel</button></div></div></div>`);
 }
+window.addClassRule=()=>{const box=document.querySelector("#classRules");if(!box)return;const i=box.querySelectorAll(".scheduleRule").length;box.insertAdjacentHTML("beforeend",ruleEditor({id:uid(),periods:[],days:[1,2,3,4,5]},i));}
+window.removeClassRule=btn=>{const rules=document.querySelectorAll("#classRules .scheduleRule");if(rules.length<=1){alert("A class needs at least one scheduling rule. You can leave its periods empty if you do not want it to appear automatically.");return;}btn.closest(".scheduleRule")?.remove();document.querySelectorAll("#classRules .scheduleRule").forEach((el,i)=>{const b=el.querySelector("b");if(b)b.textContent=`Scheduling Rule ${i+1}`;});}
 window.closeClassModal=()=>document.querySelector("#classModal")?.remove();
 window.saveClass=oldId=>{
   const name=("#className"&&$("#className")?.value||"").trim();if(!name){alert("Please enter a class name.");return;}
-  const vals=n=>[...document.querySelectorAll(`input[name="${n}"]:checked`)].map(x=>x.value);
-  const periods=vals("period").map(Number),days=vals("day").map(Number),terms=vals("term");
-  if(!periods.length){if(!confirm("No period is selected, so this class will not automatically appear on the Live Class page. Save anyway?"))return;}
-  if(!days.length){alert("Please choose at least one meeting day.");return;}
-  if(!terms.length){alert("Please choose at least one course length option.");return;}
-  const item={id:oldId||uid(),name,studentIds:oldId?(data.classes.find(c=>c.id===oldId)?.studentIds||[]):[],periods,days,terms};
+  const ruleEls=[...document.querySelectorAll("#classRules .scheduleRule")];
+  const rules=ruleEls.map((el,i)=>({id:el.dataset.ruleId||uid(),periods:[...el.querySelectorAll(`input[name^="rule-period-"]:checked`)].map(x=>Number(x.value)),days:[...el.querySelectorAll(`input[name^="rule-day-"]:checked`)].map(x=>Number(x.value))}));
+  if(rules.some(r=>!r.days.length)){alert("Each scheduling rule needs at least one meeting day.");return;}
+  const terms=[...document.querySelectorAll('input[name="term"]:checked')].map(x=>x.value);if(!terms.length){alert("Please choose at least one course length option.");return;}
+  if(rules.every(r=>!r.periods.length)&&!confirm("No periods are selected, so this class will not automatically appear on the Live Class page. Save anyway?"))return;
+  const old=data.classes.find(c=>c.id===oldId);
+  const item={id:oldId||uid(),name,studentIds:old?.studentIds||[],rules,periods:[...new Set(rules.flatMap(r=>r.periods))],days:[...new Set(rules.flatMap(r=>r.days))],terms};
   if(oldId){const i=data.classes.findIndex(c=>c.id===oldId);if(i>=0)data.classes[i]=item;}else data.classes.push(item);
   save();window.closeClassModal();render();
 }
