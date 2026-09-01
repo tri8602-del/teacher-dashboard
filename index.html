@@ -62,6 +62,11 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 .classMeta{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.classMeta span{font-size:11px;background:#f1f4fa;border:1px solid #e0e4ec;border-radius:999px;padding:3px 7px;color:#556070}.classEditor{max-width:720px}.checkGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:7px;margin:8px 0}.checkGrid label{font-size:13px;padding:6px 8px;border:1px solid #e0e4ec;border-radius:8px;background:#fafbfe}.sectionLabel{font-weight:800;margin-top:14px;display:block}.classEmpty{padding:18px;text-align:center;color:#697386}.noActiveClass{padding:26px;text-align:center;color:#697386}.classStatus{font-size:12px;color:#697386;margin-top:4px}
 @media(max-width:750px){aside{width:62px;padding:8px}aside .brand span:last-child{display:none}.brandEmoji{font-size:22px}.nav{font-size:0;text-align:center}.nav:first-letter{font-size:19px}.status,.userCard{display:none}main{padding:14px}.split{grid-template-columns:1fr}.quick span{display:none}}
 @media(max-width:650px){.calDay,.calBlank{min-height:62px}.calDay{padding:4px;font-size:12px}.calMarks{font-size:11px}.weekdays span{font-size:9px}.calendarSettings{align-items:stretch}.calendarCount{margin-left:0}}
+
+<style>
+.studentListCollapsible{display:none;margin-top:12px}.studentListCollapsible.open{display:block}
+.sectionHeader{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+</style>
 </style>
 </head>
 <body>
@@ -89,7 +94,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.6.15";
+const APP_VERSION="1.6.16";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -204,7 +209,8 @@ function avatarHTML(cls="accountAvatar"){
 
 async function loadCloudData(){
   if(!currentUser)return;
-  cloudStatus="Loading your dashboard...";render();
+  cloudStatus="Loading your dashboard...";normalizeStudents();
+render();
   data=loadLocalForUser();
   try{
     const snap=await getDoc(dashboardRef());
@@ -381,7 +387,48 @@ function classMeta(c){
   const termText=(c.terms||["fullYear"]).map(t=>TERM_OPTIONS.find(x=>x[0]===t)?.[1]||t).join(" · ");
   return `<div class="classMeta"><span>${esc(ruleText)}</span><span>${esc(termText)}</span></div>`;
 }
-function students(){ensureClassFields();return `<header><h2>Students & Classes</h2></header><div class="split"><section class="card"><h3>Students</h3><div class="add"><input id="newStudent" placeholder="Student name"><button onclick="window.addStudent()">Add</button></div>${data.students.map(st=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0"><span>${esc(st.name)}</span><span style="white-space:nowrap"><button onclick="window.openStudentModal('${st.id}')">Edit</button> <button onclick="window.deleteStudent('${st.id}')">Delete</button></span></div>`).join("")||"<p>No students yet.</p>"}</section><section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3>Classes</h3><button class="primary" onclick="window.openClassModal()">＋ Add Class</button></div>${data.classes.length?data.classes.map(c=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><b>${esc(c.name)}</b>${classMeta(c)}</div><div><button onclick="window.openClassModal('${c.id}')">Edit</button> <button onclick="window.deleteClass('${c.id}')">Delete</button></div></div><details><summary class="small">Students (${c.studentIds.length})</summary><div style="margin-top:8px">${data.students.map(st=>`<label class="small"><input type="checkbox" ${c.studentIds.includes(st.id)?"checked":""} onchange="window.roster('${c.id}','${st.id}',this.checked)"> ${esc(st.name)}</label><br>`).join("")||"<span class='small'>Add students first.</span>"}</div></details></div>`).join(""):`<div class="classEmpty">No classes yet. Add your first class to get started.</div>`}</section></div>`}
+
+function studentFirstName(s){
+  if(s.firstName!==undefined)return (s.firstName||"").trim();
+  const parts=(s.name||"").trim().split(/\s+/);
+  return parts.shift()||"";
+}
+function studentLastName(s){
+  if(s.lastName!==undefined)return (s.lastName||"").trim();
+  const parts=(s.name||"").trim().split(/\s+/);
+  return parts.join(" ");
+}
+function studentDisplayName(s){
+  const first=studentFirstName(s),last=studentLastName(s);
+  return [first,last].filter(Boolean).join(" ") || s.name || "Unnamed Student";
+}
+function normalizeStudents(){
+  data.students??=[];
+  data.students.forEach(s=>{
+    if(s.firstName===undefined)s.firstName=studentFirstName(s);
+    if(s.lastName===undefined)s.lastName=studentLastName(s);
+    s.name=studentDisplayName(s); // compatibility with older event/report data
+  });
+}
+function sortedStudents(list=data.students){
+  normalizeStudents();
+  return [...list].sort((a,b)=>{
+    const la=studentLastName(a).localeCompare(studentLastName(b),undefined,{sensitivity:"base"});
+    if(la)return la;
+    return studentFirstName(a).localeCompare(studentFirstName(b),undefined,{sensitivity:"base"});
+  });
+}
+
+
+window.toggleStudentsList=()=>{
+  const el=document.querySelector("#studentsListCollapsible");
+  const btn=document.querySelector("#studentsExpandBtn");
+  if(!el)return;
+  el.classList.toggle("open");
+  if(btn)btn.textContent=el.classList.contains("open")?"▼ Collapse":"▶ Expand";
+};
+
+function students(){ensureClassFields();return `<header><h2>Students & Classes</h2></header><div class="split"><section class="card"><h3>Students</h3><div class="add"><input id="newStudent" placeholder="Student name"><button onclick="window.addStudent()">Add</button></div>${sortedStudents(data.students).map(st=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0"><span>${esc(st.name)}</span><span style="white-space:nowrap"><button onclick="window.openStudentModal('${st.id}')">Edit</button> <button onclick="window.deleteStudent('${st.id}')">Delete</button></span></div>`).join("")||"<p>No students yet.</p>"}</section><section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3>Classes</h3><button class="primary" onclick="window.openClassModal()">＋ Add Class</button></div>${data.classes.length?data.classes.map(c=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><b>${esc(c.name)}</b>${classMeta(c)}</div><div><button onclick="window.openClassModal('${c.id}')">Edit</button> <button onclick="window.deleteClass('${c.id}')">Delete</button></div></div><details><summary class="small">Students (${c.studentIds.length})</summary><div style="margin-top:8px">${sortedStudents(data.students).map(st=>`<label class="small"><input type="checkbox" ${c.studentIds.includes(st.id)?"checked":""} onchange="window.roster('${c.id}','${st.id}',this.checked)"> ${esc(st.name)}</label><br>`).join("")||"<span class='small'>Add students first.</span>"}</div></details></div>`).join(""):`<div class="classEmpty">No classes yet. Add your first class to get started.</div>`}</section></div>`}
 
 function isoAddDays(date,n){const d=new Date(date+"T12:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
 function isWeekday(date){const d=new Date(date+"T12:00:00").getDay();return d!==0&&d!==6}
@@ -601,7 +648,7 @@ window.saveDateDetails=date=>{
 
 function quickButtons(){return `<header><h2>Quick Buttons</h2><p class="small">Use ↑ and ↓ to control the order shown on the Live Class page. Edit a button any time to change its name, icon, or event type.</p></header><section class="card"><h3>Current Buttons</h3>${data.buttons.map((b,i)=>`<p style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="min-width:210px">${b.icon} <b>${esc(b.label)}</b> <span class="small">(${esc(b.type==="timed"?"Timed / Out of Class":"Event")})</span></span><button onclick="window.moveButton('${b.id}',-1)" ${i===0?"disabled":""}>↑</button><button onclick="window.moveButton('${b.id}',1)" ${i===data.buttons.length-1?"disabled":""}>↓</button><button onclick="window.openButtonModal('${b.id}')">Edit</button><button onclick="window.deleteButton('${b.id}')">Delete</button></p>`).join("")}<hr><div class="add"><input id="qbIcon" placeholder="Emoji" value="⚡" style="width:80px"><input id="qbLabel" placeholder="Button label"><select id="qbType"><option value="event">Event</option><option value="timed">Timed / Out of Class</option></select><button class="primary" onclick="window.addButton()">Add button</button></div></section>`}
 
-function grades(){return `<header><h2>Grades</h2></header><section class="card"><div class="add"><input id="courseName" placeholder="Course name"><button class="primary" onclick="window.addCourse()">Add course</button></div></section>${data.gradeCourses.map(c=>`<section class="card"><h3>${esc(c.name)}</h3><div class="add"><input id="comp-${c.id}" placeholder="Component"><input id="weight-${c.id}" type="number" placeholder="Weight %" style="width:120px"><button onclick="window.addComponent('${c.id}')">Add component</button></div>${c.components.length?`<table><thead><tr><th>Student</th>${c.components.map(co=>`<th>${esc(co.name)} (${co.weight}%)</th>`).join("")}</tr></thead><tbody>${data.students.map(s=>`<tr><td>${esc(s.name)}</td>${c.components.map(co=>`<td><input class="grade" value="${esc(c.grades?.[s.id]?.[co.id]??"")}" onchange="window.setGrade('${c.id}','${s.id}','${co.id}',this.value)"></td>`).join("")}</tr>`).join("")}</tbody></table>`:"<p class='small'>Add grading components to begin.</p>"}</section>`).join("")}`}
+function grades(){return `<header><h2>Grades</h2></header><section class="card"><div class="add"><input id="courseName" placeholder="Course name"><button class="primary" onclick="window.addCourse()">Add course</button></div></section>${data.gradeCourses.map(c=>`<section class="card"><h3>${esc(c.name)}</h3><div class="add"><input id="comp-${c.id}" placeholder="Component"><input id="weight-${c.id}" type="number" placeholder="Weight %" style="width:120px"><button onclick="window.addComponent('${c.id}')">Add component</button></div>${c.components.length?`<table><thead><tr><th>Student</th>${c.components.map(co=>`<th>${esc(co.name)} (${co.weight}%)</th>`).join("")}</tr></thead><tbody>${sortedStudents(data.students).map(s=>`<tr><td>${esc(s.name)}</td>${c.components.map(co=>`<td><input class="grade" value="${esc(c.grades?.[s.id]?.[co.id]??"")}" onchange="window.setGrade('${c.id}','${s.id}','${co.id}',this.value)"></td>`).join("")}</tr>`).join("")}</tbody></table>`:"<p class='small'>Add grading components to begin.</p>"}</section>`).join("")}`}
 
 function reports(){
   // Report state is kept separately from the page data so changing a selector
@@ -682,7 +729,7 @@ window.saveNote=()=>{const text=$("#noteText")?.value.trim();if(!selected)return
 window.openEventModal=id=>{
   document.querySelector("#eventModal")?.remove();
   const e=data.events.find(x=>x.id===id);if(!e)return;
-  const studentOptions=data.students.map(st=>`<option value="${esc(st.id)}" ${st.id===e.studentId?"selected":""}>${esc(st.name)}</option>`).join("");
+  const studentOptions=sortedStudents(data.students).map(st=>`<option value="${esc(st.id)}" ${st.id===e.studentId?"selected":""}>${esc(st.name)}</option>`).join("");
   const classOptions=data.classes.map(c=>`<option value="${esc(c.id)}" ${c.id===e.classId?"selected":""}>${esc(c.name)}</option>`).join("");
   const buttonOptions=data.buttons.map(b=>`<option value="${esc(b.id)}" ${b.id===e.buttonId?"selected":""}>${b.icon} ${esc(b.label)} (${b.type==="timed"?"Out of Room":"Event"})</option>`).join("");
   document.body.insertAdjacentHTML("beforeend",`<div id="eventModal" class="modalbg"><div class="modal"><h3>Edit Event</h3>
@@ -774,7 +821,7 @@ window.openClassModal=(id="")=>{
   const existing=id?data.classes.find(c=>c.id===id):null,c=existing?structuredClone(existing):{id:"",name:"",studentIds:[],rules:[{id:uid(),periods:[],days:[1,2,3,4,5]}],terms:["fullYear"]};
   const checks=(items,selected,prefix)=>items.map(([v,label])=>`<label><input type="checkbox" name="${prefix}" value="${v}" ${selected.includes(v)?"checked":""}> ${label}</label>`).join("");
   const rules=(c.rules&&c.rules.length)?c.rules:[{id:uid(),periods:c.periods||[],days:c.days||[1,2,3,4,5]}];
-  document.body.insertAdjacentHTML("beforeend",`<div id="classModal" class="modalbg"><div class="modal classEditor"><h3>${existing?"Edit":"Add"} Class</h3><label>Class Name<br><input id="className" value="${esc(c.name)}" placeholder="e.g., Honors Precalculus" style="width:100%"></label><span class="sectionLabel">When does this class meet?</span><p class="small">Add as many scheduling rules as you need. For example: Period 7 on MTWF, plus Periods 6 and 7 on Thursday.</p><div id="classRules">${rules.map(ruleEditor).join("")}</div><button type="button" onclick="window.addClassRule()">＋ Add Another Scheduling Rule</button><span class="sectionLabel">Course Length</span><p class="small">Choose the part(s) of the year when this class is active. Full Year keeps it active all year.</p><div class="checkGrid">${checks(TERM_OPTIONS,c.terms,"term")}</div><span class="sectionLabel">Students in This Class</span><p class="small">Check the students who belong in this class, or add a new student without leaving this screen.</p><div class="add" style="margin:8px 0"><input id="newStudentInClassModal" placeholder="New student name"><button type="button" onclick="window.addStudentFromClassModal()">＋ Add Student</button></div><div id="classStudentGrid" class="checkGrid classStudentGrid">${data.students.map(st=>`<label><input type="checkbox" name="classStudent" value="${esc(st.id)}" ${(c.studentIds||[]).includes(st.id)?"checked":""}> ${esc(st.name)}</label>`).join("")||"<span class='small emptyStudents'>No students yet.</span>"}</div><div style="margin-top:16px"><button class="primary" onclick="window.saveClass('${c.id}')">Save Class</button> <button onclick="window.closeClassModal()">Cancel</button></div></div></div>`);
+  document.body.insertAdjacentHTML("beforeend",`<div id="classModal" class="modalbg"><div class="modal classEditor"><h3>${existing?"Edit":"Add"} Class</h3><label>Class Name<br><input id="className" value="${esc(c.name)}" placeholder="e.g., Honors Precalculus" style="width:100%"></label><span class="sectionLabel">When does this class meet?</span><p class="small">Add as many scheduling rules as you need. For example: Period 7 on MTWF, plus Periods 6 and 7 on Thursday.</p><div id="classRules">${rules.map(ruleEditor).join("")}</div><button type="button" onclick="window.addClassRule()">＋ Add Another Scheduling Rule</button><span class="sectionLabel">Course Length</span><p class="small">Choose the part(s) of the year when this class is active. Full Year keeps it active all year.</p><div class="checkGrid">${checks(TERM_OPTIONS,c.terms,"term")}</div><span class="sectionLabel">Students in This Class</span><p class="small">Check the students who belong in this class, or add a new student without leaving this screen.</p><div class="add" style="margin:8px 0"><input id="newStudentInClassModal" placeholder="New student name"><button type="button" onclick="window.addStudentFromClassModal()">＋ Add Student</button></div><div id="classStudentGrid" class="checkGrid classStudentGrid">${sortedStudents(data.students).map(st=>`<label><input type="checkbox" name="classStudent" value="${esc(st.id)}" ${(c.studentIds||[]).includes(st.id)?"checked":""}> ${esc(st.name)}</label>`).join("")||"<span class='small emptyStudents'>No students yet.</span>"}</div><div style="margin-top:16px"><button class="primary" onclick="window.saveClass('${c.id}')">Save Class</button> <button onclick="window.closeClassModal()">Cancel</button></div></div></div>`);
 }
 window.addClassRule=()=>{const box=document.querySelector("#classRules");if(!box)return;const i=box.querySelectorAll(".scheduleRule").length;box.insertAdjacentHTML("beforeend",ruleEditor({id:uid(),periods:[],days:[1,2,3,4,5]},i));}
 window.removeClassRule=btn=>{const rules=document.querySelectorAll("#classRules .scheduleRule");if(rules.length<=1){alert("A class needs at least one scheduling rule. You can leave its periods empty if you do not want it to appear automatically.");return;}btn.closest(".scheduleRule")?.remove();document.querySelectorAll("#classRules .scheduleRule").forEach((el,i)=>{const b=el.querySelector("b");if(b)b.textContent=`Scheduling Rule ${i+1}`;});}
