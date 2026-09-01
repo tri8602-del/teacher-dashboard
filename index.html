@@ -46,7 +46,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 .calBlank{min-height:82px}.calDay{min-height:82px;text-align:left;padding:7px;display:flex;flex-direction:column;align-items:flex-start;border:1px solid #e0e4ec;border-left:4px solid var(--cal-color,#e0e4ec);background:var(--cal-bg,#fff)}
 .calDay.outside{background:#f7f8fa;color:#a1a8b5;border-left-color:#e0e4ec}.calDay.today{outline:2px solid var(--nav)}
 .dayNum{font-size:10px;color:var(--muted);margin-top:2px}.calMarks{font-size:14px;margin-top:auto;line-height:1.3}.calMark{font-weight:800;margin-right:3px}.calNote{font-size:11px;margin-top:3px;color:#556070}.colorGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.colorGrid label{font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px}.colorGrid input[type=color]{width:46px;height:32px;padding:2px}.todayNotes{border-left:4px solid #4c79c6}.todayNotes h3{margin-bottom:8px}.todayNotes ul{margin:8px 0 0;padding-left:22px}.todayNotes li{margin:6px 0}
-.altScheduleTag{font-size:10px;font-weight:700;margin-top:auto;padding:2px 6px;border-radius:999px;background:#fff9;border:1px solid #00000012;color:inherit}.calEventTag{font-size:10px;font-weight:700;margin-top:4px;line-height:1.2}
+.altScheduleTag{font-size:10px;font-weight:700;margin-top:auto;padding:2px 6px;border-radius:999px;background:#fff9;border:1px solid #00000012;color:inherit}.bellScheduleList{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:16px}.bellScheduleCard{border:1px solid #e0e4ec;border-radius:12px;padding:12px;background:#fff}.bellScheduleCard h4{margin:0 0 5px}.bellScheduleCard p{margin:0 0 10px}.scheduleTable{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}.scheduleTable th,.scheduleTable td{border-bottom:1px solid #e5e8ee;padding:7px;text-align:left}.scheduleTable input{width:100%;box-sizing:border-box}.scheduleActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.scheduleEditor{max-width:760px}.scheduleRows{max-height:48vh;overflow:auto;border:1px solid #e0e4ec;border-radius:10px;padding:8px}.scheduleRow{display:grid;grid-template-columns:1.8fr 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px}.scheduleRow input{min-width:0}.scheduleRow button{padding:7px 9px}.scheduleMeta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.scheduleMeta input{flex:1;min-width:180px}@media(max-width:620px){.scheduleRow{grid-template-columns:1fr 1fr 1fr}.scheduleRow input:first-child{grid-column:1/-1}.scheduleRow button{grid-column:3}}.calEventTag{font-size:10px;font-weight:700;margin-top:4px;line-height:1.2}
 .appFooter{margin-top:32px;padding:14px 0 4px;text-align:center;color:#98a1b2;font-size:10px}
 .viewToggle{display:flex;gap:4px;justify-content:flex-end;margin-bottom:8px}.viewToggle button{font-size:13px}.viewToggle .activeView{background:var(--nav);color:#fff;border-color:var(--nav)}
 .matrixWrap{background:#fff;border-radius:12px;box-shadow:0 2px 8px #0000000c;overflow:auto;max-height:calc(100vh - 190px)}
@@ -85,7 +85,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.5.3";
+const APP_VERSION="1.6.0";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -106,7 +106,19 @@ const seed={
  calendarSettings:{firstStudentDay:"",lastStudentDay:""},
  calendarOverrides:{},
  calendarColors:{instructional:"#4f9d69",inservice:"#8b6bb8",noschool:"#cf5f5f",nineWeeks:"#d59627",endNineWeeks:"#c77b20",trimester:"#3f7fc0",endTrimester:"#2f679e",semester:"#6c63a8",endSemester:"#514a8a",alternateSchedule:"#b05c8a",note:"#556070"},
- calendarViewDate:new Date().toISOString().slice(0,7)
+ calendarViewDate:new Date().toISOString().slice(0,7),
+ bellSchedules:[
+  {id:"regular",name:"Regular Bell Schedule",kind:"regular",periods:[
+   ["Breakfast","7:45","8:00"],["1st Period","8:00","8:40"],["2nd Period","8:43","9:23"],["3rd Period","9:26","10:06"],["4th Period","10:09","10:49"],["5th Period (HS Lunch)","10:52","11:32"],["6th Period (MS Lunch / PLT)","11:35","12:15"],["7th Period","12:18","12:58"],["8th Period","1:01","1:41"],["9th Period","1:44","2:24"],["Flex","2:27","2:47"]]},
+  {id:"delay2",name:"2 Hour Delay",kind:"alternate",periods:[
+   ["Breakfast","9:45","10:00"],["1st Period","10:00","10:29"],["2nd Period","10:32","11:01"],["3rd Period","11:04","11:33"],["4th Period","11:36","12:05"],["5th Period (HS Lunch)","12:08","12:38"],["6th Period (MS Lunch / PLT)","12:41","1:11"],["7th Period","1:14","1:43"],["8th Period","1:46","2:15"],["9th Period","2:18","2:47"],["Flex","2:47","3:15"]]},
+  {id:"early2",name:"2 Hour Early Dismissal",kind:"alternate",periods:[
+   ["Breakfast","7:45","8:00"],["1st Period","8:00","8:36"],["2nd Period","8:39","9:15"],["3rd Period","9:18","9:54"],["4th Period","9:57","10:33"],["5th Period (HS Lunch)","10:36","11:12"],["6th Period (MS Lunch / PLT)","11:15","11:51"],["7th Period","11:54","12:30"]]},
+  {id:"early3",name:"3 Hour Early Dismissal",kind:"alternate",periods:[
+   ["Breakfast","7:45","8:00"],["1st Period","8:00","8:30"],["2nd Period","8:33","9:03"],["3rd Period","9:06","9:36"],["4th Period","9:39","10:09"],["5th Period (HS Lunch)","10:12","10:52"],["6th Period (MS Lunch / PLT)","10:55","11:35"]]},
+  {id:"peprally",name:"Pep Rally",kind:"alternate",periods:[
+   ["Breakfast","7:45","8:00"],["1st Period","8:00","8:37"],["2nd Period","8:40","9:17"],["3rd Period","9:20","9:57"],["4th Period","10:00","10:37"],["5th Period (HS Lunch)","10:40","11:17"],["6th Period (MS Lunch / PLT)","11:20","11:57"],["7th Period","12:00","12:37"],["8th Period","12:40","1:17"],["9th Period","1:20","1:57"],["Pep Rally","2:00","2:47"]]}
+ ]
 };
 
 let data=structuredClone(seed);
@@ -117,10 +129,32 @@ let cloudSaveTimer=null,cloudWriteInProgress=false,cloudSavePending=false;
 let authBusy=false,loginError="",initializedUserData=false,toast="";
 
 function localKey(){return currentUser?LOCAL_PREFIX+currentUser.uid:null}
+function defaultBellSchedules(){
+  return structuredClone(seed.bellSchedules||[]);
+}
+function ensureBellSchedules(){
+  if(!Array.isArray(data.bellSchedules)||!data.bellSchedules.length)data.bellSchedules=defaultBellSchedules();
+  if(!data.bellSchedules.some(s=>s.id==="regular")){
+    data.bellSchedules.unshift(defaultBellSchedules().find(s=>s.id==="regular"));
+  }
+}
+function bellScheduleById(id){
+  ensureBellSchedules();
+  return data.bellSchedules.find(s=>s.id===id)||data.bellSchedules.find(s=>s.id==="regular");
+}
+function bellScheduleName(id){
+  const s=bellScheduleById(id);
+  return s?.name||"Regular Bell Schedule";
+}
+function bellScheduleOptions(selectedId){
+  ensureBellSchedules();
+  const none=`<option value="" ${!selectedId?"selected":""}>No Bell Schedule</option>`;
+  return none+data.bellSchedules.map(s=>`<option value="${esc(s.id)}" ${s.id===selectedId?"selected":""}>${esc(s.name)}${s.id==="regular"?" (Default)":""}</option>`).join("");
+}
 function loadLocalForUser(){
   const key=localKey();
   if(!key)return structuredClone(seed);
-  try{return {...seed,...JSON.parse(localStorage.getItem(key)||"{}")}}catch{return structuredClone(seed)}
+  try{const loaded={...seed,...JSON.parse(localStorage.getItem(key)||"{}")}; if(!Array.isArray(loaded.bellSchedules)||!loaded.bellSchedules.length)loaded.bellSchedules=defaultBellSchedules(); return loaded}catch{return structuredClone(seed)}
 }
 function saveLocal(){const key=localKey();if(key)localStorage.setItem(key,JSON.stringify(data))}
 function dashboardRef(){return currentUser?doc(db,"users",currentUser.uid,CLOUD_SUBCOLLECTION,CLOUD_DOCUMENT):null}
@@ -143,7 +177,7 @@ async function loadCloudData(){
   try{
     const snap=await getDoc(dashboardRef());
     if(snap.exists()&&snap.data()?.data){
-      data={...seed,...snap.data().data};
+      data={...seed,...snap.data().data}; ensureBellSchedules();
       lastSyncAt=snap.data().updatedAt||null;
       cloudStatus="Firebase synced";
       saveLocal();
@@ -266,7 +300,10 @@ function getDateInfo(date){
     trimester:!!o.trimester,endTrimester:!!o.endTrimester,
     semester:!!o.semester,endSemester:!!o.endSemester
   };
-  const schedule=o.schedule!==undefined?o.schedule:(type==="instructional"?"regular":"");
+  let schedule=o.schedule!==undefined?o.schedule:(type==="instructional"?"regular":"");
+  if(schedule==="alternate")schedule="regular";
+  ensureBellSchedules();
+  if(schedule&&!data.bellSchedules.some(s=>s.id===schedule))schedule="regular";
   return {type,counted,markers,schedule,countedDay:counted?countedDaysBefore(date):0};
 }
 function countedDaysBefore(date){
@@ -312,7 +349,7 @@ function calendarAppearance(date,info){
   // Alternate schedules get visual priority because they are the exception
   // that changes how an otherwise instructional day runs.
   let key="";
-  if(info.schedule==="alternate") key="alternateSchedule";
+  if(info.schedule&&info.schedule!=="regular") key="alternateSchedule";
   else if(["instructional","inservice","noschool"].includes(info.type)) key=info.type;
   if(!key)return {color:"#e0e4ec",background:"#f7f8fa"};
   const color=eventColor(date,key);
@@ -342,15 +379,58 @@ function calendar(){
     if(date===firstStudent)marks.push("🎒");
     if(date===lastStudent)marks.push("🏁");
     if(notes.length)marks.push(`<span class="calMark" style="color:${eventColor(date,"note")}" title="${notes.length} note${notes.length===1?"":"s"}">📝</span>`);
-    const altTag=info.schedule==="alternate"?`<span class="altScheduleTag">Alternate Bell Schedule</span>`:"";
+    const altTag=info.schedule&&info.schedule!=="regular"?`<span class="altScheduleTag">${esc(bellScheduleName(info.schedule))}</span>`:"";
     const dayStyle=`--cal-color:${appearance.color};--cal-bg:${appearance.background};`;
     cells+=`<button class="calDay ${info.type} ${info.schedule==="alternate"?"alternate":""} ${date===todayISO()?"today":""}" style="${dayStyle}" onclick="window.editDate('${date}')"><b>${d}</b>${info.countedDay?`<span class="dayNum">Day ${info.countedDay}</span>`:""}${altTag}<span class="calMarks">${marks.join("")}</span>${notes.length?`<span class="calNote">${notes.length} note${notes.length===1?"":"s"}</span>`:""}</button>`;
   }
   return `<header><div><h2>School Calendar</h2><p>Set your student year, then only change the exceptions.</p></div></header>
-  <section class="card calendarSettings"><div><label>🎒 First Student Day<br><input type="date" value="${esc(firstStudent)}" onchange="window.setCalendarBoundary('firstStudentDay',this.value)"></label></div><div><label>🏁 Last Student Day<br><input type="date" value="${esc(lastStudent)}" onchange="window.setCalendarBoundary('lastStudentDay',this.value)"></label></div><div class="calendarCount"><b>${countedDaysTotal()}</b><span>counted days</span></div></section>
+  <section class="card calendarSettings"><div><label>🎒 First Student Day<br><input type="date" value="${esc(firstStudent)}" onchange="window.setCalendarBoundary('firstStudentDay',this.value)"></label></div><div><label>🏁 Last Student Day<br><input type="date" value="${esc(lastStudent)}" onchange="window.setCalendarBoundary('lastStudentDay',this.value)"></label></div><div class="calendarCount"><b>${countedDaysTotal()}</b><span>counted days</span></div></section><section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h3 style="margin:0">🕐 Bell Schedules</h3><p class="small" style="margin:6px 0 0">Regular is the default for instructional days. Choose a different schedule only when that day is an exception.</p></div><button class="primary" onclick="window.openBellScheduleModal()">＋ Add Custom Schedule</button></div><div class="bellScheduleList">${bellSchedulesList()}</div></section>
   <section class="card"><div class="calHead"><button onclick="window.changeMonth(-1)">◀</button><h3>${monthLabel}</h3><button onclick="window.changeMonth(1)">▶</button></div><div class="weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div><div class="calendarGrid">${cells}</div></section>
   <section class="card small"><b>Legend:</b> <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().instructional};background:${hexToRgba(calendarColors().instructional,.11)}"></span> Instructional (counts + regular schedule) &nbsp; <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().inservice};background:${hexToRgba(calendarColors().inservice,.11)}"></span> In-Service (counts) &nbsp; <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().noschool};background:${hexToRgba(calendarColors().noschool,.11)}"></span> No School &nbsp; <span style="display:inline-block;width:10px;height:10px;border-left:4px solid ${calendarColors().alternateSchedule};background:${hexToRgba(calendarColors().alternateSchedule,.11)}"></span> Alternate Bell Schedule<br><br><span style="color:${calendarColors().nineWeeks}">⅟₉</span> Beginning of Nine Weeks &nbsp; <span style="color:${calendarColors().endNineWeeks}">⅟₉</span> End of Nine Weeks &nbsp; <span style="color:${calendarColors().trimester}">⅓</span> Beginning of Trimester &nbsp; <span style="color:${calendarColors().endTrimester}">⅓</span> End of Trimester &nbsp; <span style="color:${calendarColors().semester}">½</span> Beginning of Semester &nbsp; <span style="color:${calendarColors().endSemester}">½</span> End of Semester &nbsp; 🎒 First Student Day &nbsp; 🏁 Last Student Day &nbsp; 📝 Notes</section>`;
 }
+function bellSchedulesList(){
+  ensureBellSchedules();
+  return data.bellSchedules.map(s=>`<div class="bellScheduleCard"><h4>${esc(s.name)}</h4><p class="small">${s.id==="regular"?"Default for instructional days":`${s.periods.length} scheduled block${s.periods.length===1?"":"s"}`}</p><div class="scheduleActions"><button onclick="window.openBellScheduleModal('${s.id}')">Edit</button>${s.id==="regular"?"":`<button onclick="window.deleteBellSchedule('${s.id}')">Delete</button>`}</div></div>`).join("");
+}
+window.openBellScheduleModal=(id="")=>{
+  ensureBellSchedules();
+  document.querySelector("#bellModal")?.remove();
+  const existing=id?structuredClone(bellScheduleById(id)):null;
+  const schedule=existing||{id:"",name:"Custom Bell Schedule",kind:"alternate",periods:[["Breakfast","",""],["1st Period","",""]]};
+  const rows=schedule.periods.map((p,i)=>`<div class="scheduleRow" data-row="${i}"><input placeholder="Period / block name" value="${esc(p[0])}"><input placeholder="Begins" value="${esc(p[1])}"><input placeholder="Ends" value="${esc(p[2])}"><button type="button" onclick="this.closest('.scheduleRow').remove()">✕</button></div>`).join("");
+  document.body.insertAdjacentHTML("beforeend",`<div id="bellModal" class="modalbg"><div class="modal scheduleEditor"><h3>🕐 ${existing?"Edit":"Add"} Bell Schedule</h3><div class="scheduleMeta"><label style="flex:1">Schedule Name<br><input id="bellName" value="${esc(schedule.name)}" placeholder="e.g., Assembly Schedule"></label></div><p class="small">${schedule.id==="regular"?"This is your default schedule for instructional days.":'This can be assigned to individual dates on the calendar.'}</p><div class="scheduleRows" id="scheduleRows">${rows}</div><p><button type="button" onclick="window.addBellScheduleRow()">＋ Add Period / Block</button></p><div style="margin-top:16px"><button class="primary" onclick="window.saveBellSchedule('${esc(schedule.id)}')">Save Schedule</button> <button onclick="window.closeBellScheduleModal()">Cancel</button></div></div></div>`);
+}
+window.addBellScheduleRow=()=>{
+  const rows=document.querySelector("#scheduleRows"); if(!rows)return;
+  const i=rows.querySelectorAll(".scheduleRow").length;
+  rows.insertAdjacentHTML("beforeend",`<div class="scheduleRow" data-row="${i}"><input placeholder="Period / block name"><input placeholder="Begins"><input placeholder="Ends"><button type="button" onclick="this.closest('.scheduleRow').remove()">✕</button></div>`);
+}
+window.closeBellScheduleModal=()=>document.querySelector("#bellModal")?.remove();
+window.saveBellSchedule=oldId=>{
+  ensureBellSchedules();
+  const name=($("#bellName").value||"").trim()||"Custom Bell Schedule";
+  const periods=[...document.querySelectorAll("#scheduleRows .scheduleRow")].map(row=>[...row.querySelectorAll("input")].map(i=>i.value.trim())).filter(p=>p.some(Boolean));
+  if(!periods.length){alert("Please add at least one period or block.");return;}
+  if(oldId){
+    const s=data.bellSchedules.find(x=>x.id===oldId);
+    if(s){s.name=name;s.periods=periods;}
+  }else{
+    let id="schedule-"+Date.now().toString(36);
+    while(data.bellSchedules.some(s=>s.id===id))id+="x";
+    data.bellSchedules.push({id,name,kind:"alternate",periods});
+  }
+  save();window.closeBellScheduleModal();render();
+}
+window.deleteBellSchedule=id=>{
+  ensureBellSchedules();
+  const s=data.bellSchedules.find(x=>x.id===id);
+  if(!s||id==="regular")return;
+  if(!confirm(`Delete "${s.name}"? Dates using it will return to the Regular Bell Schedule.`))return;
+  data.bellSchedules=data.bellSchedules.filter(x=>x.id!==id);
+  Object.values(data.calendarOverrides||{}).forEach(o=>{if(o.schedule===id)o.schedule="regular"});
+  save();render();
+}
+
 window.changeMonth=n=>{
   const [y,m]=(data.calendarViewDate||new Date().toISOString().slice(0,7)).split("-").map(Number);
   data.calendarViewDate=new Date(y,m-1+n,1).toISOString().slice(0,7);
@@ -370,7 +450,7 @@ function renderCalendarModal(){
   const options=`<option value="instructional" ${info.type==="instructional"?"selected":""}>Instructional Day</option><option value="inservice" ${info.type==="inservice"?"selected":""}>In-Service Day</option><option value="noschool" ${info.type==="noschool"?"selected":""}>No School / Vacation</option><option value="outside" ${info.type==="outside"?"selected":""}>Outside Student Year</option>`;
   const notes=(o.notes||[]).join("\n");
   const colorRow=(key,label)=>`<label>${label}<br><input id="color-${key}" type="color" value="${eventColor(date,key)}"><select id="scope-${key}"><option value="this">This event only</option><option value="all">All ${label} events</option></select></label>`;
-  document.body.insertAdjacentHTML("beforeend",`<div id="calModal" class="modalbg"><div class="modal"><h3>🗓️ ${label}</h3><label>Day Type<br><select id="calType">${options}</select></label><p class="small">Weekdays between the first and last student day automatically count as instructional days unless you change them. In-service days count too.</p><hr><b>Academic Markers</b><p><label><input id="markNine" type="checkbox" ${o.nineWeeks?"checked":""}> Beginning of Nine Weeks</label><br><label><input id="markEndNine" type="checkbox" ${o.endNineWeeks?"checked":""}> End of Nine Weeks</label><br><label><input id="markTri" type="checkbox" ${o.trimester?"checked":""}> Beginning of Trimester</label><br><label><input id="markEndTri" type="checkbox" ${o.endTrimester?"checked":""}> End of Trimester</label><br><label><input id="markSem" type="checkbox" ${o.semester?"checked":""}> Beginning of Semester</label><br><label><input id="markEndSem" type="checkbox" ${o.endSemester?"checked":""}> End of Semester</label></p><hr><b>Calendar Colors</b><p class="small">These colors control the calendar appearance. Day types and alternate schedules use the color for a light background shade and the left stripe. Markers keep their colored symbol.</p><p class="small">For each item, choose whether the color changes only this date or becomes the default for every event of that type.</p><div class="colorGrid">${colorRow("instructional","Instructional")} ${colorRow("inservice","In-Service")} ${colorRow("noschool","No School")} ${colorRow("nineWeeks","Beginning Nine Weeks")} ${colorRow("endNineWeeks","End Nine Weeks")} ${colorRow("trimester","Beginning Trimester")} ${colorRow("endTrimester","End Trimester")} ${colorRow("semester","Beginning Semester")} ${colorRow("endSemester","End Semester")} ${colorRow("alternateSchedule","Alternate Schedule")} ${colorRow("note","Notes")}</div><hr><label>Bell Schedule<br><select id="calSchedule"><option value="">None / Default</option><option value="regular" ${info.schedule==="regular"?"selected":""}>Regular Bell Schedule</option><option value="alternate" ${info.schedule==="alternate"?"selected":""}>Alternate Bell Schedule</option></select></label><p class="small">Instructional days automatically use the Regular Bell Schedule unless you switch that date to the Alternate Bell Schedule.</p><hr><label><b>📝 Notes for this day</b><br><textarea id="calNotes" placeholder="One note per line. These will appear on your dashboard when this date arrives.">${esc(notes)}</textarea></label><p class="small">Notes stay attached to this date in the calendar and automatically appear on the Live Class dashboard on that day.</p><div style="margin-top:16px"><button class="primary" onclick="window.saveDateDetails('${date}')">Save</button> <button onclick="window.closeCalendarModal()">Cancel</button></div></div></div>`);
+  document.body.insertAdjacentHTML("beforeend",`<div id="calModal" class="modalbg"><div class="modal"><h3>🗓️ ${label}</h3><label>Day Type<br><select id="calType">${options}</select></label><p class="small">Weekdays between the first and last student day automatically count as instructional days unless you change them. In-service days count too.</p><hr><b>Academic Markers</b><p><label><input id="markNine" type="checkbox" ${o.nineWeeks?"checked":""}> Beginning of Nine Weeks</label><br><label><input id="markEndNine" type="checkbox" ${o.endNineWeeks?"checked":""}> End of Nine Weeks</label><br><label><input id="markTri" type="checkbox" ${o.trimester?"checked":""}> Beginning of Trimester</label><br><label><input id="markEndTri" type="checkbox" ${o.endTrimester?"checked":""}> End of Trimester</label><br><label><input id="markSem" type="checkbox" ${o.semester?"checked":""}> Beginning of Semester</label><br><label><input id="markEndSem" type="checkbox" ${o.endSemester?"checked":""}> End of Semester</label></p><hr><b>Calendar Colors</b><p class="small">These colors control the calendar appearance. Day types and alternate schedules use the color for a light background shade and the left stripe. Markers keep their colored symbol.</p><p class="small">For each item, choose whether the color changes only this date or becomes the default for every event of that type.</p><div class="colorGrid">${colorRow("instructional","Instructional")} ${colorRow("inservice","In-Service")} ${colorRow("noschool","No School")} ${colorRow("nineWeeks","Beginning Nine Weeks")} ${colorRow("endNineWeeks","End Nine Weeks")} ${colorRow("trimester","Beginning Trimester")} ${colorRow("endTrimester","End Trimester")} ${colorRow("semester","Beginning Semester")} ${colorRow("endSemester","End Semester")} ${colorRow("alternateSchedule","Alternate Schedule")} ${colorRow("note","Notes")}</div><hr><label>Bell Schedule<br><select id="calSchedule">${bellScheduleOptions(info.schedule)}</select></label><p class="small">Instructional days automatically use the Regular Bell Schedule. Select one of your alternate schedules when this date runs differently.</p><hr><label><b>📝 Notes for this day</b><br><textarea id="calNotes" placeholder="One note per line. These will appear on your dashboard when this date arrives.">${esc(notes)}</textarea></label><p class="small">Notes stay attached to this date in the calendar and automatically appear on the Live Class dashboard on that day.</p><div style="margin-top:16px"><button class="primary" onclick="window.saveDateDetails('${date}')">Save</button> <button onclick="window.closeCalendarModal()">Cancel</button></div></div></div>`);
 }
 window.closeCalendarModal=()=>document.querySelector("#calModal")?.remove()
 window.saveDateDetails=date=>{
