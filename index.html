@@ -105,7 +105,12 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 .quickAddOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:center;justify-content:center;padding:18px}
 .quickAddBox{background:var(--card,#fff);width:min(380px,94vw);padding:20px;border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.3);display:grid;gap:12px}
 .quickAddBox label{display:grid;gap:5px}.quickAddBox input{width:100%}
-.formCard{margin:10px 0}.formCardTop{display:flex;justify-content:space-between;gap:12px;align-items:center}.targetGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:8px}.targetGrid>div{display:grid;gap:5px}.targetStudents{max-height:220px;overflow:auto}.fieldDef{display:grid;grid-template-columns:1fr 160px auto;gap:7px;margin:6px 0}.tableWrap{overflow:auto;max-width:100%}.formMatrix{white-space:nowrap}.formMatrix input,.formMatrix select,.formMatrix textarea{max-width:180px}.trackerHeader{display:flex;gap:12px;align-items:center;margin-bottom:10px}@media(max-width:700px){.targetGrid{grid-template-columns:1fr}.fieldDef{grid-template-columns:1fr}.formCardTop{align-items:flex-start;flex-direction:column}}</style>
+.formCard{margin:10px 0}.formCardTop{display:flex;justify-content:space-between;gap:12px;align-items:center}.targetGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:8px}.targetGrid>div{display:grid;gap:5px}.targetStudents{max-height:220px;overflow:auto}.fieldDef{display:grid;grid-template-columns:1fr 160px auto;gap:7px;margin:6px 0}.tableWrap{overflow:auto;max-width:100%}.formMatrix{white-space:nowrap}.formMatrix input,.formMatrix select,.formMatrix textarea{max-width:180px}.trackerHeader{display:flex;gap:12px;align-items:center;margin-bottom:10px}@media(max-width:700px){.targetGrid{grid-template-columns:1fr}.fieldDef{grid-template-columns:1fr}.formCardTop{align-items:flex-start;flex-direction:column}}
+#formModalFallback{display:none;position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:10000;align-items:center;justify-content:center;padding:18px}
+#formModalFallback .formModalPanel{background:var(--card,#fff);width:min(850px,96vw);max-height:92vh;overflow:auto;border-radius:14px;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.28)}
+#formModalFallback .modalHead{display:flex;align-items:center;justify-content:space-between}
+#formModalFallback .modalActions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+</style>
 </style>
 </head>
 <body>
@@ -133,7 +138,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.11.0";
+const APP_VERSION="1.11.1";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -941,6 +946,12 @@ window.closeGroupDialog=()=>{
   if(typeof closeModal==="function")closeModal();
 };
 
+
+window.closeFormDialog=()=>{
+  const host=document.getElementById("formModalFallback");
+  if(host){host.style.display="none";host.innerHTML="";}
+  if(typeof closeModal==="function"){try{closeModal();}catch(e){}}
+};
 function formStudentIds(f){
   const ids=new Set(f.targetStudentIds||[]);
   (f.targetClassIds||[]).forEach(cid=>{const c=data.classes.find(x=>x.id===cid);(c?.studentIds||[]).forEach(id=>ids.add(id));});
@@ -959,12 +970,16 @@ function forms(){
 window.openFormEditor=(id=null)=>{
   ensureForms();ensureGroups(); const f=id?data.forms.find(x=>x.id===id):null;
   const checks=(items,selected,name)=>items.map(x=>`<label class="checkRow"><input type="checkbox" name="${name}" value="${x.id}" ${(selected||[]).includes(x.id)?"checked":""}> ${esc(x.name)}</label>`).join("");
-  const fields=(f?.fields||[]).map((x,i)=>`<div class="fieldDef"><input value="${esc(x.label)}" placeholder="Field name" oninput="this.closest('.fieldDef').dataset.label=this.value"><select onchange="this.closest('.fieldDef').dataset.type=this.value"><option value="text" ${x.type==="text"?"selected":""}>Short text</option><option value="number" ${x.type==="number"?"selected":""}>Number</option><option value="date" ${x.type==="date"?"selected":""}>Date</option><option value="checkbox" ${x.type==="checkbox"?"selected":""}>Yes / No</option><option value="dropdown" ${x.type==="dropdown"?"selected":""}>Dropdown</option><option value="notes" ${x.type==="notes"?"selected":""}>Notes</option></select><button type="button" onclick="this.parentElement.remove()">×</button></div>`).join("");
+  const fields=(f?.fields||[]).map(x=>`<div class="fieldDef" data-type="${x.type}" data-label="${esc(x.label)}"><input value="${esc(x.label)}" placeholder="Field name" oninput="this.closest('.fieldDef').dataset.label=this.value"><select onchange="this.closest('.fieldDef').dataset.type=this.value"><option value="text" ${x.type==="text"?"selected":""}>Short text</option><option value="number" ${x.type==="number"?"selected":""}>Number</option><option value="date" ${x.type==="date"?"selected":""}>Date</option><option value="checkbox" ${x.type==="checkbox"?"selected":""}>Yes / No</option><option value="dropdown" ${x.type==="dropdown"?"selected":""}>Dropdown</option><option value="notes" ${x.type==="notes"?"selected":""}>Notes</option></select><button type="button" onclick="this.parentElement.remove()">×</button></div>`).join("");
   const body=`<div class="modalStack formEditor"><label>Form / Record Name<input id="formName" value="${esc(f?.name||"")}" placeholder="e.g., Calculator Agreement"></label><label>Description<textarea id="formDescription" rows="2">${esc(f?.description||"")}</textarea></label><label>Due Date <input id="formDueDate" type="date" value="${f?.dueDate||""}"></label>
   <details open><summary><b>Who does this apply to?</b></summary><div class="targetGrid"><div><b>Classes</b>${checks(data.classes,f?.targetClassIds,"targetClass")||'<span class="small">None</span>'}</div><div><b>Groups</b>${checks(data.groups,f?.targetGroupIds,"targetGroup")||'<span class="small">None</span>'}</div><div><b>Individual Students</b><div class="targetStudents">${checks(sortedStudents(data.students),f?.targetStudentIds,"targetStudent")}</div></div></div></details>
   <details open><summary><b>Information Fields</b></summary><p class="small">Received, submission method, and date received are included automatically. Add anything else you want to track.</p><div id="customFields">${fields}</div><button type="button" onclick="window.addFormField()">＋ Add Field</button></details></div>`;
-  const footer=`<button onclick="window.closeFormDialog()">Cancel</button><button class="primary" onclick="window.saveForm('${id||""}')">Save Form</button>`;
-  openModal(f?"Edit Form":"Create Form",body,footer);
+  const footer=`<button type="button" onclick="window.closeFormDialog()">Cancel</button><button type="button" class="primary" onclick="window.saveForm('${id||""}')">Save Form</button>`;
+  let host=document.getElementById("formModalFallback");
+  if(!host){host=document.createElement("div");host.id="formModalFallback";document.body.appendChild(host);}
+  host.innerHTML=`<div class="formModalPanel"><div class="modalHead"><h3>${f?"Edit Form":"Create Form"}</h3><button type="button" onclick="window.closeFormDialog()">×</button></div><div class="modalBody">${body}</div><div class="modalActions">${footer}</div></div>`;
+  host.style.display="flex";
+  setTimeout(()=>document.getElementById("formName")?.focus(),0);
 };
 window.addFormField=()=>{const host=document.getElementById("customFields");const d=document.createElement("div");d.className="fieldDef";d.dataset.type="text";d.innerHTML=`<input placeholder="Field name" oninput="this.closest('.fieldDef').dataset.label=this.value"><select onchange="this.closest('.fieldDef').dataset.type=this.value"><option value="text">Short text</option><option value="number">Number</option><option value="date">Date</option><option value="checkbox">Yes / No</option><option value="dropdown">Dropdown</option><option value="notes">Notes</option></select><button type="button" onclick="this.parentElement.remove()">×</button>`;host.appendChild(d);};
 window.closeFormDialog=()=>{if(typeof closeModal==="function")closeModal();};
