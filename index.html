@@ -100,6 +100,11 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 #groupModalFallback .modal{background:var(--card,#fff);width:min(620px,96vw);max-height:90vh;overflow:auto;border-radius:14px;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.25)}
 #groupModalFallback .modalHead{display:flex;justify-content:space-between;align-items:center}
 #groupModalFallback .modalActions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+
+.groupStudentTools{display:flex;gap:8px;margin:8px 0;align-items:center}.groupStudentTools input{flex:1;min-width:0}
+.quickAddOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:center;justify-content:center;padding:18px}
+.quickAddBox{background:var(--card,#fff);width:min(380px,94vw);padding:20px;border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.3);display:grid;gap:12px}
+.quickAddBox label{display:grid;gap:5px}.quickAddBox input{width:100%}
 </style>
 </style>
 </head>
@@ -128,7 +133,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.10.1";
+const APP_VERSION="1.10.2";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -853,15 +858,69 @@ window.openGroupModal=(id=null)=>{
   ensureGroups(); normalizeStudents();
   const g=id?data.groups.find(x=>x.id===id):null;
   const selected=new Set(g?.studentIds||[]);
-  const rows=sortedStudents(data.students).map(s=>`<label class="checkRow"><input type="checkbox" value="${s.id}" ${selected.has(s.id)?"checked":""}> ${esc(studentDisplayName(s))}</label>`).join("");
-  const body=`<div class="modalStack"><label>Group Name<input id="groupName" value="${esc(g?.name||"")}" placeholder="e.g., Debate Club" autofocus></label><label>Description <span class="small">(optional)</span><textarea id="groupDescription" rows="2">${esc(g?.description||"")}</textarea></label><details open><summary><b>Students</b></summary><div class="groupCheckList">${rows||'<p class="small">Add students first.</p>'}</div></details></div>`;
-  const footer=`<button type="button" onclick="window.closeGroupDialog()">Cancel</button><button type="button" class="primary" onclick="window.saveGroup('${id||""}')">Save</button>`;
-  if(typeof openModal==="function"){ openModal(`${g?"Edit":"Add"} Group`,body,footer); return; }
+  const students=sortedStudents(data.students);
+  const list=students.map(s=>`<label class="checkRow groupStudentRow" data-search="${esc(studentDisplayName(s)).toLowerCase()}"><input type="checkbox" value="${s.id}" ${selected.has(s.id)?"checked":""}> ${esc(studentDisplayName(s))}</label>`).join("");
+  const body=`<div class="modalStack">
+    <label>Group Name<input id="groupName" value="${esc(g?.name||"")}" placeholder="e.g., Debate Club" autofocus></label>
+    <label>Description <span class="small">(optional)</span><textarea id="groupDescription" rows="2">${esc(g?.description||"")}</textarea></label>
+    <details open><summary><b>Students</b> <span class="small">Search, select existing students, or add a new student.</span></summary>
+      <div class="groupStudentTools">
+        <input id="groupStudentSearch" placeholder="🔍 Search students..." oninput="window.filterGroupStudents(this.value)">
+        <button type="button" class="primary" onclick="window.openQuickAddStudent()">＋ Add Student</button>
+      </div>
+      <div class="groupCheckList" id="groupStudentList">${list||'<p class="small">No students yet. Add one below.</p>'}</div>
+    </details>
+  </div>`;
+  const footer=`<button type="button" onclick="window.closeGroupDialog()">Cancel</button><button type="button" class="primary" onclick="window.saveGroup('${id||""}')">Save Group</button>`;
+  if(typeof openModal==="function"){ openModal(`${g?"Edit":"Add"} Group`,body,footer); setTimeout(()=>document.getElementById("groupStudentSearch")?.focus(),0); return; }
   let host=document.getElementById("groupModalFallback");
   if(!host){host=document.createElement("div");host.id="groupModalFallback";host.className="modalOverlay";document.body.appendChild(host);}
   host.innerHTML=`<div class="modal"><div class="modalHead"><h3>${g?"Edit":"Add"} Group</h3><button type="button" onclick="window.closeGroupDialog()">×</button></div><div class="modalBody">${body}</div><div class="modalActions">${footer}</div></div>`;
   host.style.display="flex";
   setTimeout(()=>document.getElementById("groupName")?.focus(),0);
+};
+window.filterGroupStudents=(query)=>{
+  const q=(query||"").trim().toLowerCase();
+  document.querySelectorAll("#groupStudentList .groupStudentRow").forEach(row=>{
+    row.style.display=(!q||row.dataset.search.includes(q))?"flex":"none";
+  });
+};
+window.openQuickAddStudent=()=>{
+  const selected=[...document.querySelectorAll("#groupStudentList input:checked")].map(x=>x.value);
+  const modal=document.getElementById("groupModalFallback");
+  if(modal) modal.dataset.selectedBeforeAdd=selected.join(",");
+  const existing=document.getElementById("quickAddStudent");
+  if(existing) existing.remove();
+  const host=document.createElement("div");host.id="quickAddStudent";host.className="quickAddOverlay";
+  host.innerHTML=`<div class="quickAddBox"><h3>Add Student</h3>
+    <label>First Name<input id="quickStudentFirst" autofocus></label>
+    <label>Last Name<input id="quickStudentLast"></label>
+    <div class="modalActions"><button type="button" onclick="document.getElementById('quickAddStudent').remove()">Cancel</button><button type="button" class="primary" onclick="window.saveQuickAddStudent()">Add to Group</button></div>
+  </div>`;
+  document.body.appendChild(host);
+  setTimeout(()=>document.getElementById("quickStudentFirst")?.focus(),0);
+};
+window.saveQuickAddStudent=()=>{
+  const first=document.getElementById("quickStudentFirst")?.value.trim()||"";
+  const last=document.getElementById("quickStudentLast")?.value.trim()||"";
+  if(!first||!last){alert("Please enter both a first and last name.");return;}
+  normalizeStudents();
+  const id="s_"+Math.random().toString(36).slice(2);
+  data.students.push({id,firstName:first,lastName:last,name:`${first} ${last}`});
+  save();
+  document.getElementById("quickAddStudent")?.remove();
+  // Re-open the group modal while preserving the unsaved group fields and selections.
+  const name=document.getElementById("groupName")?.value||"";
+  const description=document.getElementById("groupDescription")?.value||"";
+  const selected=[...document.querySelectorAll("#groupStudentList input:checked")].map(x=>x.value);
+  const list=document.getElementById("groupStudentList");
+  if(list){
+    const all=sortedStudents(data.students);
+    list.innerHTML=all.map(s=>`<label class="checkRow groupStudentRow" data-search="${esc(studentDisplayName(s)).toLowerCase()}"><input type="checkbox" value="${s.id}" ${(selected.includes(s.id)||s.id===id)?"checked":""}> ${esc(studentDisplayName(s))}</label>`).join("");
+    document.getElementById("groupName").value=name;
+    document.getElementById("groupDescription").value=description;
+    document.getElementById("groupStudentSearch")?.focus();
+  }
 };
 window.closeGroupDialog=()=>{
   const host=document.getElementById("groupModalFallback");
