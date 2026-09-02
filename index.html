@@ -83,7 +83,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 @media(max-width:760px){.headerRight{justify-content:flex-start}.headerUtilities{width:100%}}
 
 .calendarDay,.calendar-cell,.calDay{position:relative}.dayProgress{position:absolute;top:4px;right:4px;font-size:10px;font-weight:800;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:7px;padding:2px 5px;line-height:1.1;z-index:2}.calDay{position:relative}.activeToolCard{position:relative;padding-right:34px!important}.toolClose{position:absolute;right:5px;top:5px;border:0;background:transparent;font-size:17px;line-height:18px;padding:2px 6px;cursor:pointer}.activeToolControls{display:flex;gap:5px;align-items:center;margin-top:5px}.activeToolControls button{font-size:11px;padding:3px 6px}
-.utilityCard{position:relative;min-width:150px}.utilityMenu{position:absolute;right:0;top:calc(100% + 6px);z-index:20;width:310px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 12px 28px #26345425}.utilityMenu[hidden]{display:none}.utilityMenu .toolBlock{border-bottom:1px solid var(--line);padding:9px 0}.utilityMenu .toolBlock:last-child{border-bottom:0}.utilityMenu h4{margin:0 0 7px;font-size:14px}.compactUtilityValue{font-size:18px;font-weight:800;margin-left:4px}.pvaasGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.pvaasCard{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.pvaasTable td,.pvaasTable th{padding:8px;text-align:left;border-bottom:1px solid var(--line)}.pvaasCourseChip{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.utilityCard{position:relative;min-width:150px}.utilityMenu{position:absolute;right:0;top:calc(100% + 6px);z-index:20;width:310px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 12px 28px #26345425}.utilityMenu[hidden]{display:none}.utilityMenu .toolBlock{border-bottom:1px solid var(--line);padding:9px 0}.utilityMenu .toolBlock:last-child{border-bottom:0}.utilityMenu h4{margin:0 0 7px;font-size:14px}.compactUtilityValue{font-size:18px;font-weight:800;margin-left:4px}.pvaasGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.pvaasCard{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.pvaasTable{width:100%;border-collapse:collapse}.pvaasTable th,.pvaasTable td{padding:10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}.pvaasTable th{white-space:nowrap}.pvaasCourseChip{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;display:flex;justify-content:space-between;gap:8px;align-items:center}.pvaasControls{display:flex;gap:10px;align-items:end;justify-content:space-between;flex-wrap:wrap}.pvaasEnrollmentBlock{padding:6px 0;border-bottom:1px dashed var(--line)}.pvaasEnrollmentBlock:last-child{border-bottom:0}.pvaasEnrollmentLine{display:flex;gap:6px;align-items:end;flex-wrap:wrap;margin-top:5px}.pvaasEnrollmentLine label{font-size:12px}.pvaasEnrollmentLine input{max-width:145px}.pvaasMatrixWrap{overflow-x:auto}.pvaasMatrixWrap .small{font-size:12px}.pvaasCohortTag{display:inline-block;padding:3px 8px;border:1px solid var(--line);border-radius:999px;background:#f7f8fb;font-size:12px}
 
 
 </style>
@@ -114,7 +114,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.9.7";
+const APP_VERSION="1.9.10";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -399,19 +399,64 @@ function pvaasTotalDays(){
   const start=schoolStartDate(),end=schoolEndDate(); return start&&end?pvaasDaysForPeriod(start,end):178;
 }
 
-function pvaas(){
-  ensureClassFields();
+function ensurePvaasData(){
+  if(!Array.isArray(data.pvaasCohorts)||!data.pvaasCohorts.length)data.pvaasCohorts=[{id:"all",name:"All PVAAS Students"}];
+  if(!data.pvaasCohorts.some(c=>c.id==="all"))data.pvaasCohorts.unshift({id:"all",name:"All PVAAS Students"});
+  data.pvaasStudentCohorts=data.pvaasStudentCohorts&&typeof data.pvaasStudentCohorts==="object"?data.pvaasStudentCohorts:{};
+}
+function pvaasCohortId(studentId){ensurePvaasData();const id=data.pvaasStudentCohorts[studentId]||"all";return data.pvaasCohorts.some(c=>c.id===id)?id:"all"}
+function mergeEnrollmentPeriods(periods){
+  const sorted=periods.filter(p=>p.start&&p.end).map(p=>({start:p.start,end:p.end})).sort((a,b)=>a.start.localeCompare(b.start));
+  const merged=[];
+  for(const p of sorted){
+    const last=merged[merged.length-1];
+    if(!last){merged.push({...p});continue;}
+    const nextDay=new Date(last.end+"T12:00:00");nextDay.setDate(nextDay.getDate()+1);
+    const nextISO=nextDay.toISOString().slice(0,10);
+    if(p.start<=nextISO&&p.end>last.end)last.end=p.end; else if(p.start>nextISO)merged.push({...p});
+  }
+  return merged;
+}
+function pvaasRows(){
+  ensurePvaasData();ensureClassFields();
   const classes=data.classes.filter(c=>c.pvaasReported);
-  return `<header><div><h2>PVAAS Reporting</h2><p>Enrollment periods determine your instructional responsibility for each student. Only classes checked for PVAAS are included below.</p></div></header>
-  <section class="card"><h3>PVAAS Courses</h3><p class="small">Courses are selected in each class's settings. ${classes.length?`${classes.length} course${classes.length===1?"":"s"} currently marked for PVAAS.`:"No courses are currently marked for PVAAS."}</p>
-  ${classes.length?`<div class="checkGrid">${classes.map(c=>`<div class="pvaasCourseChip"><b>${esc(c.name)}</b><span class="small">${(c.studentIds||[]).length} student${(c.studentIds||[]).length===1?"":"s"}</span></div>`).join("")}</div>`:`<p class="small">Go to Students & Classes → Edit the course → PVAAS Reporting and check “Report this course for PVAAS.”</p>`}</section>
-  ${classes.map(cls=>{const students=sortedStudents(data.students.filter(st=>(cls.studentIds||[]).includes(st.id)));const total=pvaasTotalDays();
-    return `<section class="card"><h3>${esc(cls.name)}</h3><p class="small">Default enrollment runs from the first school day to the last school day. Add another period if a student leaves and later returns.</p>
-    ${students.map(st=>{const periods=classEnrollmentPeriods(cls,st.id);const days=periods.reduce((sum,p)=>sum+pvaasDaysForPeriod(p.start,p.end),0);const pct=total?Math.round(days/total*1000)/10:0;
-      return `<div class="pvaasCard"><h4>${esc(studentDisplayName(st))}</h4>
-      <div id="pvaasPeriods_${cls.id}_${st.id}">${periods.map((p,i)=>`<div class="enrollmentRow"><label>Enroll <input type="date" value="${p.start||""}" onchange="window.updateEnrollmentPeriod('${cls.id}','${p.id}','start',this.value)"></label><label>Unenroll <input type="date" value="${p.end||""}" onchange="window.updateEnrollmentPeriod('${cls.id}','${p.id}','end',this.value)"></label>${periods.length>1?`<button type="button" onclick="window.removeEnrollmentPeriod('${cls.id}','${p.id}')">Remove</button>`:""}</div>`).join("")}</div>
-      <button type="button" onclick="window.addEnrollmentPeriod('${cls.id}','${st.id}')">+ Add Enrollment Period</button>
-      <div class="small" style="margin-top:8px"><b>${days} / ${total} days — ${pct}% responsibility</b></div></div>`;}).join("")||"<p>No students in this class.</p>"}</section>`}).join("")}`;}
+  const byStudent=new Map();
+  classes.forEach(cls=>(cls.studentIds||[]).forEach(sid=>{
+    const st=data.students.find(s=>s.id===sid);if(!st)return;
+    if(!byStudent.has(sid))byStudent.set(sid,{student:st,classes:[]});
+    byStudent.get(sid).classes.push(cls);
+  }));
+  return sortedStudents([...byStudent.values()].map(x=>x.student)).map(st=>{
+    const entry=byStudent.get(st.id);
+    const allPeriods=entry.classes.flatMap(cls=>classEnrollmentPeriods(cls,st.id));
+    const merged=mergeEnrollmentPeriods(allPeriods);
+    const days=merged.reduce((sum,p)=>sum+pvaasDaysForPeriod(p.start,p.end),0);
+    return {...entry,merged,days};
+  });
+}
+function pvaas(){
+  ensurePvaasData();
+  const classes=data.classes.filter(c=>c.pvaasReported);
+  const cohortFilter=window.pvaasCohortFilter||"allStudents";
+  const rows=pvaasRows();
+  const filtered=cohortFilter==="allStudents"?rows:rows.filter(r=>pvaasCohortId(r.student.id)===cohortFilter);
+  const total=pvaasTotalDays();
+  const cohortOptions=[`<option value="allStudents" ${cohortFilter==="allStudents"?"selected":""}>All PVAAS Students</option>`,...data.pvaasCohorts.filter(c=>c.id!=="all").map(c=>`<option value="${c.id}" ${cohortFilter===c.id?"selected":""}>${esc(c.name)}</option>`)];
+  return `<header><div><h2>PVAAS Reporting</h2><p>All students from PVAAS-reportable classes are combined into one alphabetized roster. Class sections are kept only as a reference.</p></div></header>
+  <section class="card"><div class="pvaasControls"><div><h3 style="margin-bottom:4px">PVAAS Cohort</h3><label class="small">View cohort<br><select onchange="window.setPvaasCohortFilter(this.value)">${cohortOptions.join("")}</select></label></div><div><button onclick="window.openPvaasCohortManager()">Manage Cohorts</button></div></div>
+  <p class="small" style="margin-top:10px">${classes.length?`${classes.length} course${classes.length===1?"":"s"} selected for PVAAS · ${rows.length} unique student${rows.length===1?"":"s"} · ${total} instructional days`:`No courses are currently marked for PVAAS.`}</p></section>
+  ${classes.length?`<section class="card"><h3>Student Responsibility Matrix</h3><p class="small">Students are alphabetized by last name. If a student is enrolled in more than one PVAAS class, they appear only once in this matrix.</p><div class="pvaasMatrixWrap"><table class="pvaasTable"><thead><tr><th>Student</th><th>% Responsible</th><th>PVAAS Course(s)</th><th>Enrollment Period(s)</th><th>Responsibility Days</th><th>Cohort</th></tr></thead><tbody>${filtered.map(r=>{const st=r.student;const pct=total?Math.round(r.days/total*1000)/10:0;const cohortId=pvaasCohortId(st.id);return `<tr><td><b>${pct}%</b></td><td><b>${esc(studentDisplayName(st))}</b></td><td>${r.classes.map(c=>`<div class="pvaasCohortTag">${esc(c.name)}</div>`).join(" ")}</td><td>${r.classes.map(cls=>{const periods=classEnrollmentPeriods(cls,st.id);return `<div class="pvaasEnrollmentBlock"><b class="small">${esc(cls.name)}</b>${periods.map(p=>`<div class="pvaasEnrollmentLine"><label>Enroll<br><input type="date" value="${p.start||""}" onchange="window.updateEnrollmentPeriod('${cls.id}','${p.id}','start',this.value)"></label><label>Unenroll<br><input type="date" value="${p.end||""}" onchange="window.updateEnrollmentPeriod('${cls.id}','${p.id}','end',this.value)"></label>${periods.length>1?`<button type="button" onclick="window.removeEnrollmentPeriod('${cls.id}','${p.id}')">×</button>`:""}</div>`).join("")}<button type="button" style="margin-top:5px" onclick="window.addEnrollmentPeriod('${cls.id}','${st.id}')">+ Period</button></div>`}).join("")}</td><td><b>${r.days} / ${total}</b></td><td><select onchange="window.setPvaasStudentCohort('${st.id}',this.value)">${data.pvaasCohorts.map(c=>`<option value="${c.id}" ${cohortId===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select></td></tr>`;}).join("")||`<tr><td colspan="6" class="small">No students in this cohort yet.</td></tr>`}</tbody></table></div></section>`:`<section class="card"><p class="small">Go to Students & Classes → Edit the course → PVAAS Reporting and check “Report this course for PVAAS.”</p></section>`}`;
+}
+window.setPvaasCohortFilter=value=>{window.pvaasCohortFilter=value;render();};
+window.setPvaasStudentCohort=(studentId,cohortId)=>{ensurePvaasData();data.pvaasStudentCohorts[studentId]=cohortId;save();render();};
+window.openPvaasCohortManager=()=>{
+  ensurePvaasData();document.querySelector('#pvaasCohortModal')?.remove();
+  document.body.insertAdjacentHTML('beforeend',`<div id="pvaasCohortModal" class="modalbg"><div class="modal"><h3>Manage PVAAS Cohorts</h3><p class="small">You only need the default cohort for your current Algebra I reporting. Extra cohorts are optional for future use.</p><div id="pvaasCohortList">${data.pvaasCohorts.map(c=>`<div class="add" style="margin:8px 0"><input data-cohort-id="${c.id}" value="${esc(c.name)}" ${c.id==='all'?'readonly':''} style="flex:1"><button ${c.id==='all'?'disabled':''} onclick="window.deletePvaasCohort('${c.id}')">Delete</button></div>`).join('')}</div><div class="add" style="margin-top:12px"><input id="newPvaasCohortName" placeholder="New cohort name" style="flex:1"><button onclick="window.addPvaasCohort()">+ Add Cohort</button></div><div style="margin-top:16px"><button class="primary" onclick="window.savePvaasCohorts()">Save Cohorts</button> <button onclick="window.closePvaasCohortManager()">Cancel</button></div></div></div>`);
+};
+window.closePvaasCohortManager=()=>document.querySelector('#pvaasCohortModal')?.remove();
+window.addPvaasCohort=()=>{const input=$('#newPvaasCohortName');const name=input?.value.trim();if(!name)return;ensurePvaasData();data.pvaasCohorts.push({id:'cohort_'+uid(),name});data._pvaasCohortsDirty=true;window.openPvaasCohortManager();};
+window.deletePvaasCohort=id=>{if(id==='all')return;ensurePvaasData();data.pvaasCohorts=data.pvaasCohorts.filter(c=>c.id!==id);Object.keys(data.pvaasStudentCohorts).forEach(sid=>{if(data.pvaasStudentCohorts[sid]===id)data.pvaasStudentCohorts[sid]='all';});data._pvaasCohortsDirty=true;window.openPvaasCohortManager();};
+window.savePvaasCohorts=()=>{ensurePvaasData();document.querySelectorAll('#pvaasCohortList input[data-cohort-id]').forEach(input=>{const c=data.pvaasCohorts.find(x=>x.id===input.dataset.cohortId);if(c&&input.value.trim())c.name=input.value.trim();});delete data._pvaasCohortsDirty;save();window.closePvaasCohortManager();render();};
 window.setPvaasCourse=(id,value)=>{const c=data.classes.find(x=>x.id===id);if(c){c.pvaasReported=value;save();render();}};
 window.updateEnrollmentPeriod=(classId,periodId,field,value)=>{const c=data.classes.find(x=>x.id===classId);if(!c)return;c.enrollmentPeriods=c.enrollmentPeriods||[];const p=c.enrollmentPeriods.find(x=>x.id===periodId);if(p){p[field]=value;save();render();}};
 window.addEnrollmentPeriod=(classId,studentId)=>{const c=data.classes.find(x=>x.id===classId);if(!c)return;c.enrollmentPeriods=c.enrollmentPeriods||[];c.enrollmentPeriods.push({id:"ep_"+Math.random().toString(36).slice(2),studentId,start:"",end:schoolEndDate()||""});save();render();};
@@ -950,6 +995,7 @@ function reports(){
   const mode=window.reportMode||"student";
   const search=(window.reportSearch||"").trim().toLowerCase();
   const classFilter=window.reportClassFilter||"all";
+  const eventFilter=window.reportEventFilter||"all";
   const classMatches=classes.filter(c=>classFilter==="all"||c.id===classFilter);
   const allowedIds=classFilter==="all"?null:new Set((classes.find(c=>c.id===classFilter)?.studentIds)||[]);
   const filteredStudents=(data.students||[]).filter(st=>
@@ -967,7 +1013,8 @@ function reports(){
 
   const classOptions=`<option value="all">All classes</option>${classes.map(c=>`<option value="${esc(c.id)}" ${c.id===classFilter?"selected":""}>${esc(c.name)}</option>`).join("")}`;
   const studentOptions=availableStudents.map(st=>`<option value="${esc(st.id)}" ${st.id===sid?"selected":""}>${esc(st.name)}</option>`).join("")||`<option value="">No matching students</option>`;
-  const modeControls=`<div class="reportControls"><label>View<br><select onchange="window.setReportMode(this.value)"><option value="student" ${mode==="student"?"selected":""}>Student Report</option><option value="class" ${mode==="class"?"selected":""}>Class Report</option></select></label><label>Filter by class<br><select onchange="window.setReportClassFilter(this.value)">${classOptions}</select></label><label>Search student<br><input value="${esc(window.reportSearch||"")}" placeholder="Type a student name..." oninput="window.setReportSearch(this.value)"></label></div>`;
+  const eventOptions=`<option value="all">All events</option>${buttons.map(b=>`<option value="${esc(b.id)}" ${b.id===eventFilter?"selected":""}>${esc(b.label)}</option>`).join("")}`;
+  const modeControls=`<div class="reportControls"><label>View<br><select onchange="window.setReportMode(this.value)"><option value="student" ${mode==="student"?"selected":""}>Student Report</option><option value="class" ${mode==="class"?"selected":""}>Class Report</option></select></label><label>Filter by class<br><select onchange="window.setReportClassFilter(this.value)">${classOptions}</select></label><label>Filter by event<br><select onchange="window.setReportEventFilter(this.value)">${eventOptions}</select></label><label>Search student<br><input value="${esc(window.reportSearch||"")}" placeholder="Type a student name..." oninput="window.setReportSearch(this.value)"></label></div>`;
 
   if(mode==="class"){
     const classChoices=(classFilter!=="all"?classMatches:classes);
@@ -975,24 +1022,27 @@ function reports(){
     const cls=classes.find(c=>c.id===reportClassId);
     const roster=(data.students||[]).filter(st=>(cls?.studentIds||[]).includes(st.id)&&(!search||st.name.toLowerCase().includes(search)));
     const classSelect=`<label>Class<br><select onchange="window.setReportClass(this.value)">${classChoices.map(c=>`<option value="${esc(c.id)}" ${c.id===reportClassId?"selected":""}>${esc(c.name)}</option>`).join("")}</select></label>`;
-    const matrixButtons=buttons;
+    const matrixButtons=eventFilter==="all"?buttons:buttons.filter(b=>b.id===eventFilter);
+    const eventMatches=e=>eventFilter==="all"||e.buttonId===eventFilter;
     const count=(studentId,buttonId)=>data.events.filter(e=>e.studentId===studentId&&e.classId===reportClassId&&e.buttonId===buttonId).length;
-    return `<header><h2>Reports</h2><p class="small">See individual totals or a whole-class behavior matrix.</p></header><section class="card">${modeControls}<div class="reportControls" style="margin-top:10px">${classSelect}</div><h3 style="margin-top:18px">${esc(cls?.name||"Class Report")}</h3><p class="small">${roster.length} student${roster.length===1?"":"s"} shown. Counts include events recorded while this class was active.</p><div class="tableWrap"><table class="reportMatrix"><thead><tr><th>Student</th>${matrixButtons.map(b=>`<th title="${esc(b.label)}">${b.icon}<br><span>${esc(b.label)}</span></th>`).join("")}<th>Total</th></tr></thead><tbody>${roster.map(st=>{const total=data.events.filter(e=>e.studentId===st.id&&e.classId===reportClassId).length;return `<tr><td><b>${esc(st.name)}</b></td>${matrixButtons.map(b=>`<td>${count(st.id,b.id)}</td>`).join("")}<td><b>${total}</b></td></tr>`}).join("")||`<tr><td colspan="${matrixButtons.length+2}" class="small">No students match this class/filter.</td></tr>`}</tbody></table></div></section>${recentEventsHTML()}`;
+    return `<header><h2>Reports</h2><p class="small">See individual totals or a whole-class behavior matrix.</p></header><section class="card">${modeControls}<div class="reportControls" style="margin-top:10px">${classSelect}</div><h3 style="margin-top:18px">${esc(cls?.name||"Class Report")}</h3><p class="small">${roster.length} student${roster.length===1?"":"s"} shown. Counts include events recorded while this class was active.</p><div class="tableWrap"><table class="reportMatrix"><thead><tr><th>Student</th>${matrixButtons.map(b=>`<th title="${esc(b.label)}">${b.icon}<br><span>${esc(b.label)}</span></th>`).join("")}<th>Total</th></tr></thead><tbody>${roster.map(st=>{const total=data.events.filter(e=>e.studentId===st.id&&e.classId===reportClassId&&eventMatches(e)).length;return `<tr><td><b>${esc(st.name)}</b></td>${matrixButtons.map(b=>`<td>${count(st.id,b.id)}</td>`).join("")}<td><b>${total}</b></td></tr>`}).join("")||`<tr><td colspan="${matrixButtons.length+2}" class="small">No students match this class/filter.</td></tr>`}</tbody></table></div></section>${recentEventsHTML()}`;
   }
 
   const student=selectedStudent;
   const allStudentEvents=student?data.events.filter(e=>e.studentId===student.id):[];
-  const shownEvents=classFilter==="all"?allStudentEvents:allStudentEvents.filter(e=>e.classId===classFilter);
+  const classShownEvents=classFilter==="all"?allStudentEvents:allStudentEvents.filter(e=>e.classId===classFilter);
+  const shownEvents=eventFilter==="all"?classShownEvents:classShownEvents.filter(e=>e.buttonId===eventFilter);
   const studentClassIds=new Set([...(classes.filter(c=>(c.studentIds||[]).includes(student?.id)).map(c=>c.id)),...allStudentEvents.map(e=>e.classId).filter(Boolean)]);
   const studentClasses=classes.filter(c=>studentClassIds.has(c.id));
   const notes=student?data.notes.filter(n=>n.studentId===student.id):[];
   const countButton=(events,bid)=>events.filter(e=>e.buttonId===bid).length;
   const timeRange=window.timeReportRange||"day";
   const timeOut=timedDuration(shownEvents,timeRange);
-  return `<header><h2>Reports</h2><p class="small">Filter by class, search students, and compare totals across classes.</p></header><section class="card">${modeControls}<div class="reportControls" style="margin-top:10px"><label>Student<br><select onchange="window.setReportStudent(this.value)">${studentOptions}</select></label></div>${student?`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px"><h3 style="margin:0">${esc(student.name)}</h3><button class="primary" onclick="window.openReportEventModal('${student.id}')">+ Add Event</button></div><p><b>${classFilter==="all"?"Total events across all classes":"Events in selected class"}:</b> ${shownEvents.length}</p><div class="card" style="margin:12px 0"><b>🚪 Time Out of the Classroom</b><div class="reportControls" style="margin-top:8px"><label>Range<br><select onchange="window.setTimeReportRange(this.value)"><option value="day" ${timeRange==="day"?"selected":""}>Day</option><option value="week" ${timeRange==="week"?"selected":""}>Week</option><option value="month" ${timeRange==="month"?"selected":""}>Month</option><option value="year" ${timeRange==="year"?"selected":""}>Year</option></select></label><div class="stat"><b>${formatDuration(timeOut)}</b><span>running total</span></div></div></div><div class="reportgrid">${buttons.map(b=>`<div class="stat">${b.icon}<b>${countButton(shownEvents,b.id)}</b><span>${esc(b.label)}</span></div>`).join("")}</div><h4>Breakdown by Class</h4><div class="tableWrap"><table class="reportMatrix"><thead><tr><th>Class</th>${buttons.map(b=>`<th title="${esc(b.label)}">${b.icon}<br><span>${esc(b.label)}</span></th>`).join("")}<th>Total</th></tr></thead><tbody>${studentClasses.map(c=>{const ev=allStudentEvents.filter(e=>e.classId===c.id);return `<tr><td><b>${esc(c.name)}</b></td>${buttons.map(b=>`<td>${countButton(ev,b.id)}</td>`).join("")}<td><b>${ev.length}</b></td></tr>`}).join("")||`<tr><td colspan="${buttons.length+2}" class="small">No class data yet.</td></tr>`}</tbody></table></div><h4>Notes</h4>${notes.map(n=>`<p>📝 ${esc(n.text)} <span class="small">${new Date(n.created).toLocaleString()}</span></p>`).join("")||"<p>None recorded.</p>"}`:"<p>No students match your current filter.</p>"}</section>${recentEventsHTML()}`;
+  return `<header><h2>Reports</h2><p class="small">Filter by class, search students, and compare totals across classes.</p></header><section class="card">${modeControls}<div class="reportControls" style="margin-top:10px"><label>Student<br><select onchange="window.setReportStudent(this.value)">${studentOptions}</select></label></div>${student?`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px"><h3 style="margin:0">${esc(student.name)}</h3><button class="primary" onclick="window.openReportEventModal('${student.id}')">+ Add Event</button></div><p><b>${classFilter==="all"?"Total events across all classes":"Events in selected class"}:</b> ${shownEvents.length}</p><div class="card" style="margin:12px 0"><b>🚪 Time Out of the Classroom</b><div class="reportControls" style="margin-top:8px"><label>Range<br><select onchange="window.setTimeReportRange(this.value)"><option value="day" ${timeRange==="day"?"selected":""}>Day</option><option value="week" ${timeRange==="week"?"selected":""}>Week</option><option value="month" ${timeRange==="month"?"selected":""}>Month</option><option value="year" ${timeRange==="year"?"selected":""}>Year</option></select></label><div class="stat"><b>${formatDuration(timeOut)}</b><span>running total</span></div></div></div><div class="reportgrid">${(eventFilter==="all"?buttons:buttons.filter(b=>b.id===eventFilter)).map(b=>`<div class="stat">${b.icon}<b>${countButton(shownEvents,b.id)}</b><span>${esc(b.label)}</span></div>`).join("")}</div><h4>Breakdown by Class</h4><div class="tableWrap"><table class="reportMatrix"><thead><tr><th>Class</th>${(eventFilter==="all"?buttons:buttons.filter(b=>b.id===eventFilter)).map(b=>`<th title="${esc(b.label)}">${b.icon}<br><span>${esc(b.label)}</span></th>`).join("")}<th>Total</th></tr></thead><tbody>${studentClasses.map(c=>{const ev=(eventFilter==="all"?allStudentEvents:allStudentEvents.filter(e=>e.buttonId===eventFilter)).filter(e=>e.classId===c.id);return `<tr><td><b>${esc(c.name)}</b></td>${(eventFilter==="all"?buttons:buttons.filter(b=>b.id===eventFilter)).map(b=>`<td>${countButton(ev,b.id)}</td>`).join("")}<td><b>${ev.length}</b></td></tr>`}).join("")||`<tr><td colspan="${buttons.length+2}" class="small">No class data yet.</td></tr>`}</tbody></table></div><h4>Notes</h4>${notes.map(n=>`<p>📝 ${esc(n.text)} <span class="small">${new Date(n.created).toLocaleString()}</span></p>`).join("")||"<p>None recorded.</p>"}`:"<p>No students match your current filter.</p>"}</section>${recentEventsHTML()}`;
 }
 window.setReportMode=v=>{window.reportMode=v;render();}
 window.setReportClassFilter=v=>{window.reportClassFilter=v;render();}
+window.setReportEventFilter=v=>{window.reportEventFilter=v;render();}
 window.setReportSearch=v=>{window.reportSearch=v;render(); const input=document.querySelector('.reportControls input'); if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length);}}
 window.setReportStudent=v=>{window.reportStudent=v;render();}
 window.setReportClass=v=>{window.reportClassId=v;render();}
