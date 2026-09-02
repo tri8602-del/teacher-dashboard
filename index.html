@@ -105,7 +105,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 .quickAddOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:center;justify-content:center;padding:18px}
 .quickAddBox{background:var(--card,#fff);width:min(380px,94vw);padding:20px;border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.3);display:grid;gap:12px}
 .quickAddBox label{display:grid;gap:5px}.quickAddBox input{width:100%}
-</style>
+.formCard{margin:10px 0}.formCardTop{display:flex;justify-content:space-between;gap:12px;align-items:center}.targetGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:8px}.targetGrid>div{display:grid;gap:5px}.targetStudents{max-height:220px;overflow:auto}.fieldDef{display:grid;grid-template-columns:1fr 160px auto;gap:7px;margin:6px 0}.tableWrap{overflow:auto;max-width:100%}.formMatrix{white-space:nowrap}.formMatrix input,.formMatrix select,.formMatrix textarea{max-width:180px}.trackerHeader{display:flex;gap:12px;align-items:center;margin-bottom:10px}@media(max-width:700px){.targetGrid{grid-template-columns:1fr}.fieldDef{grid-template-columns:1fr}.formCardTop{align-items:flex-start;flex-direction:column}}</style>
 </style>
 </head>
 <body>
@@ -133,7 +133,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.10.2";
+const APP_VERSION="1.11.0";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -149,6 +149,7 @@ const seed={
  classes:[{id:"c1",name:"Honors Precalculus",studentIds:["s1","s2","s3"],periods:[1],days:[1,2,3,4,5],terms:["fullYear"]}],
  students:[{id:"s1",name:"Abby Smith"},{id:"s2",name:"Ben Jones"},{id:"s3",name:"Chris Brown"}],
  groups:[],
+ forms:[],
  buttons:defaultButtons.map(([id,icon,label,type])=>({id,icon,label,type})),
  events:[],notes:[],schoolDays:[],totalSchoolDays:178,gradeCourses:[],
  profileAvatar:"",
@@ -186,6 +187,18 @@ function ensureBellSchedules(){
   if(!data.bellSchedules.some(s=>s.id==="regular")){
     data.bellSchedules.unshift(defaultBellSchedules().find(s=>s.id==="regular"));
   }
+}
+function ensureForms(){
+  if(!Array.isArray(data.forms))data.forms=[];
+  data.forms=data.forms.map(f=>({
+    id:f.id||"form_"+Math.random().toString(36).slice(2),name:f.name||"Untitled Form",
+    description:f.description||"",dueDate:f.dueDate||"",
+    targetClassIds:Array.isArray(f.targetClassIds)?f.targetClassIds:[],
+    targetGroupIds:Array.isArray(f.targetGroupIds)?f.targetGroupIds:[],
+    targetStudentIds:Array.isArray(f.targetStudentIds)?f.targetStudentIds:[],
+    fields:Array.isArray(f.fields)?f.fields:[],
+    records:f.records||{}
+  }));
 }
 function ensureGroups(){
   if(!Array.isArray(data.groups))data.groups=[];
@@ -487,7 +500,7 @@ window.addEnrollmentPeriod=(classId,studentId)=>{const c=data.classes.find(x=>x.
 window.removeEnrollmentPeriod=(classId,periodId)=>{const c=data.classes.find(x=>x.id===classId);if(!c)return;c.enrollmentPeriods=(c.enrollmentPeriods||[]).filter(p=>p.id!==periodId);save();render();};
 
 function render(){
-  ensureClassroomTools(); ensureGroups();
+  ensureClassroomTools(); ensureGroups(); ensureForms();
   if(!currentUser){$("#root").innerHTML=loginHTML();return}
   const userLabel=currentUser.displayName||currentUser.email||"Google user";
   $("#root").innerHTML=`<div class="app"><aside>
@@ -500,7 +513,7 @@ function render(){
   bind();
 }
 function loginHTML(){return `<div class="loginScreen"><section class="loginCard"><div style="font-size:48px">🍎</div><h1>Teacher Dashboard</h1><p>Sign in with Google to securely access your own Teacher Dashboard.</p><button class="googleBtn primary" onclick="window.signIn()" ${authBusy?"disabled":""}>${authBusy?"Signing in...":"G  Sign in with Google"}</button>${loginError?`<div class="loginError">${esc(loginError)}</div>`:""}<p class="small" style="margin-top:20px">Each Google account has its own private dashboard and browser backup.</p></section></div>`}
-function nav(){return [["live","🏠","Live Class"],["students","👥","Students & Classes"],["groups","👥","Groups"],["calendar","🗓️","Calendar"],["buttons","⚡","Quick Buttons"],["grades","📚","Grades"],["reports","📊","Reports"],["pvaas","📈","PVAAS Reporting"],["settings","⚙️","Settings"]].map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
+function nav(){return [["live","🏠","Live Class"],["students","👥","Students & Classes"],["groups","👥","Groups"],["forms","📋","Forms & Records"],["calendar","🗓️","Calendar"],["buttons","⚡","Quick Buttons"],["grades","📚","Grades"],["reports","📊","Reports"],["pvaas","📈","PVAAS Reporting"],["settings","⚙️","Settings"]].map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
 function classPeriodNumber(label){const m=String(label||"").match(/^(\d+)(?:st|nd|rd|th)?\s+Period\b/i);return m?Number(m[1]):null}
 function timeToMinutes(value,previous=-1){
   const m=String(value||"").trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);if(!m)return null;
@@ -555,7 +568,7 @@ function recentEventsHTML(){
 window.toggleRecentEvents=()=>{window.recentEventsExpanded=!(window.recentEventsExpanded===true);render();}
 function toastHTML(){return toast?`<div class="toast">${esc(toast)} <button onclick="window.clearToast()">×</button></div>`:""}
 window.clearToast=()=>{toast="";render()}
-function pageHTML(){return ({live,students,groups,calendar,buttons:quickButtons,grades,reports,pvaas,settings})[page]()}
+function pageHTML(){return ({live,students,groups,forms,calendar,buttons:quickButtons,grades,reports,pvaas,settings})[page]()}
 
 function classroomToolsHTML(cls,block){
   ensureClassroomTools();
@@ -928,6 +941,56 @@ window.closeGroupDialog=()=>{
   if(typeof closeModal==="function")closeModal();
 };
 
+function formStudentIds(f){
+  const ids=new Set(f.targetStudentIds||[]);
+  (f.targetClassIds||[]).forEach(cid=>{const c=data.classes.find(x=>x.id===cid);(c?.studentIds||[]).forEach(id=>ids.add(id));});
+  (f.targetGroupIds||[]).forEach(gid=>{const g=data.groups.find(x=>x.id===gid);(g?.studentIds||[]).forEach(id=>ids.add(id));});
+  return [...ids];
+}
+function forms(){
+  ensureForms(); ensureGroups(); normalizeStudents();
+  const cards=data.forms.map(f=>{
+    const ids=formStudentIds(f), received=ids.filter(id=>f.records[id]?.received).length;
+    return `<section class="card formCard"><div class="formCardTop"><div><h3>${esc(f.name)}</h3>${f.description?`<p class="small">${esc(f.description)}</p>`:""}<p class="small"><b>${received} / ${ids.length} received</b>${f.dueDate?` · Due ${f.dueDate}`:""}</p></div><div><button onclick="window.openFormEditor('${f.id}')">Edit</button> <button class="primary" onclick="window.openFormTracker('${f.id}')">Open Tracker</button></div></div></section>`;
+  }).join("");
+  return `<header><div><h2>Forms & Records</h2><p>Create a tracker once, then keep all the information you need in one place.</p></div><button class="primary" onclick="window.openFormEditor()">＋ Create Form</button></header>
+  <section class="card"><h3>Your Forms & Records</h3>${cards||'<p class="small">No forms yet. Create your Calculator Agreement, permission slips, club forms, or anything else you need to track.</p>'}</section>`;
+}
+window.openFormEditor=(id=null)=>{
+  ensureForms();ensureGroups(); const f=id?data.forms.find(x=>x.id===id):null;
+  const checks=(items,selected,name)=>items.map(x=>`<label class="checkRow"><input type="checkbox" name="${name}" value="${x.id}" ${(selected||[]).includes(x.id)?"checked":""}> ${esc(x.name)}</label>`).join("");
+  const fields=(f?.fields||[]).map((x,i)=>`<div class="fieldDef"><input value="${esc(x.label)}" placeholder="Field name" oninput="this.closest('.fieldDef').dataset.label=this.value"><select onchange="this.closest('.fieldDef').dataset.type=this.value"><option value="text" ${x.type==="text"?"selected":""}>Short text</option><option value="number" ${x.type==="number"?"selected":""}>Number</option><option value="date" ${x.type==="date"?"selected":""}>Date</option><option value="checkbox" ${x.type==="checkbox"?"selected":""}>Yes / No</option><option value="dropdown" ${x.type==="dropdown"?"selected":""}>Dropdown</option><option value="notes" ${x.type==="notes"?"selected":""}>Notes</option></select><button type="button" onclick="this.parentElement.remove()">×</button></div>`).join("");
+  const body=`<div class="modalStack formEditor"><label>Form / Record Name<input id="formName" value="${esc(f?.name||"")}" placeholder="e.g., Calculator Agreement"></label><label>Description<textarea id="formDescription" rows="2">${esc(f?.description||"")}</textarea></label><label>Due Date <input id="formDueDate" type="date" value="${f?.dueDate||""}"></label>
+  <details open><summary><b>Who does this apply to?</b></summary><div class="targetGrid"><div><b>Classes</b>${checks(data.classes,f?.targetClassIds,"targetClass")||'<span class="small">None</span>'}</div><div><b>Groups</b>${checks(data.groups,f?.targetGroupIds,"targetGroup")||'<span class="small">None</span>'}</div><div><b>Individual Students</b><div class="targetStudents">${checks(sortedStudents(data.students),f?.targetStudentIds,"targetStudent")}</div></div></div></details>
+  <details open><summary><b>Information Fields</b></summary><p class="small">Received, submission method, and date received are included automatically. Add anything else you want to track.</p><div id="customFields">${fields}</div><button type="button" onclick="window.addFormField()">＋ Add Field</button></details></div>`;
+  const footer=`<button onclick="window.closeFormDialog()">Cancel</button><button class="primary" onclick="window.saveForm('${id||""}')">Save Form</button>`;
+  openModal(f?"Edit Form":"Create Form",body,footer);
+};
+window.addFormField=()=>{const host=document.getElementById("customFields");const d=document.createElement("div");d.className="fieldDef";d.dataset.type="text";d.innerHTML=`<input placeholder="Field name" oninput="this.closest('.fieldDef').dataset.label=this.value"><select onchange="this.closest('.fieldDef').dataset.type=this.value"><option value="text">Short text</option><option value="number">Number</option><option value="date">Date</option><option value="checkbox">Yes / No</option><option value="dropdown">Dropdown</option><option value="notes">Notes</option></select><button type="button" onclick="this.parentElement.remove()">×</button>`;host.appendChild(d);};
+window.closeFormDialog=()=>{if(typeof closeModal==="function")closeModal();};
+window.saveForm=(id)=>{
+  const name=$("#formName")?.value.trim();if(!name){alert("Please name the form or record.");return;}
+  const vals=n=>[...document.querySelectorAll(`[name="${n}"]:checked`)].map(x=>x.value);
+  const fields=[...document.querySelectorAll("#customFields .fieldDef")].map(d=>({id:"fld_"+Math.random().toString(36).slice(2),label:(d.dataset.label||d.querySelector("input").value||"").trim(),type:d.dataset.type||d.querySelector("select").value})).filter(x=>x.label);
+  const obj={name,description:$("#formDescription")?.value.trim()||"",dueDate:$("#formDueDate")?.value||"",targetClassIds:vals("targetClass"),targetGroupIds:vals("targetGroup"),targetStudentIds:vals("targetStudent"),fields};
+  if(id){const old=data.forms.find(x=>x.id===id);Object.assign(old,obj);}
+  else data.forms.push({id:"form_"+Math.random().toString(36).slice(2),...obj,records:{}});
+  save();window.closeFormDialog();render();
+};
+window.openFormTracker=(id)=>{
+  const f=data.forms.find(x=>x.id===id);if(!f)return;const students=sortedStudents(data.students.filter(s=>formStudentIds(f).includes(s.id)));
+  const cols=f.fields.map(x=>`<th>${esc(x.label)}</th>`).join("");
+  const rows=students.map(s=>{const r=f.records[s.id]||{};return `<tr><td><b>${esc(studentDisplayName(s))}</b></td><td><input type="checkbox" ${r.received?"checked":""} onchange="window.updateFormRecord('${id}','${s.id}','received',this.checked)"></td><td><select onchange="window.updateFormRecord('${id}','${s.id}','method',this.value)">${["","ParentSquare","Google Classroom","Physical Copy","Email","Other"].map(v=>`<option ${r.method===v?"selected":""}>${v||"—"}</option>`).join("")}</select></td><td><input type="date" value="${r.receivedDate||""}" onchange="window.updateFormRecord('${id}','${s.id}','receivedDate',this.value)"></td>${f.fields.map(x=>`<td>${window.formFieldInput?window.formFieldInput(id,s.id,x,r[x.id]):""}</td>`).join("")}</tr>`;}).join("");
+  const body=`<div class="trackerHeader"><button onclick="window.closeFormDialog()">← Back</button><div><h2>${esc(f.name)}</h2><p class="small">${students.filter(s=>f.records[s.id]?.received).length} / ${students.length} received</p></div></div><div class="tableWrap"><table class="formMatrix"><thead><tr><th>Student</th><th>Received</th><th>Method</th><th>Date Received</th>${cols}</tr></thead><tbody>${rows||'<tr><td colspan="20">No students selected for this form.</td></tr>'}</tbody></table></div>`;
+  openModal(f.name,body,`<button onclick="window.closeFormDialog()">Close</button>`);
+};
+window.formFieldInput=(formId,studentId,field,value)=>{
+  const escv=esc(value??"");
+  if(field.type==="checkbox")return `<input type="checkbox" ${value?"checked":""} onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}',this.checked)">`;
+  if(field.type==="notes")return `<textarea rows="1" onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}',this.value)">${escv}</textarea>`;
+  return `<input type="${field.type==="number"?"number":field.type==="date"?"date":"text"}" value="${escv}" onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}',this.value)">`;
+};
+window.updateFormRecord=(formId,studentId,key,value)=>{const f=data.forms.find(x=>x.id===formId);if(!f)return;f.records[studentId]=f.records[studentId]||{};f.records[studentId][key]=value;if(key==="received"&&value&&!f.records[studentId].receivedDate)f.records[studentId].receivedDate=new Date().toISOString().slice(0,10);save();};
 function calendar(){
   data.calendarSettings??={firstStudentDay:"",lastStudentDay:""};
   data.calendarOverrides??={};
