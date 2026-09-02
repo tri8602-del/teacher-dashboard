@@ -95,7 +95,12 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 .pvaasCohortTag{display:inline-block;padding:3px 8px;border:1px solid var(--line);border-radius:999px;background:#f7f8fb;font-size:12px}
 
 
-.groupCard{margin:10px 0}.groupMembers{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.groupMemberTag{font-size:12px;padding:4px 8px;border-radius:999px;background:var(--soft,#f1f4f8);border:1px solid var(--line)}.groupCheckList{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:5px;max-height:280px;overflow:auto;padding:8px 2px}.checkRow{display:flex;align-items:center;gap:7px;padding:5px}.modalStack{display:grid;gap:12px}.modalStack label>input,.modalStack label>textarea{width:100%;margin-top:4px}.modalStack summary{cursor:pointer;margin-bottom:6px}</style>
+.groupCard{margin:10px 0}.groupMembers{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.groupMemberTag{font-size:12px;padding:4px 8px;border-radius:999px;background:var(--soft,#f1f4f8);border:1px solid var(--line)}.groupCheckList{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:5px;max-height:280px;overflow:auto;padding:8px 2px}.checkRow{display:flex;align-items:center;gap:7px;padding:5px}.modalStack{display:grid;gap:12px}.modalStack label>input,.modalStack label>textarea{width:100%;margin-top:4px}.modalStack summary{cursor:pointer;margin-bottom:6px}
+#groupModalFallback{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999;align-items:center;justify-content:center;padding:18px}
+#groupModalFallback .modal{background:var(--card,#fff);width:min(620px,96vw);max-height:90vh;overflow:auto;border-radius:14px;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.25)}
+#groupModalFallback .modalHead{display:flex;justify-content:space-between;align-items:center}
+#groupModalFallback .modalActions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+</style>
 </style>
 </head>
 <body>
@@ -123,7 +128,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.10.0";
+const APP_VERSION="1.10.1";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -840,9 +845,30 @@ window.saveGroup=(id)=>{
   const studentIds=[...document.querySelectorAll('.groupCheckList input:checked')].map(x=>x.value);
   if(id){const g=data.groups.find(x=>x.id===id);Object.assign(g,{name,description:$("#groupDescription")?.value.trim()||"",studentIds});}
   else data.groups.push({id:"g_"+Math.random().toString(36).slice(2),name,description:$("#groupDescription")?.value.trim()||"",studentIds});
-  ensureGroups();save();closeModal();render();
+  ensureGroups();save();window.closeGroupDialog();render();
 };
 window.deleteGroup=(id)=>{const g=data.groups.find(x=>x.id===id);if(!g)return;if(confirm(`Delete "${g.name}"? This will not delete any students.`)){data.groups=data.groups.filter(x=>x.id!==id);save();render();}};
+
+window.openGroupModal=(id=null)=>{
+  ensureGroups(); normalizeStudents();
+  const g=id?data.groups.find(x=>x.id===id):null;
+  const selected=new Set(g?.studentIds||[]);
+  const rows=sortedStudents(data.students).map(s=>`<label class="checkRow"><input type="checkbox" value="${s.id}" ${selected.has(s.id)?"checked":""}> ${esc(studentDisplayName(s))}</label>`).join("");
+  const body=`<div class="modalStack"><label>Group Name<input id="groupName" value="${esc(g?.name||"")}" placeholder="e.g., Debate Club" autofocus></label><label>Description <span class="small">(optional)</span><textarea id="groupDescription" rows="2">${esc(g?.description||"")}</textarea></label><details open><summary><b>Students</b></summary><div class="groupCheckList">${rows||'<p class="small">Add students first.</p>'}</div></details></div>`;
+  const footer=`<button type="button" onclick="window.closeGroupDialog()">Cancel</button><button type="button" class="primary" onclick="window.saveGroup('${id||""}')">Save</button>`;
+  if(typeof openModal==="function"){ openModal(`${g?"Edit":"Add"} Group`,body,footer); return; }
+  let host=document.getElementById("groupModalFallback");
+  if(!host){host=document.createElement("div");host.id="groupModalFallback";host.className="modalOverlay";document.body.appendChild(host);}
+  host.innerHTML=`<div class="modal"><div class="modalHead"><h3>${g?"Edit":"Add"} Group</h3><button type="button" onclick="window.closeGroupDialog()">×</button></div><div class="modalBody">${body}</div><div class="modalActions">${footer}</div></div>`;
+  host.style.display="flex";
+  setTimeout(()=>document.getElementById("groupName")?.focus(),0);
+};
+window.closeGroupDialog=()=>{
+  const host=document.getElementById("groupModalFallback");
+  if(host){host.style.display="none";host.innerHTML="";}
+  if(typeof closeModal==="function")closeModal();
+};
+
 function calendar(){
   data.calendarSettings??={firstStudentDay:"",lastStudentDay:""};
   data.calendarOverrides??={};
