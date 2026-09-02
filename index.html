@@ -112,7 +112,45 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 #formModalFallback .modalActions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
 
 .fieldDefEnhanced{position:relative;display:block!important;padding:10px 38px 10px 0;border-top:1px solid var(--line);margin:8px 0}.fieldDefEnhanced .fieldMain{display:grid;grid-template-columns:1fr 160px;gap:7px}.fieldDefEnhanced .removeField{position:absolute;right:0;top:10px}.dropdownOptions{margin-top:8px}.dropdownOptions textarea{width:100%;resize:vertical}.otherFieldInput{margin-top:5px;width:100%;max-width:180px}
-.formFooterSpacer{flex:1}.danger{border-color:#b33!important;color:#a22!important}.formTrackerPanel{width:min(1200px,98vw)!important}.longTextField{min-width:220px;min-height:70px;resize:vertical;white-space:pre-wrap}.formMatrix td{vertical-align:top}</style>
+.formFooterSpacer{flex:1}.danger{border-color:#b33!important;color:#a22!important}
+/* Compact form tracker */
+.formTrackerPanel{width:min(1400px,99vw)!important;max-height:94vh;display:flex;flex-direction:column}
+.formTrackerPanel .modalBody{padding:10px 12px;overflow:auto}
+.formTrackerPanel .modalHead{padding:8px 12px}
+.formTrackerPanel .modalActions{padding:8px 12px}
+.formTrackerPanel h2{font-size:18px;margin:0}
+.formTrackerPanel .small{font-size:12px;margin:2px 0 0}
+.formTrackerPanel .tableWrap{overflow:auto;max-height:calc(94vh - 125px)}
+.formMatrix{border-collapse:collapse;width:100%;font-size:12px;line-height:1.1}
+.formMatrix th,.formMatrix td{padding:4px 5px!important;vertical-align:middle!important}
+.formMatrix th{font-size:11px}
+.formMatrix td:first-child{min-width:120px;max-width:170px;white-space:normal}
+.formMatrix input,.formMatrix select,.formMatrix textarea{
+  box-sizing:border-box!important;
+  font-size:12px!important;
+  padding:4px 6px!important;
+  min-height:30px!important;
+  height:30px!important;
+  max-width:125px!important;
+  border-radius:6px!important;
+}
+.formMatrix input[type="checkbox"]{width:16px!important;height:16px!important;min-height:16px!important;padding:0!important}
+.formMatrix input[type="date"]{max-width:118px!important}
+.formMatrix select{max-width:120px!important}
+.formMatrix textarea.longTextField{
+  width:150px!important;max-width:150px!important;
+  height:42px!important;min-height:42px!important;
+  padding:5px 6px!important;line-height:1.15!important;
+}
+.formMatrix .otherFieldInput{display:block;margin-top:3px!important;width:120px!important;max-width:120px!important}
+@media(max-width:900px){
+  .formMatrix{font-size:11px}
+  .formMatrix th,.formMatrix td{padding:3px 4px!important}
+  .formMatrix input,.formMatrix select{max-width:105px!important}
+  .formMatrix input[type="date"]{max-width:108px!important}
+  .formMatrix td:first-child{min-width:105px;max-width:135px}
+}
+</style>
 </style>
 </head>
 <body>
@@ -140,7 +178,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.11.4";
+const APP_VERSION="1.11.5";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -1007,7 +1045,7 @@ window.formFieldInput=(formId,studentId,field,value)=>{
   return `<input type="${field.type==="number"?"number":field.type==="date"?"date":"text"}" value="${escv}" onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}',this.value)">`;
 };
 window.updateFormRecord=(formId,studentId,key,value)=>{const f=data.forms.find(x=>x.id===formId);if(!f)return;f.records[studentId]=f.records[studentId]||{};f.records[studentId][key]=value;if(key==="received"&&value&&!f.records[studentId].receivedDate)f.records[studentId].receivedDate=new Date().toISOString().slice(0,10);save();};
-// --- Forms & Records v1.11.4 enhancements ---
+// --- Forms & Records v1.11.5 enhancements ---
 window.addFormField=()=>{
   const host=document.getElementById("customFields"); if(!host)return;
   const d=document.createElement("div");d.className="fieldDef fieldDefEnhanced";d.dataset.type="text";
@@ -1059,7 +1097,7 @@ window.updateDropdownField=(el,formId,studentId,fieldId)=>{
   }else window.updateFormRecord(formId,studentId,fieldId,value);
 };
 
-// --- Forms v1.11.4: reliable close + delete ---
+// --- Forms v1.11.5: reliable close + delete ---
 window.closeFormDialog=()=>{
   const host=document.getElementById("formModalFallback");
   if(host){
@@ -1096,7 +1134,7 @@ window.deleteForm=(id)=>{
   render();
 };
 
-// --- Forms v1.11.4: tracker modal + long text ---
+// --- Forms v1.11.5: tracker modal + long text ---
 window.openFormTracker=(id)=>{
   ensureForms(); const f=data.forms.find(x=>x.id===id);if(!f)return;
   normalizeStudents();
@@ -1126,7 +1164,7 @@ window.refreshFormTrackerHeader=(id)=>{
 window.formFieldInput=(formId,studentId,field,value)=>{
   const escv=esc(value??"");
   if(field.type==="checkbox")return `<input type="checkbox" ${value?"checked":""} onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}',this.checked)">`;
-  if(field.type==="notes"||field.type==="longtext")return `<textarea class="longTextField" rows="3" placeholder="Enter text..." onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}',this.value)">${escv}</textarea>`;
+  if(field.type==="notes"||field.type==="longtext")return `<textarea class="longTextField" rows="2" placeholder="Enter text..." onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}',this.value)">${escv}</textarea>`;
   if(field.type==="dropdown"){
     const opts=field.options||[], selected=String(value??""), otherValue=selected.startsWith("__OTHER__:")?selected.slice(10):"", selectValue=otherValue?"Other":selected;
     return `<select onchange="window.updateDropdownField(this,'${formId}','${studentId}','${field.id}')"><option value="">—</option>${opts.map(o=>`<option value="${esc(o)}" ${selectValue===o?"selected":""}>${esc(o)}</option>`).join("")}</select>${selectValue==="Other"?`<input class="otherFieldInput" placeholder="Please specify..." value="${esc(otherValue)}" onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}','__OTHER__:'+this.value)">`:""}`;
