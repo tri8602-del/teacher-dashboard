@@ -95,7 +95,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 .pvaasCohortTag{display:inline-block;padding:3px 8px;border:1px solid var(--line);border-radius:999px;background:#f7f8fb;font-size:12px}
 
 
-</style>
+.groupCard{margin:10px 0}.groupMembers{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.groupMemberTag{font-size:12px;padding:4px 8px;border-radius:999px;background:var(--soft,#f1f4f8);border:1px solid var(--line)}.groupCheckList{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:5px;max-height:280px;overflow:auto;padding:8px 2px}.checkRow{display:flex;align-items:center;gap:7px;padding:5px}.modalStack{display:grid;gap:12px}.modalStack label>input,.modalStack label>textarea{width:100%;margin-top:4px}.modalStack summary{cursor:pointer;margin-bottom:6px}</style>
 </style>
 </head>
 <body>
@@ -123,7 +123,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.9.11";
+const APP_VERSION="1.10.0";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -138,6 +138,7 @@ const defaultButtons=[
 const seed={
  classes:[{id:"c1",name:"Honors Precalculus",studentIds:["s1","s2","s3"],periods:[1],days:[1,2,3,4,5],terms:["fullYear"]}],
  students:[{id:"s1",name:"Abby Smith"},{id:"s2",name:"Ben Jones"},{id:"s3",name:"Chris Brown"}],
+ groups:[],
  buttons:defaultButtons.map(([id,icon,label,type])=>({id,icon,label,type})),
  events:[],notes:[],schoolDays:[],totalSchoolDays:178,gradeCourses:[],
  profileAvatar:"",
@@ -175,6 +176,10 @@ function ensureBellSchedules(){
   if(!data.bellSchedules.some(s=>s.id==="regular")){
     data.bellSchedules.unshift(defaultBellSchedules().find(s=>s.id==="regular"));
   }
+}
+function ensureGroups(){
+  if(!Array.isArray(data.groups))data.groups=[];
+  data.groups=data.groups.map((g,i)=>({id:g.id||`group_${Date.now()}_${i}`,name:String(g.name||"Untitled Group"),description:String(g.description||""),studentIds:Array.isArray(g.studentIds)?[...new Set(g.studentIds)]:[]}));
 }
 function ensureClassFields(){
   if(!Array.isArray(data.classes))data.classes=[];
@@ -472,7 +477,7 @@ window.addEnrollmentPeriod=(classId,studentId)=>{const c=data.classes.find(x=>x.
 window.removeEnrollmentPeriod=(classId,periodId)=>{const c=data.classes.find(x=>x.id===classId);if(!c)return;c.enrollmentPeriods=(c.enrollmentPeriods||[]).filter(p=>p.id!==periodId);save();render();};
 
 function render(){
-  ensureClassroomTools();
+  ensureClassroomTools(); ensureGroups();
   if(!currentUser){$("#root").innerHTML=loginHTML();return}
   const userLabel=currentUser.displayName||currentUser.email||"Google user";
   $("#root").innerHTML=`<div class="app"><aside>
@@ -485,7 +490,7 @@ function render(){
   bind();
 }
 function loginHTML(){return `<div class="loginScreen"><section class="loginCard"><div style="font-size:48px">🍎</div><h1>Teacher Dashboard</h1><p>Sign in with Google to securely access your own Teacher Dashboard.</p><button class="googleBtn primary" onclick="window.signIn()" ${authBusy?"disabled":""}>${authBusy?"Signing in...":"G  Sign in with Google"}</button>${loginError?`<div class="loginError">${esc(loginError)}</div>`:""}<p class="small" style="margin-top:20px">Each Google account has its own private dashboard and browser backup.</p></section></div>`}
-function nav(){return [["live","🏠","Live Class"],["students","👥","Students & Classes"],["calendar","🗓️","Calendar"],["buttons","⚡","Quick Buttons"],["grades","📚","Grades"],["reports","📊","Reports"],["pvaas","📈","PVAAS Reporting"],["settings","⚙️","Settings"]].map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
+function nav(){return [["live","🏠","Live Class"],["students","👥","Students & Classes"],["groups","👥","Groups"],["calendar","🗓️","Calendar"],["buttons","⚡","Quick Buttons"],["grades","📚","Grades"],["reports","📊","Reports"],["pvaas","📈","PVAAS Reporting"],["settings","⚙️","Settings"]].map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
 function classPeriodNumber(label){const m=String(label||"").match(/^(\d+)(?:st|nd|rd|th)?\s+Period\b/i);return m?Number(m[1]):null}
 function timeToMinutes(value,previous=-1){
   const m=String(value||"").trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);if(!m)return null;
@@ -540,7 +545,7 @@ function recentEventsHTML(){
 window.toggleRecentEvents=()=>{window.recentEventsExpanded=!(window.recentEventsExpanded===true);render();}
 function toastHTML(){return toast?`<div class="toast">${esc(toast)} <button onclick="window.clearToast()">×</button></div>`:""}
 window.clearToast=()=>{toast="";render()}
-function pageHTML(){return ({live,students,calendar,buttons:quickButtons,grades,reports,pvaas,settings})[page]()}
+function pageHTML(){return ({live,students,groups,calendar,buttons:quickButtons,grades,reports,pvaas,settings})[page]()}
 
 function classroomToolsHTML(cls,block){
   ensureClassroomTools();
@@ -802,6 +807,42 @@ function calendarDayProgress(iso){
   const total=countedDaysTotal();
   return current?`${current}/${Math.max(0,total-current)}`:null;
 }
+function groups(){
+  ensureGroups(); normalizeStudents();
+  const groupCards=data.groups.map(g=>{
+    const members=sortedStudents(data.students.filter(s=>g.studentIds.includes(s.id)));
+    return `<section class="card groupCard">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><h3>${esc(g.name)}</h3>${g.description?`<div class="small">${esc(g.description)}</div>`:""}<div class="small">${members.length} student${members.length===1?"":"s"}</div></div>
+      <span><button onclick="window.openGroupModal('${g.id}')">Edit</button> <button onclick="window.deleteGroup('${g.id}')">Delete</button></span></div>
+      <div class="groupMembers">${members.map(s=>`<span class="groupMemberTag">${esc(studentDisplayName(s))}</span>`).join("")||'<span class="small">No students added yet.</span>'}</div>
+    </section>`;
+  }).join("");
+  return `<header><div><h2>Groups</h2><p>Create groups that exist independently from classes—perfect for clubs, teams, activities, and anything else.</p></div><button class="primary" onclick="window.openGroupModal()">＋ Add Group</button></header>
+  <section class="card"><h3>Your Groups</h3>${groupCards||'<p class="small">No groups yet. Create Debate Club, Academic League, or any other student group.</p>'}</section>`;
+}
+
+window.openGroupModal=(id=null)=>{
+  ensureGroups(); normalizeStudents();
+  const g=id?data.groups.find(x=>x.id===id):null;
+  const selected=new Set(g?.studentIds||[]);
+  const rows=sortedStudents(data.students).map(s=>`<label class="checkRow"><input type="checkbox" value="${s.id}" ${selected.has(s.id)?"checked":""}> ${esc(studentDisplayName(s))}</label>`).join("");
+  openModal(`${g?"Edit":"Add"} Group`,`
+    <div class="modalStack">
+      <label>Group Name<input id="groupName" value="${esc(g?.name||"")}" placeholder="e.g., Debate Club" autofocus></label>
+      <label>Description <span class="small">(optional)</span><textarea id="groupDescription" rows="2">${esc(g?.description||"")}</textarea></label>
+      <details open><summary><b>Students</b> <span class="small">(${(g?.studentIds||[]).length} selected)</span></summary><div class="groupCheckList">${rows||'<p class="small">Add students first.</p>'}</div></details>
+    </div>`,
+    `<button onclick="closeModal()">Cancel</button><button class="primary" onclick="window.saveGroup('${id||""}')">Save</button>`);
+};
+
+window.saveGroup=(id)=>{
+  const name=$("#groupName")?.value.trim(); if(!name){alert("Please give the group a name.");return;}
+  const studentIds=[...document.querySelectorAll('.groupCheckList input:checked')].map(x=>x.value);
+  if(id){const g=data.groups.find(x=>x.id===id);Object.assign(g,{name,description:$("#groupDescription")?.value.trim()||"",studentIds});}
+  else data.groups.push({id:"g_"+Math.random().toString(36).slice(2),name,description:$("#groupDescription")?.value.trim()||"",studentIds});
+  ensureGroups();save();closeModal();render();
+};
+window.deleteGroup=(id)=>{const g=data.groups.find(x=>x.id===id);if(!g)return;if(confirm(`Delete "${g.name}"? This will not delete any students.`)){data.groups=data.groups.filter(x=>x.id!==id);save();render();}};
 function calendar(){
   data.calendarSettings??={firstStudentDay:"",lastStudentDay:""};
   data.calendarOverrides??={};
