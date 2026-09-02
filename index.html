@@ -151,7 +151,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
   .formMatrix td:first-child{min-width:105px;max-width:135px}
 }
 
-/* V1.11.9 ultra-compact tracker: spreadsheet-style, one-line rows */
+/* V1.12.2 ultra-compact tracker: spreadsheet-style, one-line rows */
 .formTrackerPanel .modalBody{padding:6px 8px!important}
 .formTrackerPanel .modalHead,.formTrackerPanel .modalActions{padding:6px 10px!important}
 .formTrackerPanel .trackerHeader{margin:0 0 5px!important}
@@ -201,7 +201,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 
 .copyFormBtn{white-space:nowrap}
 
-/* V1.11.9 compact Forms list */
+/* V1.12.2 compact Forms list */
 .formCard.compactFormRow{margin:4px 0!important;padding:7px 12px!important;min-height:0!important}
 .formCard.compactFormRow .formCardTop{min-height:30px!important;gap:10px!important}
 .formRowInfo{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important;overflow:hidden!important}
@@ -214,6 +214,103 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
  .formRowInfo{gap:5px!important}.formRowMeta{display:none!important}
  .formRowActions button{padding:5px 7px!important;font-size:11px!important}
 }
+
+
+/* V1.12.2 — cleaner "Who does this apply to?" selector */
+#formModalFallback .formEditor details{
+  margin:2px 0!important;
+  border:1px solid var(--line,#d8dee8)!important;
+  border-radius:8px!important;
+  padding:6px 8px!important;
+}
+#formModalFallback .formEditor details summary{
+  margin:0 0 6px!important;
+  font-size:13px!important;
+}
+#formModalFallback .targetGrid{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:8px!important;
+  margin:0!important;
+  align-items:start!important;
+}
+#formModalFallback .targetGrid>div{
+  display:block!important;
+  min-width:0!important;
+  max-height:185px!important;
+  overflow:auto!important;
+  padding:5px 6px!important;
+  border:1px solid var(--line,#e0e5ec)!important;
+  border-radius:7px!important;
+  background:rgba(255,255,255,.28)!important;
+}
+#formModalFallback .targetGrid>div>b{
+  display:block!important;
+  position:sticky!important;
+  top:-5px!important;
+  z-index:2!important;
+  padding:1px 0 5px!important;
+  font-size:12px!important;
+  background:var(--card,#fff)!important;
+}
+#formModalFallback .targetGrid .checkRow{
+  display:flex!important;
+  align-items:center!important;
+  gap:5px!important;
+  min-height:24px!important;
+  padding:2px 1px!important;
+  margin:0!important;
+  font-size:12px!important;
+  line-height:1.15!important;
+  white-space:normal!important;
+}
+#formModalFallback .targetGrid .checkRow input[type="checkbox"]{
+  width:14px!important;
+  height:14px!important;
+  min-width:14px!important;
+  min-height:14px!important;
+  margin:0!important;
+  flex:0 0 auto!important;
+}
+#formModalFallback .targetStudents{
+  max-height:none!important;
+  overflow:visible!important;
+}
+@media(max-width:700px){
+  #formModalFallback .targetGrid{grid-template-columns:1fr!important}
+  #formModalFallback .targetGrid>div{max-height:150px!important}
+}
+
+
+/* V1.12.2 multiple-checkbox form fields */
+.formMatrix .multiCheckboxField{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  gap:3px 8px!important;
+  min-width:140px!important;
+  max-width:260px!important;
+}
+.formMatrix .multiCheckboxField label{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:3px!important;
+  margin:0!important;
+  font-size:11px!important;
+  white-space:nowrap!important;
+}
+.formMatrix .multiCheckboxField input[type="checkbox"]{
+  width:14px!important;height:14px!important;min-width:14px!important;
+}
+
+
+/* V1.12.2 form ordering */
+.formsSectionHeader{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;margin-bottom:4px!important}
+.formsSectionHeader h3{margin:0!important}
+.formReorderActions{gap:4px!important}
+.formReorderActions .formMove{width:28px!important;min-width:28px!important;padding:4px!important;font-size:15px!important;line-height:1!important}
+.formReorderActions .formMove:disabled{opacity:.35!important;cursor:default!important}
+.smallButton{padding:4px 9px!important;min-height:28px!important;font-size:12px!important}
 
 </style>
 </style>
@@ -243,7 +340,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.11.9";
+const APP_VERSION="1.12.2";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -1062,14 +1159,37 @@ function formStudentIds(f){
   (f.targetGroupIds||[]).forEach(gid=>{const g=data.groups.find(x=>x.id===gid);(g?.studentIds||[]).forEach(id=>ids.add(id));});
   return [...ids];
 }
+function orderedForms(){
+  ensureForms();
+  const alpha=[...data.forms].sort((a,b)=>(a.name||"").localeCompare(b.name||"",undefined,{sensitivity:"base"}));
+  const saved=Array.isArray(data.formOrder)?data.formOrder:[];
+  if(!saved.length)return alpha;
+  const byId=new Map(data.forms.map(f=>[f.id,f]));
+  const ordered=saved.map(id=>byId.get(id)).filter(Boolean);
+  const missing=alpha.filter(f=>!saved.includes(f.id));
+  return [...ordered,...missing];
+}
+window.moveForm=(id,direction)=>{
+  const ids=orderedForms().map(f=>f.id);
+  const i=ids.indexOf(id), j=i+direction;
+  if(i<0||j<0||j>=ids.length)return;
+  [ids[i],ids[j]]=[ids[j],ids[i]];
+  data.formOrder=ids;
+  save();render();
+};
+window.alphabetizeForms=()=>{
+  data.formOrder=[];
+  save();render();
+};
 function forms(){
   ensureForms(); ensureGroups(); normalizeStudents();
-  const cards=data.forms.map(f=>{
+  const ordered=orderedForms();
+  const cards=ordered.map((f,index)=>{
     const ids=formStudentIds(f), received=ids.filter(id=>f.records[id]?.received).length;
-    return `<section class="card formCard compactFormRow"><div class="formCardTop"><div class="formRowInfo"><span class="formRowTitle">${esc(f.name)}</span><span class="formRowMeta"><b>${received} / ${ids.length} received</b>${f.dueDate?` · Due ${f.dueDate}`:""}</span></div><div class="formRowActions"><button onclick="window.openFormEditor('${f.id}')">Edit</button><button onclick="window.copyForm('${f.id}')">Copy</button><button class="primary" onclick="window.openFormTracker('${f.id}')">Open Tracker</button></div></div></section>`;
+    return `<section class="card formCard compactFormRow"><div class="formCardTop"><div class="formRowInfo"><span class="formRowTitle">${esc(f.name)}</span><span class="formRowMeta"><b>${received} / ${ids.length} received</b>${f.dueDate?` · Due ${f.dueDate}`:""}</span></div><div class="formRowActions formReorderActions"><button class="formMove" title="Move up" aria-label="Move ${esc(f.name)} up" onclick="window.moveForm('${f.id}',-1)" ${index===0?"disabled":""}>↑</button><button class="formMove" title="Move down" aria-label="Move ${esc(f.name)} down" onclick="window.moveForm('${f.id}',1)" ${index===ordered.length-1?"disabled":""}>↓</button><button onclick="window.openFormEditor('${f.id}')">Edit</button><button onclick="window.copyForm('${f.id}')">Copy</button><button class="primary" onclick="window.openFormTracker('${f.id}')">Open Tracker</button></div></div></section>`;
   }).join("");
   return `<header><div><h2>Forms & Records</h2><p>Create a tracker once, then keep all the information you need in one place.</p></div><button class="primary" onclick="window.openFormEditor()">＋ Create Form</button></header>
-  <section class="card"><h3>Your Forms & Records</h3>${cards||'<p class="small">No forms yet. Create your Calculator Agreement, permission slips, club forms, or anything else you need to track.</p>'}</section>`;
+  <section class="card"><div class="formsSectionHeader"><h3>Your Forms & Records</h3><button class="smallButton" onclick="window.alphabetizeForms()">A–Z</button></div>${cards||'<p class="small">No forms yet. Create your Calculator Agreement, permission slips, club forms, or anything else you need to track.</p>'}</section>`;
 }
 window.openFormEditor=(id=null,template=null)=>{
   ensureForms();ensureGroups(); const f=template || (id?data.forms.find(x=>x.id===id):null);
@@ -1128,7 +1248,7 @@ window.formFieldInput=(formId,studentId,field,value)=>{
   return `<input type="${field.type==="number"?"number":field.type==="date"?"date":"text"}" value="${escv}" onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}',this.value)">`;
 };
 window.updateFormRecord=(formId,studentId,key,value)=>{const f=data.forms.find(x=>x.id===formId);if(!f)return;f.records[studentId]=f.records[studentId]||{};f.records[studentId][key]=value;if(key==="received"&&value&&!f.records[studentId].receivedDate)f.records[studentId].receivedDate=new Date().toISOString().slice(0,10);save();};
-// --- Forms & Records v1.11.9 enhancements ---
+// --- Forms & Records v1.12.2 enhancements ---
 window.addFormField=()=>{
   const host=document.getElementById("customFields"); if(!host)return;
   const d=document.createElement("div");d.className="fieldDef fieldDefEnhanced";d.dataset.type="text";
@@ -1180,7 +1300,7 @@ window.updateDropdownField=(el,formId,studentId,fieldId)=>{
   }else window.updateFormRecord(formId,studentId,fieldId,value);
 };
 
-// --- Forms v1.11.9: reliable close + delete ---
+// --- Forms v1.12.2: reliable close + delete ---
 window.closeFormDialog=()=>{
   const host=document.getElementById("formModalFallback");
   if(host){
@@ -1195,11 +1315,11 @@ document.addEventListener("keydown",(e)=>{
     if(host&&host.style.display!=="none"){window.closeFormDialog();}
   }
 });
-window.openFormEditor=(id=null)=>{
-  ensureForms();ensureGroups(); const f=id?data.forms.find(x=>x.id===id):null;
+window.openFormEditor=(id=null,template=null)=>{
+  ensureForms();ensureGroups(); const f=template || (id?data.forms.find(x=>x.id===id):null);
   const checks=(items,selected,name)=>items.map(x=>`<label class="checkRow"><input type="checkbox" name="${name}" value="${x.id}" ${(selected||[]).includes(x.id)?"checked":""}> ${esc(x.name)}</label>`).join("");
-  const fields=(f?.fields||[]).map(x=>`<div class="fieldDef fieldDefEnhanced" data-field-id="${x.id}" data-type="${x.type}" data-label="${esc(x.label)}"><div class="fieldMain"><input value="${esc(x.label)}" placeholder="Field name" oninput="this.closest('.fieldDef').dataset.label=this.value"><select onchange="window.toggleDropdownOptions(this)"><option value="text" ${x.type==="text"?"selected":""}>Short text</option><option value="longtext" ${x.type==="longtext"?"selected":""}>Long text</option><option value="number" ${x.type==="number"?"selected":""}>Number</option><option value="date" ${x.type==="date"?"selected":""}>Date</option><option value="checkbox" ${x.type==="checkbox"?"selected":""}>Yes / No</option><option value="dropdown" ${x.type==="dropdown"?"selected":""}>Dropdown</option><option value="notes" ${x.type==="notes"?"selected":""}>Notes</option></select></div><div class="dropdownOptions" style="display:${x.type==="dropdown"?"block":"none"}"><label>Dropdown options <span class="small">(one per line; include Other for a custom response)</span><textarea class="fieldOptions" rows="3">${esc((x.options||[]).join("\n"))}</textarea></label></div><button type="button" class="removeField" onclick="this.closest('.fieldDef').remove()">×</button></div>`).join("");
-  const body=`<div class="modalStack formEditor"><label>Form / Record Name<input id="formName" value="${esc(f?.name||"")}" placeholder="e.g., Calculator Agreement"></label><label>Description<textarea id="formDescription" rows="2">${esc(f?.description||"")}</textarea></label><label>Due Date <input id="formDueDate" type="date" value="${f?.dueDate||""}"></label><details open><summary><b>Who does this apply to?</b></summary><div class="targetGrid"><div><b>Classes</b>${checks(data.classes,f?.targetClassIds,"targetClass")||'<span class="small">None</span>'}</div><div><b>Groups</b>${checks(data.groups,f?.targetGroupIds,"targetGroup")||'<span class="small">None</span>'}</div><div><b>Individual Students</b><div class="targetStudents">${checks(sortedStudents(data.students),f?.targetStudentIds,"targetStudent")}</div></div></div></details><details open><summary><b>Information Fields</b></summary><p class="small">Received, submission method, and date received are included automatically. Add anything else you want to track.</p><div id="customFields">${fields}</div><button type="button" onclick="window.addFormField()">＋ Add Field</button></details></div>`;
+  const fields=(f?.fields||[]).map(x=>`<div class="fieldDef fieldDefEnhanced" data-field-id="${x.id}" data-type="${x.type}" data-label="${esc(x.label)}"><div class="fieldMain"><input value="${esc(x.label)}" placeholder="Field name" oninput="this.closest('.fieldDef').dataset.label=this.value"><select onchange="window.toggleDropdownOptions(this)"><option value="text" ${x.type==="text"?"selected":""}>Short text</option><option value="longtext" ${x.type==="longtext"?"selected":""}>Long text</option><option value="number" ${x.type==="number"?"selected":""}>Number</option><option value="date" ${x.type==="date"?"selected":""}>Date</option><option value="checkbox" ${x.type==="checkbox"?"selected":""}>Yes / No</option><option value="checkboxes" ${x.type==="checkboxes"?"selected":""}>Checkboxes (multiple)</option><option value="dropdown" ${x.type==="dropdown"?"selected":""}>Dropdown</option><option value="notes" ${x.type==="notes"?"selected":""}>Notes</option></select></div><div class="dropdownOptions" style="display:${(x.type==="dropdown"||x.type==="checkboxes")?"block":"none"}"><label>Options <span class="small">(one per line; include Other for a custom response)</span><textarea class="fieldOptions" rows="3">${esc((x.options||[]).join("\n"))}</textarea></label></div><button type="button" class="removeField" onclick="this.closest('.fieldDef').remove()">×</button></div>`).join("");
+  const body=`<div class="modalStack formEditor"><label>Form / Record Name<input id="formName" value="${esc(template?"":(f?.name||""))}" placeholder="e.g., Calculator Agreement"></label><label>Description<textarea id="formDescription" rows="2">${esc(template?"":(f?.description||""))}</textarea></label><label>Due Date <input id="formDueDate" type="date" value="${template?"":(f?.dueDate||"")}"></label><details open><summary><b>Who does this apply to?</b></summary><div class="targetGrid"><div><b>Classes</b>${checks(data.classes,f?.targetClassIds,"targetClass")||'<span class="small">None</span>'}</div><div><b>Groups</b>${checks(data.groups,f?.targetGroupIds,"targetGroup")||'<span class="small">None</span>'}</div><div><b>Individual Students</b><div class="targetStudents">${checks(sortedStudents(data.students),f?.targetStudentIds,"targetStudent")}</div></div></div></details><details open><summary><b>Information Fields</b></summary><p class="small">Received, submission method, and date received are included automatically. Add anything else you want to track.</p><div id="customFields">${fields}</div><button type="button" onclick="window.addFormField()">＋ Add Field</button></details></div>`;
   const footer=`${id?`<button type="button" onclick="window.copyForm('${id}')">Copy Form</button><button type="button" class="danger" onclick="window.deleteForm('${id}')">Delete Form</button>`:""}<span class="formFooterSpacer"></span><button type="button" onclick="window.closeFormDialog()">Cancel</button><button type="button" class="primary" onclick="window.saveForm('${id||""}')">Save Form</button>`;
   let host=document.getElementById("formModalFallback");
   if(!host){host=document.createElement("div");host.id="formModalFallback";document.body.appendChild(host);}
@@ -1217,7 +1337,7 @@ window.deleteForm=(id)=>{
   render();
 };
 
-// --- Forms v1.11.9: tracker modal + long text ---
+// --- Forms v1.12.2: tracker modal + long text ---
 window.openFormTracker=(id)=>{
   ensureForms(); const f=data.forms.find(x=>x.id===id);if(!f)return;
   normalizeStudents();
@@ -1248,11 +1368,21 @@ window.formFieldInput=(formId,studentId,field,value)=>{
   const escv=esc(value??"");
   if(field.type==="checkbox")return `<input type="checkbox" ${value?"checked":""} onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}',this.checked)">`;
   if(field.type==="notes"||field.type==="longtext")return `<textarea class="longTextField" rows="2" placeholder="Enter text..." onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}',this.value)">${escv}</textarea>`;
+  if(field.type==="checkboxes"){
+    const selected=Array.isArray(value)?value:(value?String(value).split("||").filter(Boolean):[]);
+    const opts=field.options||[];
+    return `<div class="multiCheckboxField">${opts.map((o,i)=>`<label><input type="checkbox" value="${esc(o)}" ${selected.includes(o)?"checked":""} onchange="window.updateCheckboxList(this,'${formId}','${studentId}','${field.id}')"> ${esc(o)}</label>`).join("")}</div>`;
+  }
   if(field.type==="dropdown"){
     const opts=field.options||[], selected=String(value??""), otherValue=selected.startsWith("__OTHER__:")?selected.slice(10):"", selectValue=otherValue?"Other":selected;
     return `<select onchange="window.updateDropdownField(this,'${formId}','${studentId}','${field.id}')"><option value="">—</option>${opts.map(o=>`<option value="${esc(o)}" ${selectValue===o?"selected":""}>${esc(o)}</option>`).join("")}</select>${selectValue==="Other"?`<input class="otherFieldInput" placeholder="Please specify..." value="${esc(otherValue)}" onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}','__OTHER__:'+this.value)">`:""}`;
   }
   return `<input type="${field.type==="number"?"number":field.type==="date"?"date":"text"}" value="${escv}" onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}',this.value)">`;
+};
+window.updateCheckboxList=(el,formId,studentId,fieldId)=>{
+  const box=el.closest(".multiCheckboxField");
+  const values=[...box.querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value);
+  window.updateFormRecord(formId,studentId,fieldId,values);
 };
 
 function calendar(){
