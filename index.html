@@ -112,7 +112,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 #formModalFallback .modalActions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
 
 .fieldDefEnhanced{position:relative;display:block!important;padding:10px 38px 10px 0;border-top:1px solid var(--line);margin:8px 0}.fieldDefEnhanced .fieldMain{display:grid;grid-template-columns:1fr 160px;gap:7px}.fieldDefEnhanced .removeField{position:absolute;right:0;top:10px}.dropdownOptions{margin-top:8px}.dropdownOptions textarea{width:100%;resize:vertical}.otherFieldInput{margin-top:5px;width:100%;max-width:180px}
-.formFooterSpacer{flex:1}.danger{border-color:#b33!important;color:#a22!important}</style>
+.formFooterSpacer{flex:1}.danger{border-color:#b33!important;color:#a22!important}.formTrackerPanel{width:min(1200px,98vw)!important}.longTextField{min-width:220px;min-height:70px;resize:vertical;white-space:pre-wrap}.formMatrix td{vertical-align:top}</style>
 </style>
 </head>
 <body>
@@ -140,7 +140,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="1.11.3";
+const APP_VERSION="1.11.4";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -971,7 +971,7 @@ function forms(){
 window.openFormEditor=(id=null)=>{
   ensureForms();ensureGroups(); const f=id?data.forms.find(x=>x.id===id):null;
   const checks=(items,selected,name)=>items.map(x=>`<label class="checkRow"><input type="checkbox" name="${name}" value="${x.id}" ${(selected||[]).includes(x.id)?"checked":""}> ${esc(x.name)}</label>`).join("");
-  const fields=(f?.fields||[]).map(x=>`<div class="fieldDef fieldDefEnhanced" data-field-id="${x.id}" data-type="${x.type}" data-label="${esc(x.label)}"><div class="fieldMain"><input value="${esc(x.label)}" placeholder="Field name" oninput="this.closest('.fieldDef').dataset.label=this.value"><select onchange="window.toggleDropdownOptions(this)"><option value="text" ${x.type==="text"?"selected":""}>Short text</option><option value="number" ${x.type==="number"?"selected":""}>Number</option><option value="date" ${x.type==="date"?"selected":""}>Date</option><option value="checkbox" ${x.type==="checkbox"?"selected":""}>Yes / No</option><option value="dropdown" ${x.type==="dropdown"?"selected":""}>Dropdown</option><option value="notes" ${x.type==="notes"?"selected":""}>Notes</option></select></div><div class="dropdownOptions" style="display:${x.type==="dropdown"?"block":"none"}"><label>Dropdown options <span class="small">(one per line; type Other to allow a custom response)</span><textarea class="fieldOptions" rows="3">${esc((x.options||[]).join("\n"))}</textarea></label></div><button type="button" class="removeField" onclick="this.closest('.fieldDef').remove()">×</button></div>`).join("");
+  const fields=(f?.fields||[]).map(x=>`<div class="fieldDef fieldDefEnhanced" data-field-id="${x.id}" data-type="${x.type}" data-label="${esc(x.label)}"><div class="fieldMain"><input value="${esc(x.label)}" placeholder="Field name" oninput="this.closest('.fieldDef').dataset.label=this.value"><select onchange="window.toggleDropdownOptions(this)"><option value="text" ${x.type==="text"?"selected":""}>Short text</option><option value="longtext" ${x.type==="longtext"?"selected":""}>Long text</option><option value="number" ${x.type==="number"?"selected":""}>Number</option><option value="date" ${x.type==="date"?"selected":""}>Date</option><option value="checkbox" ${x.type==="checkbox"?"selected":""}>Yes / No</option><option value="dropdown" ${x.type==="dropdown"?"selected":""}>Dropdown</option><option value="notes" ${x.type==="notes"?"selected":""}>Notes</option></select></div><div class="dropdownOptions" style="display:${x.type==="dropdown"?"block":"none"}"><label>Dropdown options <span class="small">(one per line; type Other to allow a custom response)</span><textarea class="fieldOptions" rows="3">${esc((x.options||[]).join("\n"))}</textarea></label></div><button type="button" class="removeField" onclick="this.closest('.fieldDef').remove()">×</button></div>`).join("");
   const body=`<div class="modalStack formEditor"><label>Form / Record Name<input id="formName" value="${esc(f?.name||"")}" placeholder="e.g., Calculator Agreement"></label><label>Description<textarea id="formDescription" rows="2">${esc(f?.description||"")}</textarea></label><label>Due Date <input id="formDueDate" type="date" value="${f?.dueDate||""}"></label>
   <details open><summary><b>Who does this apply to?</b></summary><div class="targetGrid"><div><b>Classes</b>${checks(data.classes,f?.targetClassIds,"targetClass")||'<span class="small">None</span>'}</div><div><b>Groups</b>${checks(data.groups,f?.targetGroupIds,"targetGroup")||'<span class="small">None</span>'}</div><div><b>Individual Students</b><div class="targetStudents">${checks(sortedStudents(data.students),f?.targetStudentIds,"targetStudent")}</div></div></div></details>
   <details open><summary><b>Information Fields</b></summary><p class="small">Received, submission method, and date received are included automatically. Add anything else you want to track.</p><div id="customFields">${fields}</div><button type="button" onclick="window.addFormField()">＋ Add Field</button></details></div>`;
@@ -982,7 +982,7 @@ window.openFormEditor=(id=null)=>{
   host.style.display="flex";
   setTimeout(()=>document.getElementById("formName")?.focus(),0);
 };
-window.addFormField=()=>{const host=document.getElementById("customFields");const d=document.createElement("div");d.className="fieldDef";d.dataset.type="text";d.innerHTML=`<input placeholder="Field name" oninput="this.closest('.fieldDef').dataset.label=this.value"><select onchange="this.closest('.fieldDef').dataset.type=this.value"><option value="text">Short text</option><option value="number">Number</option><option value="date">Date</option><option value="checkbox">Yes / No</option><option value="dropdown">Dropdown</option><option value="notes">Notes</option></select><button type="button" onclick="this.parentElement.remove()">×</button>`;host.appendChild(d);};
+window.addFormField=()=>{const host=document.getElementById("customFields");const d=document.createElement("div");d.className="fieldDef";d.dataset.type="text";d.innerHTML=`<input placeholder="Field name" oninput="this.closest('.fieldDef').dataset.label=this.value"><select onchange="this.closest('.fieldDef').dataset.type=this.value"><option value="text">Short text</option><option value="longtext">Long text</option><option value="number">Number</option><option value="date">Date</option><option value="checkbox">Yes / No</option><option value="dropdown">Dropdown</option><option value="notes">Notes</option></select><button type="button" onclick="this.parentElement.remove()">×</button>`;host.appendChild(d);};
 window.closeFormDialog=()=>{if(typeof closeModal==="function")closeModal();};
 window.saveForm=(id)=>{
   const name=$("#formName")?.value.trim();if(!name){alert("Please name the form or record.");return;}
@@ -1007,11 +1007,11 @@ window.formFieldInput=(formId,studentId,field,value)=>{
   return `<input type="${field.type==="number"?"number":field.type==="date"?"date":"text"}" value="${escv}" onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}',this.value)">`;
 };
 window.updateFormRecord=(formId,studentId,key,value)=>{const f=data.forms.find(x=>x.id===formId);if(!f)return;f.records[studentId]=f.records[studentId]||{};f.records[studentId][key]=value;if(key==="received"&&value&&!f.records[studentId].receivedDate)f.records[studentId].receivedDate=new Date().toISOString().slice(0,10);save();};
-// --- Forms & Records v1.11.3 enhancements ---
+// --- Forms & Records v1.11.4 enhancements ---
 window.addFormField=()=>{
   const host=document.getElementById("customFields"); if(!host)return;
   const d=document.createElement("div");d.className="fieldDef fieldDefEnhanced";d.dataset.type="text";
-  d.innerHTML=`<div class="fieldMain"><input placeholder="Field name" oninput="this.closest('.fieldDef').dataset.label=this.value"><select onchange="window.toggleDropdownOptions(this)"><option value="text">Short text</option><option value="number">Number</option><option value="date">Date</option><option value="checkbox">Yes / No</option><option value="dropdown">Dropdown</option><option value="notes">Notes</option></select></div><div class="dropdownOptions" style="display:none"><label>Dropdown options <span class="small">(one per line; type Other to allow a custom response)</span><textarea class="fieldOptions" rows="3" placeholder="Option 1&#10;Option 2&#10;Other"></textarea></label></div><button type="button" class="removeField" onclick="this.closest('.fieldDef').remove()">×</button>`;
+  d.innerHTML=`<div class="fieldMain"><input placeholder="Field name" oninput="this.closest('.fieldDef').dataset.label=this.value"><select onchange="window.toggleDropdownOptions(this)"><option value="text">Short text</option><option value="longtext">Long text</option><option value="number">Number</option><option value="date">Date</option><option value="checkbox">Yes / No</option><option value="dropdown">Dropdown</option><option value="notes">Notes</option></select></div><div class="dropdownOptions" style="display:none"><label>Dropdown options <span class="small">(one per line; type Other to allow a custom response)</span><textarea class="fieldOptions" rows="3" placeholder="Option 1&#10;Option 2&#10;Other"></textarea></label></div><button type="button" class="removeField" onclick="this.closest('.fieldDef').remove()">×</button>`;
   host.appendChild(d);
 };
 window.toggleDropdownOptions=(select)=>{
@@ -1059,7 +1059,7 @@ window.updateDropdownField=(el,formId,studentId,fieldId)=>{
   }else window.updateFormRecord(formId,studentId,fieldId,value);
 };
 
-// --- Forms v1.11.3: reliable close + delete ---
+// --- Forms v1.11.4: reliable close + delete ---
 window.closeFormDialog=()=>{
   const host=document.getElementById("formModalFallback");
   if(host){
@@ -1077,7 +1077,7 @@ document.addEventListener("keydown",(e)=>{
 window.openFormEditor=(id=null)=>{
   ensureForms();ensureGroups(); const f=id?data.forms.find(x=>x.id===id):null;
   const checks=(items,selected,name)=>items.map(x=>`<label class="checkRow"><input type="checkbox" name="${name}" value="${x.id}" ${(selected||[]).includes(x.id)?"checked":""}> ${esc(x.name)}</label>`).join("");
-  const fields=(f?.fields||[]).map(x=>`<div class="fieldDef fieldDefEnhanced" data-field-id="${x.id}" data-type="${x.type}" data-label="${esc(x.label)}"><div class="fieldMain"><input value="${esc(x.label)}" placeholder="Field name" oninput="this.closest('.fieldDef').dataset.label=this.value"><select onchange="window.toggleDropdownOptions(this)"><option value="text" ${x.type==="text"?"selected":""}>Short text</option><option value="number" ${x.type==="number"?"selected":""}>Number</option><option value="date" ${x.type==="date"?"selected":""}>Date</option><option value="checkbox" ${x.type==="checkbox"?"selected":""}>Yes / No</option><option value="dropdown" ${x.type==="dropdown"?"selected":""}>Dropdown</option><option value="notes" ${x.type==="notes"?"selected":""}>Notes</option></select></div><div class="dropdownOptions" style="display:${x.type==="dropdown"?"block":"none"}"><label>Dropdown options <span class="small">(one per line; include Other for a custom response)</span><textarea class="fieldOptions" rows="3">${esc((x.options||[]).join("\n"))}</textarea></label></div><button type="button" class="removeField" onclick="this.closest('.fieldDef').remove()">×</button></div>`).join("");
+  const fields=(f?.fields||[]).map(x=>`<div class="fieldDef fieldDefEnhanced" data-field-id="${x.id}" data-type="${x.type}" data-label="${esc(x.label)}"><div class="fieldMain"><input value="${esc(x.label)}" placeholder="Field name" oninput="this.closest('.fieldDef').dataset.label=this.value"><select onchange="window.toggleDropdownOptions(this)"><option value="text" ${x.type==="text"?"selected":""}>Short text</option><option value="longtext" ${x.type==="longtext"?"selected":""}>Long text</option><option value="number" ${x.type==="number"?"selected":""}>Number</option><option value="date" ${x.type==="date"?"selected":""}>Date</option><option value="checkbox" ${x.type==="checkbox"?"selected":""}>Yes / No</option><option value="dropdown" ${x.type==="dropdown"?"selected":""}>Dropdown</option><option value="notes" ${x.type==="notes"?"selected":""}>Notes</option></select></div><div class="dropdownOptions" style="display:${x.type==="dropdown"?"block":"none"}"><label>Dropdown options <span class="small">(one per line; include Other for a custom response)</span><textarea class="fieldOptions" rows="3">${esc((x.options||[]).join("\n"))}</textarea></label></div><button type="button" class="removeField" onclick="this.closest('.fieldDef').remove()">×</button></div>`).join("");
   const body=`<div class="modalStack formEditor"><label>Form / Record Name<input id="formName" value="${esc(f?.name||"")}" placeholder="e.g., Calculator Agreement"></label><label>Description<textarea id="formDescription" rows="2">${esc(f?.description||"")}</textarea></label><label>Due Date <input id="formDueDate" type="date" value="${f?.dueDate||""}"></label><details open><summary><b>Who does this apply to?</b></summary><div class="targetGrid"><div><b>Classes</b>${checks(data.classes,f?.targetClassIds,"targetClass")||'<span class="small">None</span>'}</div><div><b>Groups</b>${checks(data.groups,f?.targetGroupIds,"targetGroup")||'<span class="small">None</span>'}</div><div><b>Individual Students</b><div class="targetStudents">${checks(sortedStudents(data.students),f?.targetStudentIds,"targetStudent")}</div></div></div></details><details open><summary><b>Information Fields</b></summary><p class="small">Received, submission method, and date received are included automatically. Add anything else you want to track.</p><div id="customFields">${fields}</div><button type="button" onclick="window.addFormField()">＋ Add Field</button></details></div>`;
   const footer=`${id?`<button type="button" class="danger" onclick="window.deleteForm('${id}')">Delete Form</button>`:""}<span class="formFooterSpacer"></span><button type="button" onclick="window.closeFormDialog()">Cancel</button><button type="button" class="primary" onclick="window.saveForm('${id||""}')">Save Form</button>`;
   let host=document.getElementById("formModalFallback");
@@ -1094,6 +1094,44 @@ window.deleteForm=(id)=>{
   save();
   window.closeFormDialog();
   render();
+};
+
+// --- Forms v1.11.4: tracker modal + long text ---
+window.openFormTracker=(id)=>{
+  ensureForms(); const f=data.forms.find(x=>x.id===id);if(!f)return;
+  normalizeStudents();
+  const students=sortedStudents(data.students.filter(s=>formStudentIds(f).includes(s.id)));
+  const cols=f.fields.map(x=>`<th>${esc(x.label)}</th>`).join("");
+  const rows=students.map(s=>{
+    const r=f.records[s.id]||{};
+    return `<tr><td><b>${esc(studentDisplayName(s))}</b></td>
+      <td><input type="checkbox" ${r.received?"checked":""} onchange="window.updateFormRecord('${id}','${s.id}','received',this.checked);window.refreshFormTrackerHeader('${id}')"></td>
+      <td><select onchange="window.updateFormRecord('${id}','${s.id}','method',this.value)">${["","ParentSquare","Google Classroom","Physical Copy","Email","Other"].map(v=>`<option value="${esc(v)}" ${r.method===v?"selected":""}>${v||"—"}</option>`).join("")}</select></td>
+      <td><input type="date" value="${r.receivedDate||""}" onchange="window.updateFormRecord('${id}','${s.id}','receivedDate',this.value)"></td>
+      ${f.fields.map(x=>`<td>${window.formFieldInput(id,s.id,x,r[x.id])}</td>`).join("")}</tr>`;
+  }).join("");
+  const body=`<div class="trackerHeader"><div><h2>${esc(f.name)}</h2><p class="small" id="formTrackerCount">${students.filter(s=>f.records[s.id]?.received).length} / ${students.length} received</p></div></div>
+    <div class="tableWrap"><table class="formMatrix"><thead><tr><th>Student</th><th>Received</th><th>Method</th><th>Date Received</th>${cols}</tr></thead><tbody>${rows||'<tr><td colspan="20">No students selected for this form.</td></tr>'}</tbody></table></div>`;
+  let host=document.getElementById("formModalFallback");
+  if(!host){host=document.createElement("div");host.id="formModalFallback";document.body.appendChild(host);}
+  host.onclick=(e)=>{if(e.target===host)window.closeFormDialog();};
+  host.innerHTML=`<div class="formModalPanel formTrackerPanel"><div class="modalHead"><h3>Form Tracker</h3><button type="button" onclick="window.closeFormDialog()">×</button></div><div class="modalBody">${body}</div><div class="modalActions"><button type="button" onclick="window.closeFormDialog()">Close</button></div></div>`;
+  host.style.display="flex";
+};
+window.refreshFormTrackerHeader=(id)=>{
+  const f=data.forms.find(x=>x.id===id);if(!f)return;
+  const ids=formStudentIds(f);const n=ids.filter(sid=>f.records[sid]?.received).length;
+  const el=document.getElementById("formTrackerCount");if(el)el.textContent=`${n} / ${ids.length} received`;
+};
+window.formFieldInput=(formId,studentId,field,value)=>{
+  const escv=esc(value??"");
+  if(field.type==="checkbox")return `<input type="checkbox" ${value?"checked":""} onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}',this.checked)">`;
+  if(field.type==="notes"||field.type==="longtext")return `<textarea class="longTextField" rows="3" placeholder="Enter text..." onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}',this.value)">${escv}</textarea>`;
+  if(field.type==="dropdown"){
+    const opts=field.options||[], selected=String(value??""), otherValue=selected.startsWith("__OTHER__:")?selected.slice(10):"", selectValue=otherValue?"Other":selected;
+    return `<select onchange="window.updateDropdownField(this,'${formId}','${studentId}','${field.id}')"><option value="">—</option>${opts.map(o=>`<option value="${esc(o)}" ${selectValue===o?"selected":""}>${esc(o)}</option>`).join("")}</select>${selectValue==="Other"?`<input class="otherFieldInput" placeholder="Please specify..." value="${esc(otherValue)}" onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}','__OTHER__:'+this.value)">`:""}`;
+  }
+  return `<input type="${field.type==="number"?"number":field.type==="date"?"date":"text"}" value="${escv}" onchange="window.updateFormRecord('${formId}','${studentId}','${field.id}',this.value)">`;
 };
 
 function calendar(){
