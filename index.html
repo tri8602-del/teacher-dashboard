@@ -320,13 +320,13 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 </style>
 
 <style>
-/* Version 2.1.0 — Lesson Planning */
+/* Version 2.1.1 — Lesson Planning */
 .lessonPlanControls{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:10px 14px!important}.lessonPlanControls>div{text-align:center;min-width:230px}.lessonPlanControls>div b{display:block}.lessonPlanControls .small{display:block;margin-top:2px}
 .lessonPlanCard{background:var(--card,#fff);border:1px solid var(--line,#d8dee8);border-radius:18px;box-shadow:0 8px 24px rgba(30,41,59,.06);overflow:hidden}
 .lessonTableWrap{overflow:auto;max-height:calc(100vh - 245px)}
 .lessonTable{border-collapse:separate;border-spacing:0;width:100%;min-width:930px;table-layout:fixed}.lessonTable th,.lessonTable td{border-right:1px solid var(--line,#d8dee8);border-bottom:1px solid var(--line,#d8dee8)}.lessonTable thead th{position:sticky;top:0;z-index:4;background:#f7f8fb;padding:12px 8px;text-align:center;color:#334155}.lessonTable thead th span{font-size:12px;font-weight:500;color:#64748b}.lessonTable .lessonCorner{position:sticky;left:0;z-index:6;text-align:left;width:180px}.lessonRowName{position:sticky;left:0;z-index:3;background:#fbfcfe;width:180px;min-width:180px;text-align:left;padding:12px;vertical-align:top}.lessonRowName span{display:block;font-size:11px;color:#64748b;font-weight:500;margin-top:3px}.lessonCell{position:relative;height:126px;padding:0;background:#fff;transition:background .15s}.lessonCell textarea{width:100%;height:100%;min-height:126px;border:0!important;border-radius:0!important;background:transparent!important;padding:12px 30px 10px 12px!important;resize:vertical;line-height:1.35;font:inherit;box-shadow:none!important;outline:none}.lessonCell textarea:focus{background:#f8fbff!important}.lessonCheck{position:absolute;right:7px;top:7px;z-index:2;cursor:pointer}.lessonCheck input{position:absolute;opacity:0;pointer-events:none}.lessonCheck span{display:flex;align-items:center;justify-content:center;width:21px;height:21px;border:1.5px solid #9aa7b8;border-radius:6px;color:transparent;font-size:14px;font-weight:900;background:#fff}.lessonCheck input:checked+span{background:#5f9fb7;border-color:#5f9fb7;color:white}.lessonDone{background:#f1f8f7!important}.lessonDone textarea{color:#52606d}.lessonDone:after{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:#7db39c}
-.lessonPlanModal{width:min(720px,92vw)!important}.lessonSyncEditor{border:1px solid var(--line,#d8dee8);border-radius:12px;padding:12px;margin:10px 0;background:#fbfcfe}.lessonSyncHead{display:flex;gap:8px;align-items:center;margin-bottom:10px}.lessonSyncHead input{flex:1}.lessonClassChecks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px}.lessonClassChecks label{font-size:13px}
-@media(max-width:700px){.lessonPlanControls{justify-content:center}.lessonPlanControls>div{order:-1;width:100%}.lessonTableWrap{max-height:none}.lessonClassChecks{grid-template-columns:1fr}}
+.lessonRowTitle{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}.lessonRemoveRow{width:25px;height:25px;min-width:25px;padding:0;border-radius:7px;color:#64748b;background:#f1f3f7;border:1px solid var(--line,#d8dee8);font-size:18px;line-height:1;opacity:.7}.lessonRemoveRow:hover{opacity:1;color:#b42318;background:#fff1f0}.lessonUnavailable{background:#f5f6f8!important;color:#9aa4b2;text-align:center;vertical-align:middle}.lessonUnavailable span{font-size:18px}.lessonPeriod{position:absolute;left:12px;top:8px;color:#7b8796;font-size:10px;z-index:2;pointer-events:none}.lessonCell .lessonPeriod~textarea{padding-top:26px!important}.lessonVisibilityList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;margin:8px 0 14px}.lessonVisibilityItem{display:flex;gap:8px;align-items:flex-start;padding:8px;border:1px solid var(--line,#d8dee8);border-radius:10px;background:#fbfcfe;font-size:13px}.lessonVisibilityItem small{display:block;color:#64748b;margin-top:2px}.lessonPlanDivider{border:0;border-top:1px solid var(--line,#d8dee8);margin:16px 0}.lessonPlanModal h4{margin:12px 0 4px;color:#334155}.lessonPlanModal{width:min(720px,92vw)!important}.lessonSyncEditor{border:1px solid var(--line,#d8dee8);border-radius:12px;padding:12px;margin:10px 0;background:#fbfcfe}.lessonSyncHead{display:flex;gap:8px;align-items:center;margin-bottom:10px}.lessonSyncHead input{flex:1}.lessonClassChecks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px}.lessonClassChecks label{font-size:13px}
+@media(max-width:700px){.lessonPlanControls{justify-content:center}.lessonPlanControls>div{order:-1;width:100%}.lessonTableWrap{max-height:none}.lessonClassChecks,.lessonVisibilityList{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -454,6 +454,7 @@ function ensureLessonPlans(){
     name:String(g.name||"Synchronized Classes"),
     classIds:Array.isArray(g.classIds)?[...new Set(g.classIds)]:[]
   })).filter(g=>g.classIds.length>1);
+  data.lessonPlanHiddenClassIds=Array.isArray(data.lessonPlanHiddenClassIds)?[...new Set(data.lessonPlanHiddenClassIds)]:[];
 }
 
 function ensureClassFields(){
@@ -830,12 +831,34 @@ function isoDate(d){return new Date(d).toISOString().slice(0,10)}
 function lessonWeekDates(){
   const start=lessonWeekStart(window.lessonPlanWeekStart);return [0,1,2,3,4].map(i=>{const d=new Date(start);d.setDate(start.getDate()+i);return d;});
 }
+function classMeetsOnWeekday(cls,weekday){
+  if(!cls)return false;
+  const rules=Array.isArray(cls.rules)&&cls.rules.length?cls.rules:[];
+  if(rules.length)return rules.some(r=>Array.isArray(r.days)&&r.days.map(Number).includes(Number(weekday)));
+  return Array.isArray(cls.days)?cls.days.map(Number).includes(Number(weekday)):true;
+}
+function classPeriodLabel(cls,weekday){
+  if(!cls)return "";
+  const rules=Array.isArray(cls.rules)&&cls.rules.length?cls.rules:[];
+  const periods=[...new Set(rules.filter(r=>Array.isArray(r.days)&&r.days.map(Number).includes(Number(weekday))).flatMap(r=>Array.isArray(r.periods)?r.periods.map(Number):[]))];
+  if(!periods.length&&Array.isArray(cls.periods))periods.push(...cls.periods.map(Number));
+  return periods.length?`Period${periods.length>1?"s":""} ${periods.join(", ")}`:"";
+}
 function lessonPlanRows(){
   ensureLessonPlans();ensureClassFields();
-  const used=new Set(data.lessonPlanSyncGroups.flatMap(g=>g.classIds));
-  const synced=data.lessonPlanSyncGroups.map(g=>({id:`sync:${g.id}`,type:"sync",name:g.name,classIds:g.classIds}));
-  const singles=data.classes.filter(c=>!used.has(c.id)).map(c=>({id:`class:${c.id}`,type:"class",name:c.name,classIds:[c.id]}));
+  const hidden=new Set(data.lessonPlanHiddenClassIds||[]);
+  const visibleClasses=data.classes.filter(c=>!hidden.has(c.id));
+  const used=new Set(data.lessonPlanSyncGroups.flatMap(g=>g.classIds.filter(id=>!hidden.has(id))));
+  const synced=data.lessonPlanSyncGroups.map(g=>({id:`sync:${g.id}`,type:"sync",name:g.name,classIds:g.classIds.filter(id=>!hidden.has(id))})).filter(g=>g.classIds.length>1);
+  const singles=visibleClasses.filter(c=>!used.has(c.id)).map(c=>({id:`class:${c.id}`,type:"class",name:c.name,classIds:[c.id]}));
   return [...synced,...singles];
+}
+function lessonRowMeetsOnDay(row,weekday){
+  return row.classIds.some(id=>classMeetsOnWeekday(data.classes.find(c=>c.id===id),weekday));
+}
+function lessonRowScheduleLabel(row,weekday){
+  const labels=[...new Set(row.classIds.map(id=>classPeriodLabel(data.classes.find(c=>c.id===id),weekday)).filter(Boolean))];
+  return labels.join(" • ");
 }
 function lessonPlanEntry(rowId,date){ensureLessonPlans();return data.lessonPlans.entries?.[rowId]?.[date]||{text:"",done:false};}
 function lessonplans(){
@@ -844,8 +867,8 @@ function lessonplans(){
   const range=`${start.toLocaleDateString(undefined,{month:"long",day:"numeric"})} – ${end.toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"})}`;
   const dayNames=["Monday","Tuesday","Wednesday","Thursday","Friday"];
   const headers=dates.map((d,i)=>`<th><div>${dayNames[i]}</div><span>${d.toLocaleDateString(undefined,{month:"short",day:"numeric"})}</span></th>`).join("");
-  const body=rows.length?rows.map(r=>`<tr><th class="lessonRowName"><b>${esc(r.name)}</b>${r.type==="sync"?`<span>${r.classIds.length} sections synchronized</span>`:""}</th>${dates.map(d=>{const date=isoDate(d),e=lessonPlanEntry(r.id,date);return `<td class="lessonCell ${e.done?"lessonDone":""}"><label class="lessonCheck" title="Mark lesson complete"><input type="checkbox" ${e.done?"checked":""} onchange="window.updateLessonPlan('${r.id}','${date}','done',this.checked)"><span>✓</span></label><textarea aria-label="${esc(r.name)} ${date}" placeholder="Type lesson plan..." oninput="window.updateLessonPlan('${r.id}','${date}','text',this.value)">${esc(e.text||"")}</textarea></td>`}).join("")}</tr>`).join(""):`<tr><td colspan="6" class="small">No classes yet. Add classes in Students & Classes, then they will appear here automatically.</td></tr>`;
-  return `<header><div><h2>Lesson Plans</h2><p>Your week at a glance. Type directly into each cell and check it off when you are finished.</p></div><button onclick="window.openLessonPlanManager()">⚙️ Customize</button></header>
+  const body=rows.length?rows.map(r=>`<tr><th class="lessonRowName"><div class="lessonRowTitle"><div><b>${esc(r.name)}</b>${r.type==="sync"?`<span>${r.classIds.length} sections synchronized</span>`:""}</div><button class="lessonRemoveRow" title="Remove from Lesson Plans" onclick="window.hideLessonPlanClassRow('${r.id}')">×</button></div></th>${dates.map((d,i)=>{const weekday=i+1,date=isoDate(d);if(!lessonRowMeetsOnDay(r,weekday))return `<td class="lessonCell lessonUnavailable"><span>—</span></td>`;const e=lessonPlanEntry(r.id,date),schedule=lessonRowScheduleLabel(r,weekday);return `<td class="lessonCell ${e.done?"lessonDone":""}">${schedule?`<small class="lessonPeriod">${esc(schedule)}</small>`:""}<label class="lessonCheck" title="Mark lesson complete"><input type="checkbox" ${e.done?"checked":""} onchange="window.updateLessonPlan('${r.id}','${date}','done',this.checked)"><span>✓</span></label><textarea aria-label="${esc(r.name)} ${date}" placeholder="Type lesson plan..." oninput="window.updateLessonPlan('${r.id}','${date}','text',this.value)">${esc(e.text||"")}</textarea></td>`}).join("")}</tr>`).join(""):`<tr><td colspan="6" class="small">No classes are currently shown in your lesson plan. Add classes in Students & Classes or use Customize to add them back.</td></tr>`;
+  return `<header><div><h2>Lesson Plans</h2><p>Your week at a glance. Only days a class actually meets are available for planning.</p></div><button onclick="window.openLessonPlanManager()">⚙️ Customize</button></header>
   <section class="card lessonPlanControls"><button onclick="window.changeLessonWeek(-1)">← Previous Week</button><div><b>${range}</b><span class="small">Monday–Friday</span></div><button onclick="window.changeLessonWeek(1)">Next Week →</button><button onclick="window.goToLessonWeekToday()">Today</button></section>
   <section class="lessonPlanCard"><div class="lessonTableWrap"><table class="lessonTable"><thead><tr><th class="lessonCorner">Class</th>${headers}</tr></thead><tbody>${body}</tbody></table></div></section>`;
 }
@@ -856,12 +879,23 @@ window.updateLessonPlan=(rowId,date,field,value)=>{
   const cell=document.querySelector(`[aria-label$=" ${date}"]`)?.closest('.lessonCell');
   if(cell&&field==="done")cell.classList.toggle('lessonDone',!!value);
 };
+window.hideLessonPlanClassRow=rowId=>{
+  ensureLessonPlans();
+  let ids=[];
+  if(String(rowId).startsWith('sync:')){const id=String(rowId).slice(5);ids=(data.lessonPlanSyncGroups.find(g=>g.id===id)?.classIds)||[];}
+  else if(String(rowId).startsWith('class:'))ids=[String(rowId).slice(6)];
+  if(!ids.length)return;
+  if(!confirm(ids.length>1?"Remove these synchronized classes from the Lesson Plans view? They will not be deleted from Students & Classes.":"Remove this class from the Lesson Plans view? It will not be deleted from Students & Classes."))return;
+  data.lessonPlanHiddenClassIds=[...new Set([...(data.lessonPlanHiddenClassIds||[]),...ids])];save();render();
+};
 window.changeLessonWeek=delta=>{const d=lessonWeekStart(window.lessonPlanWeekStart);d.setDate(d.getDate()+delta*7);window.lessonPlanWeekStart=isoDate(d);render();};
 window.goToLessonWeekToday=()=>{window.lessonPlanWeekStart=isoDate(lessonWeekStart());render();};
 window.openLessonPlanManager=()=>{
   ensureLessonPlans();ensureClassFields();document.querySelector('#lessonPlanModal')?.remove();
+  const hidden=new Set(data.lessonPlanHiddenClassIds||[]);
+  const classVisibility=data.classes.map(c=>`<label class="lessonVisibilityItem"><input class="lessonPlanClassVisible" type="checkbox" value="${c.id}" ${hidden.has(c.id)?"":"checked"}> <span><b>${esc(c.name)}</b><small>${hidden.has(c.id)?"Hidden from Lesson Plans":"Shown on Lesson Plans"}</small></span></label>`).join("")||'<span class="small">Add classes first.</span>';
   const groups=data.lessonPlanSyncGroups.map(g=>`<div class="lessonSyncEditor" data-sync-id="${g.id}"><div class="lessonSyncHead"><input class="lessonSyncName" value="${esc(g.name)}" placeholder="Group name"><button type="button" onclick="this.closest('.lessonSyncEditor').remove()">Remove</button></div><div class="lessonClassChecks">${data.classes.map(c=>`<label><input type="checkbox" value="${c.id}" ${g.classIds.includes(c.id)?"checked":""}> ${esc(c.name)}</label>`).join("")||'<span class="small">Add classes first.</span>'}</div></div>`).join("");
-  document.body.insertAdjacentHTML('beforeend',`<div id="lessonPlanModal" class="modalbg"><div class="modal lessonPlanModal"><h3>Customize Lesson Planning</h3><p class="small">Classes normally get their own row. Put sections that share the same plans into one synchronized row.</p><div id="lessonSyncList">${groups||'<p class="small emptySyncGroups">No synchronized rows yet.</p>'}</div><button type="button" onclick="window.addLessonSyncGroup()">＋ Add Synchronized Row</button><div style="margin-top:16px"><button class="primary" onclick="window.saveLessonPlanManager()">Save</button> <button onclick="window.closeLessonPlanManager()">Cancel</button></div></div></div>`);
+  document.body.insertAdjacentHTML('beforeend',`<div id="lessonPlanModal" class="modalbg"><div class="modal lessonPlanModal"><h3>Customize Lesson Planning</h3><p class="small">Choose which classes appear in this planner. Removing a class here does <b>not</b> delete it from Students & Classes.</p><h4>Classes on This Plan</h4><div class="lessonVisibilityList">${classVisibility}</div><hr class="lessonPlanDivider"><h4>Synchronized Rows</h4><p class="small">Put sections that share the same plans into one row. Classes can meet on different days—the planner will automatically make only their actual meeting days available.</p><div id="lessonSyncList">${groups||'<p class="small emptySyncGroups">No synchronized rows yet.</p>'}</div><button type="button" onclick="window.addLessonSyncGroup()">＋ Add Synchronized Row</button><div style="margin-top:16px"><button class="primary" onclick="window.saveLessonPlanManager()">Save</button> <button onclick="window.closeLessonPlanManager()">Cancel</button></div></div></div>`);
 };
 window.addLessonSyncGroup=()=>{
   const host=document.querySelector('#lessonSyncList');if(!host)return;host.querySelector('.emptySyncGroups')?.remove();
@@ -869,6 +903,8 @@ window.addLessonSyncGroup=()=>{
 };
 window.closeLessonPlanManager=()=>document.querySelector('#lessonPlanModal')?.remove();
 window.saveLessonPlanManager=()=>{
+  const visibleIds=[...document.querySelectorAll('.lessonPlanClassVisible:checked')].map(x=>x.value);
+  data.lessonPlanHiddenClassIds=data.classes.map(c=>c.id).filter(id=>!visibleIds.includes(id));
   const groups=[...document.querySelectorAll('#lessonSyncList .lessonSyncEditor')].map((el,i)=>({id:el.dataset.syncId||uid(),name:el.querySelector('.lessonSyncName')?.value.trim()||`Synchronized Classes ${i+1}`,classIds:[...el.querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value)})).filter(g=>g.classIds.length>1);
   const seen=new Set();for(const g of groups){g.classIds=g.classIds.filter(id=>{if(seen.has(id))return false;seen.add(id);return true;});}
   data.lessonPlanSyncGroups=groups;save();window.closeLessonPlanManager();render();
@@ -1802,13 +1838,13 @@ window.openClassroomDisplay=(mode="all")=>{
   if(!w){alert("Your browser blocked the display window. Please allow pop-ups for this site.");return;}
   w.document.write(`<!doctype html><html><head><title>Teacher Dashboard Display</title><style>body{margin:0;font-family:system-ui,sans-serif;background:#f4f6fb;color:#25324a}.wrap{padding:20px;text-align:center}.grid{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:1250px;margin:10px auto}.card{background:white;border-radius:12px;padding:10px 14px;min-width:150px;box-shadow:0 5px 16px #26345418}.label{font-size:12px;color:#667085}.value{font-size:26px;font-weight:800;margin-top:2px}.single{min-height:88vh;display:flex;flex-direction:column;justify-content:center;align-items:center}.single .label{font-size:28px}.single .value{font-size:min(24vw,220px)}.single.student .value{font-size:min(12vw,110px)}.groups{text-align:left;max-width:900px;margin:20px auto}.group{background:white;border-radius:14px;padding:16px;margin:10px 0;font-size:22px}</style>
 <style>
-/* Version 2.1.0 — Lesson Planning */
+/* Version 2.1.1 — Lesson Planning */
 .lessonPlanControls{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:10px 14px!important}.lessonPlanControls>div{text-align:center;min-width:230px}.lessonPlanControls>div b{display:block}.lessonPlanControls .small{display:block;margin-top:2px}
 .lessonPlanCard{background:var(--card,#fff);border:1px solid var(--line,#d8dee8);border-radius:18px;box-shadow:0 8px 24px rgba(30,41,59,.06);overflow:hidden}
 .lessonTableWrap{overflow:auto;max-height:calc(100vh - 245px)}
 .lessonTable{border-collapse:separate;border-spacing:0;width:100%;min-width:930px;table-layout:fixed}.lessonTable th,.lessonTable td{border-right:1px solid var(--line,#d8dee8);border-bottom:1px solid var(--line,#d8dee8)}.lessonTable thead th{position:sticky;top:0;z-index:4;background:#f7f8fb;padding:12px 8px;text-align:center;color:#334155}.lessonTable thead th span{font-size:12px;font-weight:500;color:#64748b}.lessonTable .lessonCorner{position:sticky;left:0;z-index:6;text-align:left;width:180px}.lessonRowName{position:sticky;left:0;z-index:3;background:#fbfcfe;width:180px;min-width:180px;text-align:left;padding:12px;vertical-align:top}.lessonRowName span{display:block;font-size:11px;color:#64748b;font-weight:500;margin-top:3px}.lessonCell{position:relative;height:126px;padding:0;background:#fff;transition:background .15s}.lessonCell textarea{width:100%;height:100%;min-height:126px;border:0!important;border-radius:0!important;background:transparent!important;padding:12px 30px 10px 12px!important;resize:vertical;line-height:1.35;font:inherit;box-shadow:none!important;outline:none}.lessonCell textarea:focus{background:#f8fbff!important}.lessonCheck{position:absolute;right:7px;top:7px;z-index:2;cursor:pointer}.lessonCheck input{position:absolute;opacity:0;pointer-events:none}.lessonCheck span{display:flex;align-items:center;justify-content:center;width:21px;height:21px;border:1.5px solid #9aa7b8;border-radius:6px;color:transparent;font-size:14px;font-weight:900;background:#fff}.lessonCheck input:checked+span{background:#5f9fb7;border-color:#5f9fb7;color:white}.lessonDone{background:#f1f8f7!important}.lessonDone textarea{color:#52606d}.lessonDone:after{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:#7db39c}
-.lessonPlanModal{width:min(720px,92vw)!important}.lessonSyncEditor{border:1px solid var(--line,#d8dee8);border-radius:12px;padding:12px;margin:10px 0;background:#fbfcfe}.lessonSyncHead{display:flex;gap:8px;align-items:center;margin-bottom:10px}.lessonSyncHead input{flex:1}.lessonClassChecks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px}.lessonClassChecks label{font-size:13px}
-@media(max-width:700px){.lessonPlanControls{justify-content:center}.lessonPlanControls>div{order:-1;width:100%}.lessonTableWrap{max-height:none}.lessonClassChecks{grid-template-columns:1fr}}
+.lessonRowTitle{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}.lessonRemoveRow{width:25px;height:25px;min-width:25px;padding:0;border-radius:7px;color:#64748b;background:#f1f3f7;border:1px solid var(--line,#d8dee8);font-size:18px;line-height:1;opacity:.7}.lessonRemoveRow:hover{opacity:1;color:#b42318;background:#fff1f0}.lessonUnavailable{background:#f5f6f8!important;color:#9aa4b2;text-align:center;vertical-align:middle}.lessonUnavailable span{font-size:18px}.lessonPeriod{position:absolute;left:12px;top:8px;color:#7b8796;font-size:10px;z-index:2;pointer-events:none}.lessonCell .lessonPeriod~textarea{padding-top:26px!important}.lessonVisibilityList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;margin:8px 0 14px}.lessonVisibilityItem{display:flex;gap:8px;align-items:flex-start;padding:8px;border:1px solid var(--line,#d8dee8);border-radius:10px;background:#fbfcfe;font-size:13px}.lessonVisibilityItem small{display:block;color:#64748b;margin-top:2px}.lessonPlanDivider{border:0;border-top:1px solid var(--line,#d8dee8);margin:16px 0}.lessonPlanModal h4{margin:12px 0 4px;color:#334155}.lessonPlanModal{width:min(720px,92vw)!important}.lessonSyncEditor{border:1px solid var(--line,#d8dee8);border-radius:12px;padding:12px;margin:10px 0;background:#fbfcfe}.lessonSyncHead{display:flex;gap:8px;align-items:center;margin-bottom:10px}.lessonSyncHead input{flex:1}.lessonClassChecks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px}.lessonClassChecks label{font-size:13px}
+@media(max-width:700px){.lessonPlanControls{justify-content:center}.lessonPlanControls>div{order:-1;width:100%}.lessonTableWrap{max-height:none}.lessonClassChecks,.lessonVisibilityList{grid-template-columns:1fr}}
 </style>
 </head><body><div id="display"></div><script>const mode=${JSON.stringify(mode)};function update(){const s=window.opener&&window.opener.getClassroomDisplayState?window.opener.getClassroomDisplayState():null;if(!s)return;const cards={classleft:['Time Left',s.timeLeft],stopwatch:['Timer',s.stopwatch],countdown:['Countdown',s.countdown],number:['Random Number',s.randomNumber],student:['Random Student',s.randomStudent]};let html='<div class="wrap">';if(mode==='all')html+='<h3>'+s.className+'</h3>';if(mode==='groups'){html+='<div class="groups"><h1>Groups</h1>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>';}else if(mode!=='all'&&cards[mode]){const x=cards[mode];html+='<div class="single '+(mode==='student'?'student':'')+'"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>';}else{html+='<div class="grid">'+Object.values(cards).map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>').join('')+'</div>'+(s.groups.length?'<div class="groups"><h3>Groups</h3>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>':'');}document.getElementById('display').innerHTML=html+'</div>';}update();setInterval(update,500);<\/script></body></html>`);w.document.close();
 }
