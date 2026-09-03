@@ -363,7 +363,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.2.5";
+const APP_VERSION="2.2.6";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -869,11 +869,19 @@ function lessonRowMeetsOnDay(row,weekday){
 function lessonRowScheduleLabel(row,weekday){return row.period?`Period ${row.period}`:'';}
 function lessonPlanEntry(rowId,date){ensureLessonPlans();const e=data.lessonPlans.entries?.[rowId]?.[date]||{};return {text:e.text||'',planned:!!e.planned,created:!!e.created,posted:!!e.posted};}
 function lessonplans(){
-  ensureLessonPlans();const dates=lessonWeekDates(),rows=lessonPlanRows(),start=dates[0],end=dates[4];
+  ensureLessonPlans(); ensureClassFields();
+  const dates=lessonWeekDates(), rows=lessonPlanRows(), start=dates[0], end=dates[4];
   const range=`${start.toLocaleDateString(undefined,{month:'long',day:'numeric'})} – ${end.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'})}`;
   const names=['Monday','Tuesday','Wednesday','Thursday','Friday'];
   const headers=dates.map((d,i)=>`<th><div>${names[i]}</div><span>${d.toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span></th>`).join('');
-  const body=rows.length?rows.map(r=>`<tr><th class="lessonRowName"><div class="lessonRowTitle"><b>${esc(r.name)}</b>${r.type==='sync'?'<span class="lessonLinkedBadge">linked</span>':''}${r.type==='custom'?`<button class="lessonRemoveRow" title="Delete row" onclick="window.deleteLessonPlanRow('${r.id}')">×</button>`:''}</div></th>${dates.map((d,i)=>{const weekday=i+1,date=isoDate(d);if(!lessonRowAvailableOnDate(r,date,weekday))return `<td class="lessonCell lessonUnavailable"><span>—</span></td>`;const e=lessonPlanEntry(r.id,date),state=lessonSubState(r,date,weekday),all=e.planned&&e.created&&e.posted;return `<td class="lessonCell ${state==='all'?'lessonSubDay':state==='partial'?'lessonPartialDay':''}"><div class="lessonStatusBar"><label class="lessonStatus"><input type="checkbox" ${e.planned?'checked':''} onchange="window.updateLessonStatus('${r.id}','${date}','planned',this.checked)"> Planned</label><label class="lessonStatus"><input type="checkbox" ${e.created?'checked':''} onchange="window.updateLessonStatus('${r.id}','${date}','created',this.checked)"> Created</label><label class="lessonStatus"><input type="checkbox" ${e.posted?'checked':''} onchange="window.updateLessonStatus('${r.id}','${date}','posted',this.checked)"> Posted</label><label class="lessonStatus all"><input type="checkbox" ${all?'checked':''} onchange="window.updateLessonAll('${r.id}','${date}',this.checked)"> All</label></div><textarea aria-label="${esc(r.name)} ${date}" placeholder="Type lesson plan..." oninput="window.updateLessonPlan('${r.id}','${date}','text',this.value)">${esc(e.text)}</textarea></td>`}).join('')}</tr>`).join(''):`<tr><td colspan="6" class="small">No lesson-plan rows yet. Use Customize to add a row.</td></tr>`;
+  const safeAvailable=(row,date,weekday)=>{try{return lessonRowAvailableOnDate(row,date,weekday)}catch(e){console.error('Lesson availability error',e);return row.type==='custom'?(row.days||[]).includes(Number(weekday)):lessonRowMeetsOnDay(row,weekday)}};
+  const safeSub=(row,date,weekday)=>{try{return lessonSubState(row,date,weekday)}catch(e){console.error('Lesson sub-state error',e);return 'none'}};
+  const body=rows.length?rows.map(r=>`<tr><th class="lessonRowName"><div class="lessonRowTitle"><b>${esc(r.name)}</b>${r.type==='sync'?'<span class="lessonLinkedBadge">linked</span>':''}${r.type==='custom'?`<button class="lessonRemoveRow" title="Delete row" onclick="window.deleteLessonPlanRow('${r.id}')">×</button>`:''}</div></th>${dates.map((d,i)=>{
+    const weekday=i+1,date=isoDate(d);
+    if(!safeAvailable(r,date,weekday))return `<td class="lessonCell lessonUnavailable"><span>—</span></td>`;
+    const e=lessonPlanEntry(r.id,date),state=safeSub(r,date,weekday),all=e.planned&&e.created&&e.posted;
+    return `<td class="lessonCell ${state==='all'?'lessonSubDay':state==='partial'?'lessonPartialDay':''}"><div class="lessonStatusBar"><label class="lessonStatus"><input type="checkbox" ${e.planned?'checked':''} onchange="window.updateLessonStatus('${r.id}','${date}','planned',this.checked)"> Planned</label><label class="lessonStatus"><input type="checkbox" ${e.created?'checked':''} onchange="window.updateLessonStatus('${r.id}','${date}','created',this.checked)"> Created</label><label class="lessonStatus"><input type="checkbox" ${e.posted?'checked':''} onchange="window.updateLessonStatus('${r.id}','${date}','posted',this.checked)"> Posted</label><label class="lessonStatus all"><input type="checkbox" ${all?'checked':''} onchange="window.updateLessonAll('${r.id}','${date}',this.checked)"> All</label></div><textarea aria-label="${esc(r.name)} ${date}" placeholder="Type lesson plan..." oninput="window.updateLessonPlan('${r.id}','${date}','text',this.value)">${esc(e.text)}</textarea></td>`;
+  }).join('')}</tr>`).join(''):`<tr><td colspan="6" class="small">No lesson-plan rows yet. Use Customize to add a row.</td></tr>`;
   return `<header><div><h2>Lesson Plans</h2><p>Plan your week at a glance.</p></div><button onclick="window.openLessonPlanManager()">⚙️ Customize</button></header><section class="card lessonPlanControls"><button onclick="window.changeLessonWeek(-1)">← Previous Week</button><div><b>${range}</b></div><button onclick="window.changeLessonWeek(1)">Next Week →</button><button onclick="window.goToLessonWeekToday()">Today</button><span class="lessonSubLegend"><i class="lessonSubSwatch"></i> Sub / partial day</span></section><section class="lessonPlanCard"><div class="lessonTableWrap"><table class="lessonTable"><thead><tr><th class="lessonCorner">Planning Row</th>${headers}</tr></thead><tbody>${body}</tbody></table></div></section>`;
 }
 window.updateLessonPlan=(rowId,date,field,value)=>{
