@@ -385,7 +385,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.2.9";
+const APP_VERSION="2.3.1";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -480,9 +480,13 @@ function ensureLessonPlans(){
   data.lessonPlans=data.lessonPlans&&typeof data.lessonPlans==='object'?data.lessonPlans:{entries:{}};
   data.lessonPlans.entries=data.lessonPlans.entries&&typeof data.lessonPlans.entries==='object'?data.lessonPlans.entries:{};
   data.lessonPlanCustomRows=Array.isArray(data.lessonPlanCustomRows)?data.lessonPlanCustomRows:[];
-  data.lessonPlanCustomRows=data.lessonPlanCustomRows.map((r,i)=>({
-    id:r.id||`lp_${Date.now()}_${i}`,name:String(r.name||`Row ${i+1}`),days:Array.isArray(r.days)&&r.days.length?r.days.map(Number):[1,2,3,4,5],period:Number(r.period)||0
-  }));
+  data.lessonPlanCustomRows=data.lessonPlanCustomRows.map((r,i)=>{
+    const name=String(r.name||`Row ${i+1}`);
+    let period=Number(r.period)||0;
+    // Migration for Lindsay's existing PLT row: it belongs in 6th period.
+    if(!period && name.trim().toUpperCase()==='PLT') period=6;
+    return {id:r.id||`lp_${Date.now()}_${i}`,name,days:Array.isArray(r.days)&&r.days.length?r.days.map(Number):[1,2,3,4,5],period};
+  });
   data.lessonPlanHiddenClassIds=Array.isArray(data.lessonPlanHiddenClassIds)?[...new Set(data.lessonPlanHiddenClassIds)]:[];
   data.lessonPlanSyncGroups=Array.isArray(data.lessonPlanSyncGroups)?data.lessonPlanSyncGroups:[];
 }
@@ -1944,6 +1948,23 @@ window.openClassroomDisplay=(mode="all")=>{
 #content .lessonUnavailable{height:72px!important;padding:0!important}
 #content .lessonUnavailable span{font-size:14px!important}
 @media(max-width:900px){#content .lessonPlanControls{flex-wrap:wrap!important}#content .lessonPlanControls>div{order:0!important;width:auto!important}}
+
+/* V2.3.1: extra-compact lesson planner */
+#content > header{padding:10px 16px!important;margin:0!important;min-height:auto!important}
+#content > header h2{font-size:24px!important;margin:0!important;line-height:1.15!important}
+#content > header p{margin:3px 0 0!important;font-size:14px!important}
+#content > header button{padding:6px 10px!important}
+#content .lessonPlanControls{padding:3px 6px!important;min-height:36px!important;margin:4px 0 6px!important;border-radius:14px!important}
+#content .lessonPlanControls button{padding:4px 8px!important;font-size:11px!important;line-height:1.15!important}
+#content .lessonPlanControls>div b{font-size:14px!important;line-height:1!important}
+#content .lessonTableWrap{max-height:calc(100vh - 205px)!important}
+#content .lessonTable .lessonCorner,#content .lessonRowName{width:165px!important;min-width:165px!important}
+#content .lessonTable thead th{padding:4px 3px!important;height:42px!important}
+#content .lessonCell{height:64px!important;min-height:64px!important}
+#content .lessonCell textarea{height:64px!important;min-height:64px!important;padding:5px 6px 22px!important;font-size:11px!important}
+#content .lessonRowName{padding:4px 8px!important;vertical-align:middle!important}
+#content .lessonStatusBar{left:4px!important;right:4px!important;bottom:3px!important}
+#content .lessonStatus{font-size:8px!important;padding:1px!important}
 </style>
 </head><body><div id="display"></div><script>const mode=${JSON.stringify(mode)};function update(){const s=window.opener&&window.opener.getClassroomDisplayState?window.opener.getClassroomDisplayState():null;if(!s)return;const cards={classleft:['Time Left',s.timeLeft],stopwatch:['Timer',s.stopwatch],countdown:['Countdown',s.countdown],number:['Random Number',s.randomNumber],student:['Random Student',s.randomStudent]};let html='<div class="wrap">';if(mode==='all')html+='<h3>'+s.className+'</h3>';if(mode==='groups'){html+='<div class="groups"><h1>Groups</h1>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>';}else if(mode!=='all'&&cards[mode]){const x=cards[mode];html+='<div class="single '+(mode==='student'?'student':'')+'"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>';}else{html+='<div class="grid">'+Object.values(cards).map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>').join('')+'</div>'+(s.groups.length?'<div class="groups"><h3>Groups</h3>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>':'');}document.getElementById('display').innerHTML=html+'</div>';}update();setInterval(update,500);<\/script></body></html>`);w.document.close();
 }
