@@ -327,6 +327,11 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 .lessonTable{border-collapse:separate;border-spacing:0;width:100%;min-width:930px;table-layout:fixed}.lessonTable th,.lessonTable td{border-right:1px solid var(--line,#d8dee8);border-bottom:1px solid var(--line,#d8dee8)}.lessonTable thead th{position:sticky;top:0;z-index:4;background:#f7f8fb;padding:12px 8px;text-align:center;color:#334155}.lessonTable thead th span{font-size:12px;font-weight:500;color:#64748b}.lessonTable .lessonCorner{position:sticky;left:0;z-index:6;text-align:left;width:180px}.lessonRowName{position:sticky;left:0;z-index:3;background:#fbfcfe;width:180px;min-width:180px;text-align:left;padding:12px;vertical-align:top}.lessonRowName span{display:block;font-size:11px;color:#64748b;font-weight:500;margin-top:3px}.lessonCell{position:relative;height:126px;padding:0;background:#fff;transition:background .15s}.lessonCell textarea{width:100%;height:100%;min-height:126px;border:0!important;border-radius:0!important;background:transparent!important;padding:12px 30px 10px 12px!important;resize:vertical;line-height:1.35;font:inherit;box-shadow:none!important;outline:none}.lessonCell textarea:focus{background:#f8fbff!important}.lessonCheck{position:absolute;right:7px;top:7px;z-index:2;cursor:pointer}.lessonCheck input{position:absolute;opacity:0;pointer-events:none}.lessonCheck span{display:flex;align-items:center;justify-content:center;width:21px;height:21px;border:1.5px solid #9aa7b8;border-radius:6px;color:transparent;font-size:14px;font-weight:900;background:#fff}.lessonCheck input:checked+span{background:#5f9fb7;border-color:#5f9fb7;color:white}.lessonDone{background:#f1f8f7!important}.lessonDone textarea{color:#52606d}.lessonDone:after{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:#7db39c}
 .lessonRowTitle{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}.lessonRemoveRow{width:25px;height:25px;min-width:25px;padding:0;border-radius:7px;color:#64748b;background:#f1f3f7;border:1px solid var(--line,#d8dee8);font-size:18px;line-height:1;opacity:.7}.lessonRemoveRow:hover{opacity:1;color:#b42318;background:#fff1f0}.lessonUnavailable{background:#f5f6f8!important;color:#9aa4b2;text-align:center;vertical-align:middle}.lessonUnavailable span{font-size:18px}.lessonPeriod{position:absolute;left:12px;top:8px;color:#7b8796;font-size:10px;z-index:2;pointer-events:none}.lessonCell .lessonPeriod~textarea{padding-top:26px!important}.lessonVisibilityList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;margin:8px 0 14px}.lessonVisibilityItem{display:flex;gap:8px;align-items:flex-start;padding:8px;border:1px solid var(--line,#d8dee8);border-radius:10px;background:#fbfcfe;font-size:13px}.lessonVisibilityItem small{display:block;color:#64748b;margin-top:2px}.lessonPlanDivider{border:0;border-top:1px solid var(--line,#d8dee8);margin:16px 0}.lessonPlanModal h4{margin:12px 0 4px;color:#334155}.lessonPlanModal{width:min(720px,92vw)!important}.lessonSyncEditor{border:1px solid var(--line,#d8dee8);border-radius:12px;padding:12px;margin:10px 0;background:#fbfcfe}.lessonSyncHead{display:flex;gap:8px;align-items:center;margin-bottom:10px}.lessonSyncHead input{flex:1}.lessonClassChecks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px}.lessonClassChecks label{font-size:13px}
 @media(max-width:700px){.lessonPlanControls{justify-content:center}.lessonPlanControls>div{order:-1;width:100%}.lessonTableWrap{max-height:none}.lessonClassChecks,.lessonVisibilityList{grid-template-columns:1fr}}
+
+
+/* ===== Version 2.2.4 Lesson Planning ===== */
+/* Version 2.2 lesson planning refinements */
+.lessonStatusBar{position:absolute;left:8px;right:8px;top:7px;display:flex;gap:5px;align-items:center;z-index:3;flex-wrap:wrap}.lessonStatus{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#607080;cursor:pointer;background:rgba(255,255,255,.82);padding:2px 4px;border-radius:6px;border:1px solid #d8dee8}.lessonStatus input{accent-color:#5f9fb7;margin:0}.lessonStatus.all{font-weight:700}.lessonCell textarea{padding-top:38px!important}.lessonCell.lessonSubDay{background:#fff7e8!important}.lessonCell.lessonSubDay:before{content:"SUB";position:absolute;right:7px;bottom:5px;font-size:9px;font-weight:800;color:#9a6700;letter-spacing:.04em}.lessonSubDay textarea{padding-right:10px!important}.lessonPlanRowEditor{border:1px solid var(--line,#d8dee8);border-radius:12px;padding:12px;margin:10px 0;background:#fbfcfe}.lessonPlanRowEditorHead{display:flex;gap:8px;align-items:center}.lessonPlanRowEditorHead input[type="text"]{flex:1}.lessonDayPick{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 6px}.lessonDayPick label{font-size:12px;padding:5px 7px;border:1px solid #d8dee8;border-radius:7px;background:white}.lessonRowMeta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}.lessonRowMeta label{font-size:12px}.lessonSubLegend{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#8a5a00}.lessonSubSwatch{width:13px;height:13px;border-radius:4px;background:#fff0cf;border:1px solid #f0c36a}.lessonRowName .rowDays{color:#7b8796;font-size:11px;margin-top:3px}.lessonTable .lessonUnavailable{background:#f2f4f7!important}.lessonCalendarSub{padding:10px;border:1px solid #ead7b5;border-radius:10px;background:#fffaf0;margin:12px 0}.lessonCalendarSub select{max-width:220px}
 </style>
 </head>
 <body>
@@ -354,7 +359,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.1.0";
+const APP_VERSION="2.2.4";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -446,15 +451,14 @@ function ensureGroups(){
   data.groups=data.groups.map((g,i)=>({id:g.id||`group_${Date.now()}_${i}`,name:String(g.name||"Untitled Group"),description:String(g.description||""),studentIds:Array.isArray(g.studentIds)?[...new Set(g.studentIds)]:[]}));
 }
 function ensureLessonPlans(){
-  data.lessonPlans=data.lessonPlans&&typeof data.lessonPlans==="object"?data.lessonPlans:{entries:{}};
-  data.lessonPlans.entries=data.lessonPlans.entries&&typeof data.lessonPlans.entries==="object"?data.lessonPlans.entries:{};
-  data.lessonPlanSyncGroups=Array.isArray(data.lessonPlanSyncGroups)?data.lessonPlanSyncGroups:[];
-  data.lessonPlanSyncGroups=data.lessonPlanSyncGroups.map((g,i)=>({
-    id:g.id||`sync_${Date.now()}_${i}`,
-    name:String(g.name||"Synchronized Classes"),
-    classIds:Array.isArray(g.classIds)?[...new Set(g.classIds)]:[]
-  })).filter(g=>g.classIds.length>1);
+  data.lessonPlans=data.lessonPlans&&typeof data.lessonPlans==='object'?data.lessonPlans:{entries:{}};
+  data.lessonPlans.entries=data.lessonPlans.entries&&typeof data.lessonPlans.entries==='object'?data.lessonPlans.entries:{};
+  data.lessonPlanCustomRows=Array.isArray(data.lessonPlanCustomRows)?data.lessonPlanCustomRows:[];
+  data.lessonPlanCustomRows=data.lessonPlanCustomRows.map((r,i)=>({
+    id:r.id||`lp_${Date.now()}_${i}`,name:String(r.name||`Row ${i+1}`),days:Array.isArray(r.days)&&r.days.length?r.days.map(Number):[1,2,3,4,5],period:Number(r.period)||0
+  }));
   data.lessonPlanHiddenClassIds=Array.isArray(data.lessonPlanHiddenClassIds)?[...new Set(data.lessonPlanHiddenClassIds)]:[];
+  data.lessonPlanSyncGroups=Array.isArray(data.lessonPlanSyncGroups)?data.lessonPlanSyncGroups:[];
 }
 
 function ensureClassFields(){
@@ -844,33 +848,17 @@ function classPeriodLabel(cls,weekday){
   if(!periods.length&&Array.isArray(cls.periods))periods.push(...cls.periods.map(Number));
   return periods.length?`Period${periods.length>1?"s":""} ${periods.join(", ")}`:"";
 }
-function lessonPlanRows(){
-  ensureLessonPlans();ensureClassFields();
-  const hidden=new Set(data.lessonPlanHiddenClassIds||[]);
-  const visibleClasses=data.classes.filter(c=>!hidden.has(c.id));
-  const used=new Set(data.lessonPlanSyncGroups.flatMap(g=>g.classIds.filter(id=>!hidden.has(id))));
-  const synced=data.lessonPlanSyncGroups.map(g=>({id:`sync:${g.id}`,type:"sync",name:g.name,classIds:g.classIds.filter(id=>!hidden.has(id))})).filter(g=>g.classIds.length>1);
-  const singles=visibleClasses.filter(c=>!used.has(c.id)).map(c=>({id:`class:${c.id}`,type:"class",name:c.name,classIds:[c.id]}));
-  return [...synced,...singles];
-}
-function lessonRowMeetsOnDay(row,weekday){
-  return row.classIds.some(id=>classMeetsOnWeekday(data.classes.find(c=>c.id===id),weekday));
-}
-function lessonRowScheduleLabel(row,weekday){
-  const labels=[...new Set(row.classIds.map(id=>classPeriodLabel(data.classes.find(c=>c.id===id),weekday)).filter(Boolean))];
-  return labels.join(" • ");
-}
-function lessonPlanEntry(rowId,date){ensureLessonPlans();return data.lessonPlans.entries?.[rowId]?.[date]||{text:"",done:false};}
+function lessonPlanRows(){ensureLessonPlans();return data.lessonPlanCustomRows.map(r=>({id:`row:${r.id}`,type:'custom',name:r.name,days:r.days,period:r.period||0,classIds:[]}));}
+function lessonRowMeetsOnDay(row,weekday){return row.type==='custom'?(row.days||[]).includes(Number(weekday)):false;}
+function lessonRowScheduleLabel(row,weekday){return row.period?`Period ${row.period}`:'';}
+function lessonPlanEntry(rowId,date){ensureLessonPlans();const e=data.lessonPlans.entries?.[rowId]?.[date]||{};return {text:e.text||'',planned:!!e.planned,created:!!e.created,posted:!!e.posted};}
 function lessonplans(){
-  ensureLessonPlans();
-  const dates=lessonWeekDates(),rows=lessonPlanRows(),start=dates[0],end=dates[4];
-  const range=`${start.toLocaleDateString(undefined,{month:"long",day:"numeric"})} – ${end.toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"})}`;
-  const dayNames=["Monday","Tuesday","Wednesday","Thursday","Friday"];
-  const headers=dates.map((d,i)=>`<th><div>${dayNames[i]}</div><span>${d.toLocaleDateString(undefined,{month:"short",day:"numeric"})}</span></th>`).join("");
-  const body=rows.length?rows.map(r=>`<tr><th class="lessonRowName"><div class="lessonRowTitle"><div><b>${esc(r.name)}</b>${r.type==="sync"?`<span>${r.classIds.length} sections synchronized</span>`:""}</div><button class="lessonRemoveRow" title="Remove from Lesson Plans" onclick="window.hideLessonPlanClassRow('${r.id}')">×</button></div></th>${dates.map((d,i)=>{const weekday=i+1,date=isoDate(d);if(!lessonRowMeetsOnDay(r,weekday))return `<td class="lessonCell lessonUnavailable"><span>—</span></td>`;const e=lessonPlanEntry(r.id,date),schedule=lessonRowScheduleLabel(r,weekday);return `<td class="lessonCell ${e.done?"lessonDone":""}">${schedule?`<small class="lessonPeriod">${esc(schedule)}</small>`:""}<label class="lessonCheck" title="Mark lesson complete"><input type="checkbox" ${e.done?"checked":""} onchange="window.updateLessonPlan('${r.id}','${date}','done',this.checked)"><span>✓</span></label><textarea aria-label="${esc(r.name)} ${date}" placeholder="Type lesson plan..." oninput="window.updateLessonPlan('${r.id}','${date}','text',this.value)">${esc(e.text||"")}</textarea></td>`}).join("")}</tr>`).join(""):`<tr><td colspan="6" class="small">No classes are currently shown in your lesson plan. Add classes in Students & Classes or use Customize to add them back.</td></tr>`;
-  return `<header><div><h2>Lesson Plans</h2><p>Your week at a glance. Only days a class actually meets are available for planning.</p></div><button onclick="window.openLessonPlanManager()">⚙️ Customize</button></header>
-  <section class="card lessonPlanControls"><button onclick="window.changeLessonWeek(-1)">← Previous Week</button><div><b>${range}</b><span class="small">Monday–Friday</span></div><button onclick="window.changeLessonWeek(1)">Next Week →</button><button onclick="window.goToLessonWeekToday()">Today</button></section>
-  <section class="lessonPlanCard"><div class="lessonTableWrap"><table class="lessonTable"><thead><tr><th class="lessonCorner">Class</th>${headers}</tr></thead><tbody>${body}</tbody></table></div></section>`;
+  ensureLessonPlans(); const dates=lessonWeekDates(),rows=lessonPlanRows(),start=dates[0],end=dates[4];
+  const range=`${start.toLocaleDateString(undefined,{month:'long',day:'numeric'})} – ${end.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'})}`;
+  const dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  const headers=dates.map((d,i)=>`<th><div>${dayNames[i]}</div><span>${d.toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span></th>`).join('');
+  const body=rows.length?rows.map(r=>`<tr><th class="lessonRowName"><div class="lessonRowTitle"><div><b>${esc(r.name)}</b><div class="rowDays">${esc(lessonDayList(r.days))}${r.period?` · Period ${r.period}`:''}</div></div><button class="lessonRemoveRow" title="Delete row" onclick="window.deleteLessonPlanRow('${r.id}')">×</button></div></th>${dates.map((d,i)=>{const weekday=i+1,date=isoDate(d);if(!lessonRowAvailableOnDate(r,date,weekday))return `<td class="lessonCell lessonUnavailable"><span>—</span></td>`;const e=lessonPlanEntry(r.id,date),sub=lessonSubAffectsRow(r,date),all=e.planned&&e.created&&e.posted;return `<td class="lessonCell ${sub?'lessonSubDay':''}"><div class="lessonStatusBar"><label class="lessonStatus"><input type="checkbox" ${e.planned?'checked':''} onchange="window.updateLessonStatus('${r.id}','${date}','planned',this.checked)"> Planned</label><label class="lessonStatus"><input type="checkbox" ${e.created?'checked':''} onchange="window.updateLessonStatus('${r.id}','${date}','created',this.checked)"> Created</label><label class="lessonStatus"><input type="checkbox" ${e.posted?'checked':''} onchange="window.updateLessonStatus('${r.id}','${date}','posted',this.checked)"> Posted</label><label class="lessonStatus all"><input type="checkbox" ${all?'checked':''} onchange="window.updateLessonAll('${r.id}','${date}',this.checked)"> All</label></div><textarea aria-label="${esc(r.name)} ${date}" placeholder="Type lesson plan..." oninput="window.updateLessonPlan('${r.id}','${date}','text',this.value)">${esc(e.text)}</textarea></td>`}).join('')}</tr>`).join(''):`<tr><td colspan="6" class="small">No lesson-plan rows yet. Use Customize to add a row.</td></tr>`;
+  return `<header><div><h2>Lesson Plans</h2><p>Build your planner around the rows and days you actually need.</p></div><button onclick="window.openLessonPlanManager()">⚙️ Customize</button></header><section class="card lessonPlanControls"><button onclick="window.changeLessonWeek(-1)">← Previous Week</button><div><b>${range}</b><span class="small">Monday–Friday</span></div><button onclick="window.changeLessonWeek(1)">Next Week →</button><button onclick="window.goToLessonWeekToday()">Today</button><span class="lessonSubLegend"><i class="lessonSubSwatch"></i> Sub day</span></section><section class="lessonPlanCard"><div class="lessonTableWrap"><table class="lessonTable"><thead><tr><th class="lessonCorner">Planning Row</th>${headers}</tr></thead><tbody>${body}</tbody></table></div></section>`;
 }
 window.updateLessonPlan=(rowId,date,field,value)=>{
   ensureLessonPlans();data.lessonPlans.entries[rowId]=data.lessonPlans.entries[rowId]||{};
@@ -1610,13 +1598,12 @@ window.setCalendarBoundary=(key,value)=>{
 }
 window.editDate=date=>{window.calendarEditDate=date;renderCalendarModal()}
 function renderCalendarModal(){
-  document.querySelector("#calModal")?.remove();
-  const date=window.calendarEditDate,info=getDateInfo(date),o=(data.calendarOverrides||{})[date]||{},colors=calendarColors();
-  const label=new Date(date+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"});
-  const options=`<option value="instructional" ${info.type==="instructional"?"selected":""}>Instructional Day</option><option value="inservice" ${info.type==="inservice"?"selected":""}>In-Service Day</option><option value="noschool" ${info.type==="noschool"?"selected":""}>No School / Vacation</option><option value="outside" ${info.type==="outside"?"selected":""}>Outside Student Year</option>`;
-  const notes=(o.notes||[]).join("\n");
-  const colorRow=(key,label)=>`<label>${label}<br><input id="color-${key}" type="color" value="${eventColor(date,key)}"><select id="scope-${key}"><option value="this">This event only</option><option value="all">All ${label} events</option></select></label>`;
-  document.body.insertAdjacentHTML("beforeend",`<div id="calModal" class="modalbg"><div class="modal"><h3>🗓️ ${label}</h3><label>Day Type<br><select id="calType">${options}</select></label><p class="small">Weekdays between the first and last student day automatically count as instructional days unless you change them. In-service days count too.</p><hr><b>Academic Markers</b><p><label><input id="markNine" type="checkbox" ${o.nineWeeks?"checked":""}> Beginning of Nine Weeks</label><br><label><input id="markEndNine" type="checkbox" ${o.endNineWeeks?"checked":""}> End of Nine Weeks</label><br><label><input id="markTri" type="checkbox" ${o.trimester?"checked":""}> Beginning of Trimester</label><br><label><input id="markEndTri" type="checkbox" ${o.endTrimester?"checked":""}> End of Trimester</label><br><label><input id="markSem" type="checkbox" ${o.semester?"checked":""}> Beginning of Semester</label><br><label><input id="markEndSem" type="checkbox" ${o.endSemester?"checked":""}> End of Semester</label></p><hr><b>Calendar Colors</b><p class="small">These colors control the calendar appearance. Day types and alternate schedules use the color for a light background shade and the left stripe. Markers keep their colored symbol.</p><p class="small">For each item, choose whether the color changes only this date or becomes the default for every event of that type.</p><div class="colorGrid">${colorRow("instructional","Instructional")} ${colorRow("inservice","In-Service")} ${colorRow("noschool","No School")} ${colorRow("nineWeeks","Beginning Nine Weeks")} ${colorRow("endNineWeeks","End Nine Weeks")} ${colorRow("trimester","Beginning Trimester")} ${colorRow("endTrimester","End Trimester")} ${colorRow("semester","Beginning Semester")} ${colorRow("endSemester","End Semester")} ${colorRow("alternateSchedule","Alternate Schedule")} ${colorRow("note","Notes")}</div><hr><label>Bell Schedule<br><select id="calSchedule">${bellScheduleOptions(info.schedule)}</select></label><p class="small">Instructional days automatically use the Regular Bell Schedule. Select one of your alternate schedules when this date runs differently.</p><hr><label><b>📝 Notes for this day</b><br><textarea id="calNotes" placeholder="One note per line. These will appear on your dashboard when this date arrives.">${esc(notes)}</textarea></label><p class="small">Notes stay attached to this date in the calendar and automatically appear on the Live Class dashboard on that day.</p><div style="margin-top:16px"><button class="primary" onclick="window.saveDateDetails('${date}')">Save</button> <button onclick="window.closeCalendarModal()">Cancel</button></div></div></div>`);
+  _renderCalendarModalOriginal();
+  const modal=document.querySelector('#calModal .modal'); if(!modal)return;
+  const date=window.calendarEditDate,o=(data.calendarOverrides||{})[date]||{};
+  const coverage=o.subCoverage||'none';
+  const block=`<div class="lessonCalendarSub"><b>🧑‍🏫 Substitute Coverage</b><p class="small">Mark a day when you will be absent. Lesson-plan cells affected by the absence will be highlighted so you know those plans need independent student work.</p><label>Coverage<br><select id="calSubCoverage"><option value="none" ${coverage==='none'?'selected':''}>No substitute</option><option value="am" ${coverage==='am'?'selected':''}>AM only</option><option value="pm" ${coverage==='pm'?'selected':''}>PM only</option><option value="full" ${coverage==='full'?'selected':''}>Full Day</option></select></label></div>`;
+  const notes=document.querySelector('#calNotes')?.closest('label'); if(notes)notes.insertAdjacentHTML('beforebegin',block); else modal.insertAdjacentHTML('beforeend',block);
 }
 window.closeCalendarModal=()=>document.querySelector("#calModal")?.remove()
 window.saveDateDetails=date=>{
@@ -2160,6 +2147,48 @@ window.importData=input=>{
 window.resetData=()=>{if(confirm("Reset all dashboard data to the demo data?")){data=structuredClone(seed);save();render()}}
 
 $("#root").innerHTML=`<div class="loadingScreen">Loading Teacher Dashboard...</div>`;
+
+
+function lessonRowAvailableOnDate(row,date,weekday){
+  const info=getDateInfo(date); if(info.type!=='instructional')return false;
+  if(!lessonRowMeetsOnDay(row,weekday))return false;
+  if(info.schedule&&info.schedule!=='regular'&&row.period){
+    const sch=(data.bellSchedules||[]).find(s=>s.id===info.schedule);
+    if(sch&&Array.isArray(sch.periods)){
+      const nums=sch.periods.map(x=>classPeriodNumber(x[0])).filter(Boolean);
+      if(nums.length&&!nums.includes(Number(row.period)))return false;
+    }
+  }
+  return true;
+}
+function lessonSubAffectsRow(row,date){
+  const sub=(data.calendarOverrides?.[date]||{}).subCoverage||'none'; if(sub==='none'||!sub)return false;
+  if(sub==='full')return true;
+  const p=Number(row.period)||0; if(!p)return true;
+  return sub==='am'?p<=4:p>=5;
+}
+function lessonDayList(days){const names=['Mon','Tue','Wed','Thu','Fri'];return (days||[]).map(d=>names[d-1]).join(', ');}
+
+window.updateLessonPlan=(rowId,date,field,value)=>{ensureLessonPlans();data.lessonPlans.entries[rowId]=data.lessonPlans.entries[rowId]||{};data.lessonPlans.entries[rowId][date]=data.lessonPlans.entries[rowId][date]||{};data.lessonPlans.entries[rowId][date][field]=String(value||'');save();};
+window.updateLessonStatus=(rowId,date,field,value)=>{ensureLessonPlans();data.lessonPlans.entries[rowId]=data.lessonPlans.entries[rowId]||{};const e=data.lessonPlans.entries[rowId][date]=data.lessonPlans.entries[rowId][date]||{};e[field]=!!value;save();};
+window.updateLessonAll=(rowId,date,value)=>{ensureLessonPlans();data.lessonPlans.entries[rowId]=data.lessonPlans.entries[rowId]||{};const e=data.lessonPlans.entries[rowId][date]=data.lessonPlans.entries[rowId][date]||{};e.planned=e.created=e.posted=!!value;save();render();};
+window.deleteLessonPlanRow=rowId=>{if(!confirm('Delete this planning row? Your lesson text will remain saved unless you add a new row with the same ID.'))return;const id=String(rowId).replace(/^row:/,'');data.lessonPlanCustomRows=(data.lessonPlanCustomRows||[]).filter(r=>r.id!==id);save();render();};
+window.openLessonPlanManager=()=>{ensureLessonPlans();document.querySelector('#lessonPlanModal')?.remove();const rows=data.lessonPlanCustomRows.map(r=>lessonPlanRowEditor(r)).join('');document.body.insertAdjacentHTML('beforeend',`<div id="lessonPlanModal" class="modalbg"><div class="modal lessonPlanModal"><h3>Customize Lesson Planning</h3><p class="small">Add exactly the planning rows you want. Prep, lunch, duties, and extra blocks do not need rows unless you choose to add them.</p><div id="lessonRowList">${rows||'<p class="small emptyRows">No rows yet.</p>'}</div><button type="button" onclick="window.addLessonPlanRow()">＋ Add Planning Row</button><div style="margin-top:16px"><button class="primary" onclick="window.saveLessonPlanManager()">Save</button> <button onclick="window.closeLessonPlanManager()">Cancel</button></div></div></div>`);};
+function lessonPlanRowEditor(r){const ds=[1,2,3,4,5];return `<div class="lessonPlanRowEditor" data-row-id="${esc(r.id)}"><div class="lessonPlanRowEditorHead"><input type="text" class="lpRowName" value="${esc(r.name)}" placeholder="e.g., 6th Period"><button type="button" onclick="this.closest('.lessonPlanRowEditor').remove()">Remove</button></div><div class="lessonDayPick">${ds.map(d=>`<label><input class="lpRowDay" type="checkbox" value="${d}" ${(r.days||[]).includes(d)?'checked':''}> ${['Mon','Tue','Wed','Thu','Fri'][d-1]}</label>`).join('')}</div><div class="lessonRowMeta"><label>Period (optional) <input class="lpRowPeriod" type="number" min="1" max="12" value="${r.period||''}" placeholder="6" style="width:70px"></label><span class="small">Period helps the planner recognize AM/PM subs and alternate schedules.</span></div></div>`;}
+window.addLessonPlanRow=()=>{const host=document.querySelector('#lessonRowList');if(!host)return;host.querySelector('.emptyRows')?.remove();const id='lp_'+uid();host.insertAdjacentHTML('beforeend',lessonPlanRowEditor({id,name:'',days:[1,2,3,4,5],period:0}));};
+window.closeLessonPlanManager=()=>document.querySelector('#lessonPlanModal')?.remove();
+window.saveLessonPlanManager=()=>{const rows=[...document.querySelectorAll('#lessonRowList .lessonPlanRowEditor')].map((el,i)=>({id:el.dataset.rowId||uid(),name:el.querySelector('.lpRowName').value.trim()||`Planning Row ${i+1}`,days:[...el.querySelectorAll('.lpRowDay:checked')].map(x=>Number(x.value)),period:Number(el.querySelector('.lpRowPeriod').value)||0})).filter(r=>r.days.length);data.lessonPlanCustomRows=rows;save();window.closeLessonPlanManager();render();};
+
+// Calendar: sub coverage is saved on the date and highlighted in Lesson Plans.
+
+const _oldSaveDateDetails=window.saveDateDetails;
+window.saveDateDetails=function(date){
+  const sub=document.querySelector('#calSubCoverage')?.value||'none';
+  _oldSaveDateDetails(date);
+  // The original save closes the modal and renders; preserve the new setting afterward.
+  data.calendarOverrides??={}; data.calendarOverrides[date]=data.calendarOverrides[date]||{}; data.calendarOverrides[date].subCoverage=sub; save(); render();
+};
+
 </script>
 </body>
 </html>
