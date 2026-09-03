@@ -357,6 +357,30 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 /* ===== Version 2.2.4 Lesson Planning ===== */
 /* Version 2.2 lesson planning refinements */
 .lessonStatusBar{position:absolute;left:8px;right:8px;top:7px;display:flex;gap:5px;align-items:center;z-index:3;flex-wrap:wrap}.lessonStatus{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#607080;cursor:pointer;background:rgba(255,255,255,.82);padding:2px 4px;border-radius:6px;border:1px solid #d8dee8}.lessonStatus input{accent-color:#5f9fb7;margin:0}.lessonStatus.all{font-weight:700}.lessonCell textarea{padding-top:38px!important}.lessonCell.lessonSubDay{background:#fff7e8!important}.lessonCell.lessonSubDay:before{content:"SUB";position:absolute;right:7px;bottom:5px;font-size:9px;font-weight:800;color:#9a6700;letter-spacing:.04em}.lessonSubDay textarea{padding-right:10px!important}.lessonPlanRowEditor{border:1px solid var(--line,#d8dee8);border-radius:12px;padding:12px;margin:10px 0;background:#fbfcfe}.lessonPlanRowEditorHead{display:flex;gap:8px;align-items:center}.lessonPlanRowEditorHead input[type="text"]{flex:1}.lessonDayPick{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 6px}.lessonDayPick label{font-size:12px;padding:5px 7px;border:1px solid #d8dee8;border-radius:7px;background:white}.lessonRowMeta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}.lessonRowMeta label{font-size:12px}.lessonSubLegend{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#8a5a00}.lessonSubSwatch{width:13px;height:13px;border-radius:4px;background:#fff0cf;border:1px solid #f0c36a}.lessonRowName .rowDays{color:#7b8796;font-size:11px;margin-top:3px}.lessonTable .lessonUnavailable{background:#f2f4f7!important}.lessonCalendarSub{padding:10px;border:1px solid #ead7b5;border-radius:10px;background:#fffaf0;margin:12px 0}.lessonCalendarSub select{max-width:220px}
+/* ===== Version 2.3.4 — Planner usability cleanup ===== */
+main:has(.lessonPlanCard){overflow:visible!important;}
+.lessonPlanCard{margin:0 14px 12px!important;overflow:visible!important;}
+.lessonTableWrap{height:auto!important;max-height:none!important;overflow:visible!important;overscroll-behavior:auto!important;}
+.lessonTable{overflow:visible!important;}
+.lessonTable .lessonCorner,.lessonRowName{width:108px!important;min-width:108px!important;max-width:108px!important;}
+.lessonRowName{padding:4px 6px!important;vertical-align:top!important;}
+.lessonRowTitle{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:4px!important;}
+.lessonRowLabel{width:100%!important;display:flex!important;align-items:flex-start!important;gap:3px!important;}
+.lessonRowTitle b{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;font-size:12px!important;line-height:1.15!important;font-weight:700!important;}
+.lessonRowActions{width:100%!important;display:flex!important;justify-content:flex-start!important;gap:3px!important;}
+.lessonRowMove,.lessonRemoveRow{width:24px!important;height:22px!important;min-width:24px!important;}
+.lessonCell{height:auto!important;min-height:64px!important;padding:0!important;vertical-align:top!important;}
+.lessonCell textarea{height:auto!important;min-height:64px!important;padding:3px 6px 23px!important;margin:0!important;overflow:hidden!important;font-size:14px!important;line-height:1.25!important;font-weight:500!important;resize:none!important;}
+.lessonStatusBar{bottom:3px!important;left:5px!important;right:5px!important;}
+.lessonUnavailable{height:auto!important;min-height:64px!important;}
+.lessonCompactHeader{padding:6px 14px!important;min-height:40px!important;margin-bottom:4px!important;}
+.lessonCompactHeader h2{font-size:22px!important;}
+.lessonPlanControls{gap:5px!important;}
+.lessonPlanControls>div b{font-size:15px!important;}
+.lessonTable thead th{height:38px!important;padding:3px 4px!important;}
+.lessonDayHead{font-size:14px!important;}
+@media(max-width:1000px){.lessonTable .lessonCorner,.lessonRowName{width:96px!important;min-width:96px!important;max-width:96px!important}.lessonRowTitle b{font-size:11px!important}}
+
 </style>
 </head>
 <body>
@@ -384,7 +408,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.3.3";
+const APP_VERSION="2.3.4";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -506,6 +530,7 @@ function ensureClassFields(){
     c.recommendationRules=Array.isArray(c.recommendationRules)?c.recommendationRules:[];
     c.pvaasReported=!!c.pvaasReported;
     c.enrollmentPeriods=Array.isArray(c.enrollmentPeriods)?c.enrollmentPeriods:[];
+    c.nickname=String(c.nickname||'').trim();
   });
 }
 
@@ -648,7 +673,7 @@ async function syncCloud(){
     while(cloudSavePending){
       cloudSavePending=false;
       cloudStatus="Saving to Firebase...";
-      render();
+      if(!document.querySelector('.lessonCell textarea:focus'))render();
       const record=cloudRecord();
       await setDoc(dashboardRef(),record,{merge:true});
       lastSyncAt=record.updatedAt;
@@ -659,7 +684,7 @@ async function syncCloud(){
     cloudStatus="Saved locally — cloud sync failed";
   }finally{
     cloudWriteInProgress=false;
-    render();
+    if(!document.querySelector('.lessonCell textarea:focus'))render();
   }
 }
 
@@ -797,6 +822,7 @@ function render(){
   </aside><main>${toastHTML()}${pageHTML()}<footer class="appFooter">© 2026 Lindsay Shay &nbsp;•&nbsp; Version ${APP_VERSION}</footer></main></div>${selected?modalHTML():""}`;
   document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>{page=b.dataset.page;render()});
   bind();
+  if(page==="lessonplans")requestAnimationFrame(()=>document.querySelectorAll('.lessonCell textarea').forEach(ta=>window.autoResizeLessonTextarea?.(ta)));
 }
 function loginHTML(){return `<div class="loginScreen"><section class="loginCard"><div class="loginLogo">${appLogoHTML()}</div><h1>Teacher Dashboard</h1><p>Sign in with Google to securely access your own Teacher Dashboard.</p><button class="googleBtn primary" onclick="window.signIn()" ${authBusy?"disabled":""}>${authBusy?"Signing in...":"G  Sign in with Google"}</button>${loginError?`<div class="loginError">${esc(loginError)}</div>`:""}<p class="small" style="margin-top:20px">Each Google account has its own private dashboard and browser backup.</p></section></div>`}
 function nav(){return [["live","🏠","Live Class"],["students","👥","Students & Classes"],["lessonplans","🗓️","Lesson Plans"],["groups","👥","Groups"],["forms","📋","Forms & Records"],["calendar","🗓️","Calendar"],["buttons","⚡","Quick Buttons"],["grades","📚","Grades"],["reports","📊","Reports"],["pvaas","📈","PVAAS Reporting"],["settings","⚙️","Settings"]].map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
@@ -903,7 +929,7 @@ function lessonPlanRows(){
   const groups=(data.lessonPlanSyncGroups||[]).map(g=>({id:g.id,name:String(g.name||'Linked Classes'),classIds:(g.classIds||[]).filter(id=>data.classes.some(c=>c.id===id)&&!hidden.has(id))})).filter(g=>g.classIds.length>1);
   groups.forEach(g=>g.classIds.forEach(id=>grouped.add(id)));
   const syncRows=groups.map(g=>({id:'sync:'+g.id,type:'sync',name:g.name,classIds:g.classIds,days:[1,2,3,4,5],period:0}));
-  const classRows=data.classes.filter(c=>!hidden.has(c.id)&&!grouped.has(c.id)).map(c=>({id:'class:'+c.id,type:'class',name:c.name,classIds:[c.id],days:[1,2,3,4,5],period:0}));
+  const classRows=data.classes.filter(c=>!hidden.has(c.id)&&!grouped.has(c.id)).map(c=>({id:'class:'+c.id,type:'class',name:(c.nickname||c.name),fullName:c.name,classIds:[c.id],days:[1,2,3,4,5],period:0}));
   const custom=(data.lessonPlanCustomRows||[]).map(r=>({id:'row:'+r.id,type:'custom',name:r.name,classIds:[],days:r.days,period:r.period||0}));
 
   const base=[...syncRows,...classRows,...custom]
@@ -939,7 +965,7 @@ function lessonplans(){
     const head=dates.map((d,i)=>`<th><div class="lessonDayHead">${names[i]} <span>· ${d.toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span></div></th>`).join('');
 
     const rowHTML=rows.map(row=>{
-      const title=`<th class="lessonRowName"><div class="lessonRowTitle"><div class="lessonRowLabel"><b title="${esc(row.name)}">${esc(row.name)}</b>${row.type==='sync'?'<span class="lessonLinkedBadge">linked</span>':''}</div><div class="lessonRowActions"><button class="lessonRowMove" title="Move up" onclick="window.moveLessonPlanRow('${row.id}',-1)" ${row===rows[0]?'disabled':''}>↑</button><button class="lessonRowMove" title="Move down" onclick="window.moveLessonPlanRow('${row.id}',1)" ${row===rows[rows.length-1]?'disabled':''}>↓</button>${row.type==='custom'?`<button class="lessonRemoveRow" title="Delete row" onclick="window.deleteLessonPlanRow('${row.id}')">×</button>`:''}</div></div></th>`;
+      const title=`<th class="lessonRowName"><div class="lessonRowTitle"><div class="lessonRowLabel"><b title="${esc(row.fullName||row.name)}">${esc(row.name)}</b>${row.type==='sync'?'<span class="lessonLinkedBadge">linked</span>':''}</div><div class="lessonRowActions"><button class="lessonRowMove" title="Move up" onclick="window.moveLessonPlanRow('${row.id}',-1)" ${row===rows[0]?'disabled':''}>↑</button><button class="lessonRowMove" title="Move down" onclick="window.moveLessonPlanRow('${row.id}',1)" ${row===rows[rows.length-1]?'disabled':''}>↓</button>${row.type==='custom'?`<button class="lessonRemoveRow" title="Delete row" onclick="window.deleteLessonPlanRow('${row.id}')">×</button>`:''}</div></div></th>`;
       const cells=dates.map((d,i)=>{
         const date=isoDate(d), weekday=i+1;
         let available=false, state='none';
@@ -952,7 +978,7 @@ function lessonplans(){
         const entry=lessonPlanEntry(row.id,date);
         const all=entry.planned&&entry.created&&entry.posted;
         const cls=state==='all'?' lessonSubDay':state==='partial'?' lessonPartialDay':'';
-        return `<td class="lessonCell${cls}"><textarea placeholder="Type lesson plan..." oninput="window.updateLessonPlanLive('${row.id}','${date}',this.value)" onblur="window.flushLessonPlanLive()">${esc(entry.text)}</textarea><div class="lessonStatusBar"><label class="lessonStatus"><input type="checkbox" ${entry.planned?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','planned',this.checked)">Planned</label><label class="lessonStatus"><input type="checkbox" ${entry.created?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','created',this.checked)">Created</label><label class="lessonStatus"><input type="checkbox" ${entry.posted?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','posted',this.checked)">Posted</label></div></td>`;
+        return `<td class="lessonCell${cls}"><textarea placeholder="Type lesson plan..." onfocus="window.lessonPlanTextareaFocus(this)" oninput="window.lessonPlanTextareaInput(this,'${row.id}','${date}')" onblur="window.lessonPlanTextareaBlur(this)">${esc(entry.text)}</textarea><div class="lessonStatusBar"><label class="lessonStatus"><input type="checkbox" ${entry.planned?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','planned',this.checked)">Planned</label><label class="lessonStatus"><input type="checkbox" ${entry.created?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','created',this.checked)">Created</label><label class="lessonStatus"><input type="checkbox" ${entry.posted?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','posted',this.checked)">Posted</label></div></td>`;
       }).join('');
       return `<tr>${title}${cells}</tr>`;
     }).join('');
@@ -979,7 +1005,7 @@ window.hideLessonPlanClassRow=rowId=>{
   if(!confirm(ids.length>1?"Remove these synchronized classes from the Lesson Plans view? They will not be deleted from Students & Classes.":"Remove this class from the Lesson Plans view? It will not be deleted from Students & Classes."))return;
   data.lessonPlanHiddenClassIds=[...new Set([...(data.lessonPlanHiddenClassIds||[]),...ids])];save();render();
 };
-// Version 2.3.3: typing should never fight the user by re-rendering on every keystroke.
+// Version 2.3.4: typing should never fight the user by re-rendering on every keystroke.
 let lessonPlanSaveTimer=null;
 window.updateLessonPlanLive=(rowId,date,value)=>{
   ensureLessonPlans();
@@ -993,6 +1019,17 @@ window.flushLessonPlanLive=()=>{
   if(lessonPlanSaveTimer){clearTimeout(lessonPlanSaveTimer);lessonPlanSaveTimer=null;}
   save();
 };
+window.autoResizeLessonTextarea=ta=>{
+  if(!ta)return;
+  ta.style.setProperty('height','0px','important');
+  ta.style.setProperty('height',Math.max(64,ta.scrollHeight)+'px','important');
+};
+window.lessonPlanTextareaFocus=ta=>{window.autoResizeLessonTextarea(ta);};
+window.lessonPlanTextareaInput=(ta,rowId,date)=>{
+  window.autoResizeLessonTextarea(ta);
+  window.updateLessonPlanLive(rowId,date,ta.value);
+};
+window.lessonPlanTextareaBlur=ta=>{window.flushLessonPlanLive();};
 window.moveLessonPlanRow=(rowId,direction)=>{
   const rows=lessonPlanRows();
   const ids=rows.map(r=>r.id);
@@ -2000,7 +2037,7 @@ window.openClassroomDisplay=(mode="all")=>{
 #content .lessonStatusBar{left:4px!important;right:4px!important;bottom:3px!important}
 #content .lessonStatus{font-size:8px!important;padding:1px!important}
 
-/* ===== Version 2.3.3 — Visual Weekly Planner =====
+/* ===== Version 2.3.4 — Visual Weekly Planner =====
    Final lesson-plan overrides: intentionally dense and glanceable. */
 main:has(.lessonPlanCard){overflow:hidden!important;}
 .lessonCompactHeader{
@@ -2093,6 +2130,7 @@ main:has(.lessonPlanCard){overflow:hidden!important;}
   .lessonTableWrap{height:calc(100vh - 180px)!important;max-height:calc(100vh - 180px)!important}
 }
 */
+
 </style>
 </head><body><div id="display"></div><script>const mode=${JSON.stringify(mode)};function update(){const s=window.opener&&window.opener.getClassroomDisplayState?window.opener.getClassroomDisplayState():null;if(!s)return;const cards={classleft:['Time Left',s.timeLeft],stopwatch:['Timer',s.stopwatch],countdown:['Countdown',s.countdown],number:['Random Number',s.randomNumber],student:['Random Student',s.randomStudent]};let html='<div class="wrap">';if(mode==='all')html+='<h3>'+s.className+'</h3>';if(mode==='groups'){html+='<div class="groups"><h1>Groups</h1>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>';}else if(mode!=='all'&&cards[mode]){const x=cards[mode];html+='<div class="single '+(mode==='student'?'student':'')+'"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>';}else{html+='<div class="grid">'+Object.values(cards).map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>').join('')+'</div>'+(s.groups.length?'<div class="groups"><h3>Groups</h3>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>':'');}document.getElementById('display').innerHTML=html+'</div>';}update();setInterval(update,500);<\/script></body></html>`);w.document.close();
 }
@@ -2261,6 +2299,8 @@ window.openClassModal=(id="")=>{
       <section class="courseEditorSection">
         <h4>Course Information</h4>
         <label>Class Name<br><input id="className" value="${esc(c.name)}" placeholder="e.g., Honors Precalculus" style="width:100%"></label>
+        <label style="display:block;margin-top:10px">Planner Nickname <span class="small">(optional)</span><br><input id="classNickname" value="${esc(c.nickname||'')}" placeholder="e.g., Precal" style="width:100%"></label>
+        <p class="small">If provided, the nickname is shown in Lesson Plans while the full class name remains everywhere else.</p>
       </section>
 
       <section class="courseEditorSection">
@@ -2314,6 +2354,7 @@ window.removeClassRule=btn=>{const rules=document.querySelectorAll("#classRules 
 window.closeClassModal=()=>document.querySelector("#classModal")?.remove();
 window.saveClass=oldId=>{
   const name=("#className"&&$("#className")?.value||"").trim();if(!name){alert("Please enter a class name.");return;}
+  const nickname=("#classNickname"&&$("#classNickname")?.value||"").trim();
   const ruleEls=[...document.querySelectorAll("#classRules .scheduleRule")];
   const rules=ruleEls.map((el,i)=>({id:el.dataset.ruleId||uid(),periods:[...el.querySelectorAll(`input[name^="rule-period-"]:checked`)].map(x=>Number(x.value)),days:[...el.querySelectorAll(`input[name^="rule-day-"]:checked`)].map(x=>Number(x.value))}));
   if(rules.some(r=>!r.days.length)){alert("Each scheduling rule needs at least one meeting day.");return;}
@@ -2322,7 +2363,7 @@ window.saveClass=oldId=>{
   const old=data.classes.find(c=>c.id===oldId);
   const studentIds=[...document.querySelectorAll('input[name="classStudent"]:checked')].map(x=>x.value);
   const previous=old||{};
-  const item={id:oldId||uid(),name,studentIds,rules,periods:[...new Set(rules.flatMap(r=>r.periods))],days:[...new Set(rules.flatMap(r=>r.days))],terms,
+  const item={id:oldId||uid(),name,nickname,studentIds,rules,periods:[...new Set(rules.flatMap(r=>r.periods))],days:[...new Set(rules.flatMap(r=>r.days))],terms,
   graded:!!$("#classGraded")?.checked,giveMidterm:!!$("#classMidterm")?.checked,giveFinal:!!$("#classFinal")?.checked,
   usesRecommendations:!!$("#classRecommendations")?.checked,recommendationRules:previous.recommendationRules||[],grades:previous.grades||{},
   pvaasReported:!!$("#classPvaas")?.checked,enrollmentPeriods:previous.enrollmentPeriods||[],rosterHistory:previous.rosterHistory||[]};
