@@ -864,7 +864,7 @@ function lessonPlanRows(){
 }
 function lessonRowMeetsOnDay(row,weekday){
   if(row.type==='custom')return (row.days||[]).includes(Number(weekday));
-  return (row.classIds||[]).some(id=>classMeetsOnDay(data.classes.find(c=>c.id===id),weekday));
+  return (row.classIds||[]).some(id=>classMeetsOnWeekday(data.classes.find(c=>c.id===id),weekday));
 }
 function lessonRowScheduleLabel(row,weekday){return row.period?`Period ${row.period}`:'';}
 function lessonPlanEntry(rowId,date){ensureLessonPlans();const e=data.lessonPlans.entries?.[rowId]?.[date]||{};return {text:e.text||'',planned:!!e.planned,created:!!e.created,posted:!!e.posted};}
@@ -887,7 +887,7 @@ function lessonplans(){
         let available=false, state='none';
         try{ available=lessonRowAvailableOnDate(row,date,weekday); }catch(e){
           available=row.type==='custom' ? (row.days||[]).includes(weekday) :
-            (row.classIds||[]).some(id=>classMeetsOnDay((data.classes||[]).find(c=>c.id===id),weekday));
+            (row.classIds||[]).some(id=>classMeetsOnWeekday((data.classes||[]).find(c=>c.id===id),weekday));
         }
         if(!available) return `<td class="lessonCell lessonUnavailable"><span>—</span></td>`;
         try{ state=lessonSubState(row,date,weekday); }catch(e){ state='none'; }
@@ -2196,7 +2196,7 @@ $("#root").innerHTML=`<div class="loadingScreen">Loading Teacher Dashboard...</d
 
 
 function lessonRowClassAvailable(cls,date,weekday){
-  const info=getDateInfo(date);if(info.type!=='instructional'||!classMeetsOnDay(cls,weekday))return false;
+  const info=getDateInfo(date);if(info.type!=='instructional'||!classMeetsOnWeekday(cls,weekday))return false;
   if(info.schedule&&info.schedule!=='regular'){
     const sch=(data.bellSchedules||[]).find(s=>s.id===info.schedule);
     if(sch&&Array.isArray(sch.periods)){
