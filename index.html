@@ -320,6 +320,28 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 /* Version 2.2.5 compact lesson planner */
 .lessonTableWrap{max-height:calc(100vh - 210px)}
 .lessonTable{min-width:820px}.lessonTable .lessonCorner,.lessonRowName{width:145px;min-width:145px}.lessonRowName{padding:7px 9px}.lessonRowTitle{display:flex;align-items:center;gap:5px;justify-content:space-between}.lessonRowTitle b{font-size:12px}.rowDays{display:none!important}.lessonLinkedBadge{font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;font-weight:600}.lessonCell{height:92px}.lessonCell textarea{min-height:92px;padding:27px 7px 6px!important;font-size:12px;line-height:1.25}.lessonStatusBar{left:5px;right:5px;top:4px;gap:2px;flex-wrap:nowrap;justify-content:space-between}.lessonStatus{font-size:9px;gap:2px;padding:1px 2px;border:0;background:transparent;white-space:nowrap}.lessonStatus input{width:12px;height:12px}.lessonCell.lessonSubDay{background:#fff7e8!important}.lessonCell.lessonPartialDay{background:#eef1f4!important}.lessonCell.lessonPartialDay:before{content:"PARTIAL";position:absolute;right:5px;bottom:4px;font-size:8px;font-weight:700;color:#6b7280}.lessonUnavailable{background:#eef0f3!important;color:#a0a8b2}.lessonPlanControls{padding:7px 9px!important;margin-bottom:7px!important}.lessonPlanControls button{padding:5px 8px;font-size:12px}.lessonTable thead th{padding:7px 5px}.lessonTable thead th span{font-size:10px}.lessonCalendarSub{padding:9px;margin:9px 0}
+
+/* ===== Version 2.2.9 — Streamlined Week-at-a-Glance ===== */
+.lessonPlanControls{padding:5px 8px!important;margin-bottom:6px!important;gap:7px!important}
+.lessonPlanControls>div{min-width:220px}
+.lessonPlanControls button{padding:5px 8px!important}
+.lessonTableWrap{max-height:calc(100vh - 185px)!important;overflow:auto!important}
+.lessonTable{min-width:760px!important}
+.lessonTable .lessonCorner,.lessonRowName{width:220px!important;min-width:220px!important}
+.lessonTable thead th{padding:6px 5px!important}
+.lessonTable thead th span{font-size:10px!important}
+.lessonRowName{padding:8px 10px!important;vertical-align:middle!important}
+.lessonRowTitle{align-items:center!important}
+.lessonRowTitle b{font-size:13px!important}
+.lessonCell{height:82px!important}
+.lessonCell textarea{height:82px!important;min-height:82px!important;padding:7px 8px 28px!important;font-size:12px!important;line-height:1.25!important;resize:none!important}
+.lessonStatusBar{left:5px!important;right:5px!important;top:auto!important;bottom:4px!important;display:flex!important;flex-wrap:nowrap!important;justify-content:space-between!important;gap:3px!important}
+.lessonStatus{font-size:9px!important;gap:2px!important;padding:1px 2px!important;white-space:nowrap!important;line-height:1.1!important}
+.lessonStatus input{width:12px!important;height:12px!important;margin:0!important}
+.lessonCell.lessonPartialDay:before{bottom:25px!important}
+.lessonCell.lessonSubDay:before{bottom:25px!important}
+@media(max-width:1050px){.lessonTable .lessonCorner,.lessonRowName{width:175px!important;min-width:175px!important}.lessonStatus{font-size:8px!important}.lessonCell{height:78px!important}.lessonCell textarea{height:78px!important;min-height:78px!important}}
+
 </style>
 </style>
 
@@ -363,7 +385,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.2.7";
+const APP_VERSION="2.2.9";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -852,6 +874,19 @@ function classPeriodLabel(cls,weekday){
   if(!periods.length&&Array.isArray(cls.periods))periods.push(...cls.periods.map(Number));
   return periods.length?`Period${periods.length>1?"s":""} ${periods.join(", ")}`:"";
 }
+function lessonRowSortPeriod(row){
+  if(Number(row.period)>0)return Number(row.period);
+  const periods=[];
+  (row.classIds||[]).forEach(id=>{
+    const cls=(data.classes||[]).find(c=>c.id===id);
+    if(!cls)return;
+    if(Array.isArray(cls.rules))cls.rules.forEach(r=>{
+      if(Array.isArray(r.periods))r.periods.forEach(p=>{p=Number(p);if(p>0)periods.push(p);});
+    });
+    if(Array.isArray(cls.periods))cls.periods.forEach(p=>{p=Number(p);if(p>0)periods.push(p);});
+  });
+  return periods.length?Math.min(...periods):999;
+}
 function lessonPlanRows(){
   ensureLessonPlans();ensureClassFields();
   const hidden=new Set(data.lessonPlanHiddenClassIds||[]), grouped=new Set();
@@ -860,7 +895,9 @@ function lessonPlanRows(){
   const syncRows=groups.map(g=>({id:'sync:'+g.id,type:'sync',name:g.name,classIds:g.classIds,days:[1,2,3,4,5],period:0}));
   const classRows=data.classes.filter(c=>!hidden.has(c.id)&&!grouped.has(c.id)).map(c=>({id:'class:'+c.id,type:'class',name:c.name,classIds:[c.id],days:[1,2,3,4,5],period:0}));
   const custom=data.lessonPlanCustomRows.map(r=>({id:'row:'+r.id,type:'custom',name:r.name,classIds:[],days:r.days,period:r.period||0}));
-  return [...syncRows,...classRows,...custom];
+  return [...syncRows,...classRows,...custom]
+    .map((row,index)=>({...row,_sortPeriod:lessonRowSortPeriod(row),_sortIndex:index}))
+    .sort((a,b)=>a._sortPeriod-b._sortPeriod || a._sortIndex-b._sortIndex || a.name.localeCompare(b.name));
 }
 function lessonRowMeetsOnDay(row,weekday){
   if(row.type==='custom')return (row.days||[]).includes(Number(weekday));
@@ -894,7 +931,7 @@ function lessonplans(){
         const entry=lessonPlanEntry(row.id,date);
         const all=entry.planned&&entry.created&&entry.posted;
         const cls=state==='all'?' lessonSubDay':state==='partial'?' lessonPartialDay':'';
-        return `<td class="lessonCell${cls}"><div class="lessonStatusBar"><label class="lessonStatus"><input type="checkbox" ${entry.planned?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','planned',this.checked)">Planned</label><label class="lessonStatus"><input type="checkbox" ${entry.created?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','created',this.checked)">Created</label><label class="lessonStatus"><input type="checkbox" ${entry.posted?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','posted',this.checked)">Posted</label><label class="lessonStatus all"><input type="checkbox" ${all?'checked':''} onchange="window.updateLessonAll('${row.id}','${date}',this.checked)">All</label></div><textarea placeholder="Type lesson plan..." oninput="window.updateLessonPlan('${row.id}','${date}','text',this.value)">${esc(entry.text)}</textarea></td>`;
+        return `<td class="lessonCell${cls}"><textarea placeholder="Type lesson plan..." oninput="window.updateLessonPlan('${row.id}','${date}','text',this.value)">${esc(entry.text)}</textarea><div class="lessonStatusBar"><label class="lessonStatus"><input type="checkbox" ${entry.planned?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','planned',this.checked)">Planned</label><label class="lessonStatus"><input type="checkbox" ${entry.created?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','created',this.checked)">Created</label><label class="lessonStatus"><input type="checkbox" ${entry.posted?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','posted',this.checked)">Posted</label></div></td>`;
       }).join('');
       return `<tr>${title}${cells}</tr>`;
     }).join('');
