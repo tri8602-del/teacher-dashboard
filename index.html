@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Teacher Dashboard</title><meta name="theme-color" content="#2d3b59">
+<title>Teacher Dashboard V2.3.0</title><meta name="theme-color" content="#2d3b59">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Teacher Dashboard">
@@ -875,15 +875,22 @@ function classPeriodLabel(cls,weekday){
   return periods.length?`Period${periods.length>1?"s":""} ${periods.join(", ")}`:"";
 }
 function lessonRowSortPeriod(row){
-  if(Number(row.period)>0)return Number(row.period);
+  // An explicitly assigned planning-row period always wins.
+  const explicit=Number(row.period);
+  if(Number.isFinite(explicit)&&explicit>0)return explicit;
+
+  // Otherwise, use the earliest teaching period represented by the class/linked row.
   const periods=[];
   (row.classIds||[]).forEach(id=>{
     const cls=(data.classes||[]).find(c=>c.id===id);
     if(!cls)return;
-    if(Array.isArray(cls.rules))cls.rules.forEach(r=>{
-      if(Array.isArray(r.periods))r.periods.forEach(p=>{p=Number(p);if(p>0)periods.push(p);});
+    const rules=Array.isArray(cls.rules)&&cls.rules.length?cls.rules:[];
+    rules.forEach(r=>(r.periods||[]).forEach(p=>{
+      p=Number(p);if(Number.isFinite(p)&&p>0)periods.push(p);
+    }));
+    (cls.periods||[]).forEach(p=>{
+      p=Number(p);if(Number.isFinite(p)&&p>0)periods.push(p);
     });
-    if(Array.isArray(cls.periods))cls.periods.forEach(p=>{p=Number(p);if(p>0)periods.push(p);});
   });
   return periods.length?Math.min(...periods):999;
 }
@@ -1915,6 +1922,28 @@ window.openClassroomDisplay=(mode="all")=>{
 .lessonTable{border-collapse:separate;border-spacing:0;width:100%;min-width:930px;table-layout:fixed}.lessonTable th,.lessonTable td{border-right:1px solid var(--line,#d8dee8);border-bottom:1px solid var(--line,#d8dee8)}.lessonTable thead th{position:sticky;top:0;z-index:4;background:#f7f8fb;padding:12px 8px;text-align:center;color:#334155}.lessonTable thead th span{font-size:12px;font-weight:500;color:#64748b}.lessonTable .lessonCorner{position:sticky;left:0;z-index:6;text-align:left;width:180px}.lessonRowName{position:sticky;left:0;z-index:3;background:#fbfcfe;width:180px;min-width:180px;text-align:left;padding:12px;vertical-align:top}.lessonRowName span{display:block;font-size:11px;color:#64748b;font-weight:500;margin-top:3px}.lessonCell{position:relative;height:126px;padding:0;background:#fff;transition:background .15s}.lessonCell textarea{width:100%;height:100%;min-height:126px;border:0!important;border-radius:0!important;background:transparent!important;padding:12px 30px 10px 12px!important;resize:vertical;line-height:1.35;font:inherit;box-shadow:none!important;outline:none}.lessonCell textarea:focus{background:#f8fbff!important}.lessonCheck{position:absolute;right:7px;top:7px;z-index:2;cursor:pointer}.lessonCheck input{position:absolute;opacity:0;pointer-events:none}.lessonCheck span{display:flex;align-items:center;justify-content:center;width:21px;height:21px;border:1.5px solid #9aa7b8;border-radius:6px;color:transparent;font-size:14px;font-weight:900;background:#fff}.lessonCheck input:checked+span{background:#5f9fb7;border-color:#5f9fb7;color:white}.lessonDone{background:#f1f8f7!important}.lessonDone textarea{color:#52606d}.lessonDone:after{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:#7db39c}
 .lessonRowTitle{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}.lessonRemoveRow{width:25px;height:25px;min-width:25px;padding:0;border-radius:7px;color:#64748b;background:#f1f3f7;border:1px solid var(--line,#d8dee8);font-size:18px;line-height:1;opacity:.7}.lessonRemoveRow:hover{opacity:1;color:#b42318;background:#fff1f0}.lessonUnavailable{background:#f5f6f8!important;color:#9aa4b2;text-align:center;vertical-align:middle}.lessonUnavailable span{font-size:18px}.lessonPeriod{position:absolute;left:12px;top:8px;color:#7b8796;font-size:10px;z-index:2;pointer-events:none}.lessonCell .lessonPeriod~textarea{padding-top:26px!important}.lessonVisibilityList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;margin:8px 0 14px}.lessonVisibilityItem{display:flex;gap:8px;align-items:flex-start;padding:8px;border:1px solid var(--line,#d8dee8);border-radius:10px;background:#fbfcfe;font-size:13px}.lessonVisibilityItem small{display:block;color:#64748b;margin-top:2px}.lessonPlanDivider{border:0;border-top:1px solid var(--line,#d8dee8);margin:16px 0}.lessonPlanModal h4{margin:12px 0 4px;color:#334155}.lessonPlanModal{width:min(720px,92vw)!important}.lessonSyncEditor{border:1px solid var(--line,#d8dee8);border-radius:12px;padding:12px;margin:10px 0;background:#fbfcfe}.lessonSyncHead{display:flex;gap:8px;align-items:center;margin-bottom:10px}.lessonSyncHead input{flex:1}.lessonClassChecks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px}.lessonClassChecks label{font-size:13px}
 @media(max-width:700px){.lessonPlanControls{justify-content:center}.lessonPlanControls>div{order:-1;width:100%}.lessonTableWrap{max-height:none}.lessonClassChecks,.lessonVisibilityList{grid-template-columns:1fr}}
+
+/* V2.3.0 Lesson Plans compact layout override */
+#content .lessonPlanControls{display:flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;flex-wrap:nowrap!important;padding:4px 8px!important;margin-bottom:5px!important;min-height:42px}
+#content .lessonPlanControls>div{min-width:0!important;white-space:nowrap!important}
+#content .lessonPlanControls button{padding:4px 7px!important;font-size:11px!important;white-space:nowrap!important}
+#content .lessonTableWrap{max-height:calc(100vh - 255px)!important}
+#content .lessonTable{min-width:760px!important}
+#content .lessonTable .lessonCorner,#content .lessonRowName{width:180px!important;min-width:180px!important}
+#content .lessonTable thead th{padding:5px 4px!important;height:48px!important}
+#content .lessonTable thead th div{font-size:12px!important}
+#content .lessonTable thead th span{font-size:9px!important}
+#content .lessonRowName{padding:5px 10px!important}
+#content .lessonRowTitle b{font-size:12px!important}
+#content .lessonCell{height:72px!important;min-height:72px!important;padding:0!important;position:relative!important;vertical-align:top!important}
+#content .lessonCell textarea{box-sizing:border-box!important;width:100%!important;height:72px!important;min-height:72px!important;border:0!important;resize:none!important;padding:6px 7px 25px!important;font-size:11px!important;line-height:1.25!important;background:transparent!important}
+#content .lessonStatusBar{position:absolute!important;left:5px!important;right:5px!important;bottom:4px!important;top:auto!important;display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between!important;gap:2px!important;z-index:3!important}
+#content .lessonStatus{font-size:8px!important;line-height:1!important;gap:2px!important;padding:1px 2px!important;white-space:nowrap!important;background:transparent!important;border:0!important}
+#content .lessonStatus input{width:11px!important;height:11px!important;margin:0!important}
+#content .lessonCell.lessonSubDay:before,#content .lessonCell.lessonPartialDay:before{bottom:3px!important;right:4px!important;font-size:7px!important}
+#content .lessonUnavailable{height:72px!important;padding:0!important}
+#content .lessonUnavailable span{font-size:14px!important}
+@media(max-width:900px){#content .lessonPlanControls{flex-wrap:wrap!important}#content .lessonPlanControls>div{order:0!important;width:auto!important}}
 </style>
 </head><body><div id="display"></div><script>const mode=${JSON.stringify(mode)};function update(){const s=window.opener&&window.opener.getClassroomDisplayState?window.opener.getClassroomDisplayState():null;if(!s)return;const cards={classleft:['Time Left',s.timeLeft],stopwatch:['Timer',s.stopwatch],countdown:['Countdown',s.countdown],number:['Random Number',s.randomNumber],student:['Random Student',s.randomStudent]};let html='<div class="wrap">';if(mode==='all')html+='<h3>'+s.className+'</h3>';if(mode==='groups'){html+='<div class="groups"><h1>Groups</h1>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>';}else if(mode!=='all'&&cards[mode]){const x=cards[mode];html+='<div class="single '+(mode==='student'?'student':'')+'"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>';}else{html+='<div class="grid">'+Object.values(cards).map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>').join('')+'</div>'+(s.groups.length?'<div class="groups"><h3>Groups</h3>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>':'');}document.getElementById('display').innerHTML=html+'</div>';}update();setInterval(update,500);<\/script></body></html>`);w.document.close();
 }
