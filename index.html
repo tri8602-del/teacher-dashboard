@@ -359,7 +359,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.2.4";
+const APP_VERSION="2.2.5";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -1598,24 +1598,27 @@ window.setCalendarBoundary=(key,value)=>{
 }
 window.editDate=date=>{window.calendarEditDate=date;renderCalendarModal()}
 function renderCalendarModal(){
-  _renderCalendarModalOriginal();
-  const modal=document.querySelector('#calModal .modal'); if(!modal)return;
-  const date=window.calendarEditDate,o=(data.calendarOverrides||{})[date]||{};
-  const coverage=o.subCoverage||'none';
-  const block=`<div class="lessonCalendarSub"><b>🧑‍🏫 Substitute Coverage</b><p class="small">Mark a day when you will be absent. Lesson-plan cells affected by the absence will be highlighted so you know those plans need independent student work.</p><label>Coverage<br><select id="calSubCoverage"><option value="none" ${coverage==='none'?'selected':''}>No substitute</option><option value="am" ${coverage==='am'?'selected':''}>AM only</option><option value="pm" ${coverage==='pm'?'selected':''}>PM only</option><option value="full" ${coverage==='full'?'selected':''}>Full Day</option></select></label></div>`;
-  const notes=document.querySelector('#calNotes')?.closest('label'); if(notes)notes.insertAdjacentHTML('beforebegin',block); else modal.insertAdjacentHTML('beforeend',block);
+  document.querySelector("#calModal")?.remove();
+  const date=window.calendarEditDate,info=getDateInfo(date),o=(data.calendarOverrides||{})[date]||{};
+  const label=new Date(date+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+  const options=\`<option value="instructional" \${info.type==="instructional"?"selected":""}>Instructional Day</option><option value="inservice" \${info.type==="inservice"?"selected":""}>In-Service Day</option><option value="noschool" \${info.type==="noschool"?"selected":""}>No School / Vacation</option><option value="outside" \${info.type==="outside"?"selected":""}>Outside Student Year</option>\`;
+  const notes=(o.notes||[]).join("\\n");
+  const coverage=o.subCoverage||"none";
+  const colorRow=(key,label)=>\`<label>\${label}<br><input id="color-\${key}" type="color" value="\${eventColor(date,key)}"><select id="scope-\${key}"><option value="this">This event only</option><option value="all">All \${label} events</option></select></label>\`;
+  document.body.insertAdjacentHTML("beforeend",\`<div id="calModal" class="modalbg"><div class="modal"><h3>🗓️ \${label}</h3><label>Day Type<br><select id="calType">\${options}</select></label><p class="small">Weekdays between the first and last student day automatically count as instructional days unless you change them. In-service days count too.</p><hr><b>Academic Markers</b><p><label><input id="markNine" type="checkbox" \${o.nineWeeks?"checked":""}> Beginning of Nine Weeks</label><br><label><input id="markEndNine" type="checkbox" \${o.endNineWeeks?"checked":""}> End of Nine Weeks</label><br><label><input id="markTri" type="checkbox" \${o.trimester?"checked":""}> Beginning of Trimester</label><br><label><input id="markEndTri" type="checkbox" \${o.endTrimester?"checked":""}> End of Trimester</label><br><label><input id="markSem" type="checkbox" \${o.semester?"checked":""}> Beginning of Semester</label><br><label><input id="markEndSem" type="checkbox" \${o.endSemester?"checked":""}> End of Semester</label></p><hr><b>Calendar Colors</b><p class="small">These colors control the calendar appearance. Day types and alternate schedules use the color for a light background shade and the left stripe.</p><div class="calendarColorGrid">\${colorRow("instructional","Instructional Day")} \${colorRow("inservice","In-Service Day")} \${colorRow("noschool","No School / Vacation")} \${colorRow("nineWeeks","Beginning Nine Weeks")} \${colorRow("endNineWeeks","End Nine Weeks")} \${colorRow("trimester","Beginning Trimester")} \${colorRow("endTrimester","End Trimester")} \${colorRow("semester","Beginning Semester")} \${colorRow("endSemester","End Semester")} \${colorRow("alternateSchedule","Alternate Schedule")} \${colorRow("note","Notes")}</div><hr><label>Bell Schedule<br><select id="calSchedule">\${bellScheduleOptions(info.schedule)}</select></label><p class="small">Instructional days automatically use the Regular Bell Schedule. Select one of your alternate schedules when this date runs differently.</p><hr><div class="lessonCalendarSub"><b>🧑‍🏫 Substitute Coverage</b><p class="small">Mark a day when you will be absent. Lesson-plan cells affected by the absence will be highlighted so you know those plans need independent student work.</p><label>Coverage<br><select id="calSubCoverage"><option value="none" \${coverage==="none"?"selected":""}>No substitute</option><option value="am" \${coverage==="am"?"selected":""}>AM only</option><option value="pm" \${coverage==="pm"?"selected":""}>PM only</option><option value="full" \${coverage==="full"?"selected":""}>Full Day</option></select></label></div><hr><label><b>📝 Notes for this day</b><br><textarea id="calNotes" placeholder="One note per line. These will appear on your dashboard when this date arrives.">\${esc(notes)}</textarea></label><p class="small">Notes stay attached to this date in the calendar and automatically appear on the Live Class dashboard on that day.</p><div style="margin-top:16px"><button class="primary" onclick="window.saveDateDetails('\${date}')">Save</button> <button onclick="window.closeCalendarModal()">Cancel</button></div></div></div>\`);
 }
 window.closeCalendarModal=()=>document.querySelector("#calModal")?.remove()
 window.saveDateDetails=date=>{
   data.calendarOverrides??={};
   const type=$("#calType").value,schedule=$("#calSchedule").value;
-  const notes=($("#calNotes").value||"").split("\n").map(x=>x.trim()).filter(Boolean);
+  const subCoverage=$("#calSubCoverage")?.value||"none";
+  const notes=($("#calNotes").value||"").split("\\n").map(x=>x.trim()).filter(Boolean);
   data.calendarColors=calendarColors();
   const keys=["instructional","inservice","noschool","nineWeeks","endNineWeeks","trimester","endTrimester","semester","endSemester","alternateSchedule","note"];
   const existingColors=((data.calendarOverrides[date]||{}).colors||{});
   const localColors={...existingColors};
   keys.forEach(key=>{
-    const value=$(`#color-${key}`).value,scope=$(`#scope-${key}`).value;
+    const value=$(\`#color-\${key}\`).value,scope=$(\`#scope-\${key}\`).value;
     if(scope==="all"){data.calendarColors[key]=value;delete localColors[key];}
     else if(value!==calendarColors()[key]) localColors[key]=value;
     else delete localColors[key];
@@ -1625,7 +1628,7 @@ window.saveDateDetails=date=>{
     nineWeeks:$("#markNine").checked,endNineWeeks:$("#markEndNine").checked,
     trimester:$("#markTri").checked,endTrimester:$("#markEndTri").checked,
     semester:$("#markSem").checked,endSemester:$("#markEndSem").checked,
-    notes,colors:localColors
+    notes,colors:localColors,subCoverage
   };
   if(schedule)data.calendarOverrides[date].schedule=schedule;
   save();window.closeCalendarModal();render();
