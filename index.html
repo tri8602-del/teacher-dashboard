@@ -359,6 +359,65 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 /* Version 2.2 lesson planning refinements */
 .lessonStatusBar{position:absolute;left:8px;right:8px;top:7px;display:flex;gap:5px;align-items:center;z-index:3;flex-wrap:wrap}.lessonStatus{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#607080;cursor:pointer;background:rgba(255,255,255,.82);padding:2px 4px;border-radius:6px;border:1px solid #d8dee8}.lessonStatus input{accent-color:#5f9fb7;margin:0}.lessonStatus.all{font-weight:700}.lessonCell textarea{padding-top:38px!important}.lessonCell.lessonSubDay{background:#fff7e8!important}.lessonCell.lessonSubDay:before{content:"SUB";position:absolute;right:7px;bottom:5px;font-size:9px;font-weight:800;color:#9a6700;letter-spacing:.04em}.lessonSubDay textarea{padding-right:10px!important}.lessonPlanRowEditor{border:1px solid var(--line,#d8dee8);border-radius:12px;padding:12px;margin:10px 0;background:#fbfcfe}.lessonPlanRowEditorHead{display:flex;gap:8px;align-items:center}.lessonPlanRowEditorHead input[type="text"]{flex:1}.lessonDayPick{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 6px}.lessonDayPick label{font-size:12px;padding:5px 7px;border:1px solid #d8dee8;border-radius:7px;background:white}.lessonRowMeta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}.lessonRowMeta label{font-size:12px}.lessonSubLegend{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#8a5a00}.lessonSubSwatch{width:13px;height:13px;border-radius:4px;background:#fff0cf;border:1px solid #f0c36a}.lessonRowName .rowDays{color:#7b8796;font-size:11px;margin-top:3px}.lessonTable .lessonUnavailable{background:#f2f4f7!important}.lessonCalendarSub{padding:10px;border:1px solid #ead7b5;border-radius:10px;background:#fffaf0;margin:12px 0}.lessonCalendarSub select{max-width:220px}
 </style>
+
+<style id="lesson-plans-v232">
+/* ===== Version 2.3.2 — compact, readable lesson plans ===== */
+#content header:has(+ .lessonPlanControls){
+  min-height:0!important;
+  margin:0 0 5px!important;
+  padding:0 2px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+}
+#content header:has(+ .lessonPlanControls) h2{margin:0!important;font-size:24px!important;line-height:1.05!important}
+#content header:has(+ .lessonPlanControls) p{margin:0!important;font-size:13px!important;line-height:1.1!important;color:#64748b!important}
+#content header:has(+ .lessonPlanControls)>div{display:flex!important;align-items:baseline!important;gap:12px!important;min-width:0}
+#content header:has(+ .lessonPlanControls)>button{padding:7px 12px!important;font-size:13px!important;line-height:1.1!important}
+
+#content .lessonPlanControls{height:48px!important;min-height:48px!important;box-sizing:border-box!important;margin:0 0 6px!important;padding:5px 8px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;flex-wrap:nowrap!important}
+#content .lessonPlanControls>div{min-width:0!important;width:auto!important;order:0!important}
+#content .lessonPlanControls button{padding:5px 8px!important;font-size:12px!important;white-space:nowrap!important}
+#content .lessonPlanControls b{font-size:14px!important;white-space:nowrap!important}
+
+#content .lessonPlanCard{border-radius:14px!important}
+#content .lessonTableWrap{max-height:calc(100vh - 142px)!important;overflow:auto!important}
+#content .lessonTable{min-width:720px!important}
+#content .lessonTable .lessonCorner,#content .lessonRowName{width:185px!important;min-width:185px!important}
+#content .lessonTable thead th{padding:7px 5px!important;height:40px!important;vertical-align:middle!important}
+#content .lessonDayHead{display:flex!important;align-items:baseline!important;justify-content:center!important;gap:7px!important;white-space:nowrap!important}
+#content .lessonDayHead b{font-size:14px!important;line-height:1!important}
+#content .lessonDayHead span{font-size:11px!important;font-weight:500!important;color:#64748b!important}
+#content .lessonRowName{padding:6px 8px!important;vertical-align:middle!important}
+#content .lessonRowTitle{gap:5px!important;align-items:center!important;min-height:30px!important}
+#content .lessonRowTitle b{font-size:13px!important;line-height:1.15!important;overflow-wrap:anywhere}
+#content .lessonLinkedBadge{font-size:8px!important}
+#content .lessonRowActions{margin-left:auto!important;display:flex!important;align-items:center!important;gap:2px!important;flex:0 0 auto!important}
+#content .lessonRowMove{width:22px!important;height:22px!important;min-width:22px!important;padding:0!important;border-radius:6px!important;font-size:12px!important;line-height:1!important}
+#content .lessonRowMove:disabled{opacity:.32!important;cursor:default!important}
+#content .lessonRemoveRow{width:22px!important;height:22px!important;min-width:22px!important;font-size:16px!important}
+
+#content .lessonCell{height:74px!important;padding:0!important}
+#content .lessonCell textarea.lessonPlanText{height:74px!important;min-height:74px!important;width:100%!important;box-sizing:border-box!important;padding:6px 7px 24px!important;font-size:13px!important;line-height:1.28!important;font-weight:500!important;color:#334155!important;resize:none!important;overflow:auto!important}
+#content .lessonCell textarea.lessonPlanText::placeholder{color:#9aa4b2!important;font-weight:400!important}
+#content .lessonCell textarea.lessonPlanText:focus{background:#f8fbff!important}
+#content .lessonStatusBar{left:5px!important;right:5px!important;bottom:3px!important;top:auto!important;height:18px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:2px!important;flex-wrap:nowrap!important}
+#content .lessonStatus{font-size:8px!important;line-height:1!important;gap:1px!important;padding:1px 2px!important;white-space:nowrap!important;border:0!important;background:transparent!important}
+#content .lessonStatus input{width:11px!important;height:11px!important;margin:0!important}
+#content .lessonUnavailable{height:74px!important}
+#content .lessonUnavailable span{font-size:14px!important}
+#content .lessonCell.lessonPartialDay:before,#content .lessonCell.lessonSubDay:before{bottom:22px!important;right:4px!important;font-size:7px!important}
+@media(max-width:1050px){
+  #content .lessonTable .lessonCorner,#content .lessonRowName{width:155px!important;min-width:155px!important}
+  #content .lessonStatus{font-size:7px!important}
+}
+@media(max-width:760px){
+  #content header:has(+ .lessonPlanControls)>div{align-items:flex-start!important;flex-direction:column!important;gap:3px!important}
+  #content .lessonPlanControls{justify-content:flex-start!important;overflow:auto!important}
+}
+</style>
+
 </head>
 <body>
 <div id="root"></div>
@@ -385,7 +444,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.3.1";
+const APP_VERSION="2.3.2";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -649,7 +708,7 @@ async function syncCloud(){
     while(cloudSavePending){
       cloudSavePending=false;
       cloudStatus="Saving to Firebase...";
-      render();
+      if(!document.activeElement?.classList?.contains("lessonPlanText"))render();
       const record=cloudRecord();
       await setDoc(dashboardRef(),record,{merge:true});
       lastSyncAt=record.updatedAt;
@@ -660,7 +719,7 @@ async function syncCloud(){
     cloudStatus="Saved locally — cloud sync failed";
   }finally{
     cloudWriteInProgress=false;
-    render();
+    if(!document.activeElement?.classList?.contains("lessonPlanText"))render();
   }
 }
 
@@ -898,7 +957,7 @@ function lessonRowSortPeriod(row){
   });
   return periods.length?Math.min(...periods):999;
 }
-function lessonPlanRows(){
+function lessonPlanRowsLegacy(){
   ensureLessonPlans();ensureClassFields();
   const hidden=new Set(data.lessonPlanHiddenClassIds||[]), grouped=new Set();
   const groups=(data.lessonPlanSyncGroups||[]).map(g=>({id:g.id,name:String(g.name||'Linked Classes'),classIds:(g.classIds||[]).filter(id=>data.classes.some(c=>c.id===id)&&!hidden.has(id))})).filter(g=>g.classIds.length>1);
@@ -916,7 +975,7 @@ function lessonRowMeetsOnDay(row,weekday){
 }
 function lessonRowScheduleLabel(row,weekday){return row.period?`Period ${row.period}`:'';}
 function lessonPlanEntry(rowId,date){ensureLessonPlans();const e=data.lessonPlans.entries?.[rowId]?.[date]||{};return {text:e.text||'',planned:!!e.planned,created:!!e.created,posted:!!e.posted};}
-function lessonplans(){
+function lessonplansLegacy(){
   try{
     ensureLessonPlans();
     ensureClassFields();
@@ -2325,6 +2384,70 @@ window.closeLessonPlanManager=()=>document.querySelector('#lessonPlanModal')?.re
 window.saveLessonPlanManager=()=>{ensureLessonPlans();const visible=new Set([...document.querySelectorAll('.lessonPlanClassVisible:checked')].map(x=>x.value));data.lessonPlanHiddenClassIds=data.classes.filter(c=>!visible.has(c.id)).map(c=>c.id);data.lessonPlanSyncGroups=[...document.querySelectorAll('#lessonSyncList .lessonSyncEditor')].map((el,i)=>({id:el.dataset.syncId||'sync_'+uid(),name:el.querySelector('.lessonSyncName').value.trim()||`Linked Row ${i+1}`,classIds:[...el.querySelectorAll('.lessonClassChecks input:checked')].map(x=>x.value)})).filter(g=>g.classIds.length>1);const rows=[...document.querySelectorAll('#lessonRowList .lessonPlanRowEditor')].map((el,i)=>({id:el.dataset.rowId||uid(),name:el.querySelector('.lpRowName').value.trim()||`Planning Row ${i+1}`,days:[...el.querySelectorAll('.lpRowDay:checked')].map(x=>Number(x.value)),period:Number(el.querySelector('.lpRowPeriod').value)||0})).filter(r=>r.days.length);data.lessonPlanCustomRows=rows;save();window.closeLessonPlanManager();render();};;
 
 
+
+
+/* ===== Version 2.3.2 Lesson Plan interaction overrides ===== */
+function lessonPlanRows(){
+  ensureLessonPlans();ensureClassFields();
+  const hidden=new Set(data.lessonPlanHiddenClassIds||[]), grouped=new Set();
+  const groups=(data.lessonPlanSyncGroups||[])
+    .map(g=>({id:g.id,name:String(g.name||'Linked Classes'),classIds:(g.classIds||[]).filter(id=>(data.classes||[]).some(c=>c.id===id)&&!hidden.has(id))}))
+    .filter(g=>g.classIds.length>1);
+  groups.forEach(g=>g.classIds.forEach(id=>grouped.add(id)));
+  const syncRows=groups.map(g=>({id:'sync:'+g.id,type:'sync',name:g.name,classIds:g.classIds,days:[1,2,3,4,5],period:0}));
+  const classRows=(data.classes||[]).filter(c=>!hidden.has(c.id)&&!grouped.has(c.id)).map(c=>({id:'class:'+c.id,type:'class',name:c.name,classIds:[c.id],days:[1,2,3,4,5],period:0}));
+  const custom=(data.lessonPlanCustomRows||[]).map(r=>({id:'row:'+r.id,type:'custom',name:r.name,classIds:[],days:r.days,period:r.period||0}));
+  const base=[...syncRows,...classRows,...custom].map((row,index)=>({...row,_sortPeriod:lessonRowSortPeriod(row),_sortIndex:index}));
+  const defaultIds=[...base].sort((a,b)=>a._sortPeriod-b._sortPeriod||a._sortIndex-b._sortIndex||a.name.localeCompare(b.name)).map(r=>r.id);
+  const byId=new Map(base.map(r=>[r.id,r]));
+  const saved=Array.isArray(data.lessonPlanRowOrder)?data.lessonPlanRowOrder:[];
+  const ids=[...saved.filter(id=>byId.has(id)),...defaultIds.filter(id=>!saved.includes(id))];
+  return ids.map(id=>byId.get(id)).filter(Boolean);
+}
+window.moveLessonPlanRow=(rowId,direction)=>{
+  const ids=lessonPlanRows().map(r=>r.id);
+  const i=ids.indexOf(rowId),j=i+Number(direction);
+  if(i<0||j<0||j>=ids.length)return;
+  [ids[i],ids[j]]=[ids[j],ids[i]];
+  data.lessonPlanRowOrder=ids;
+  save();render();
+};
+function lessonplans(){
+  try{
+    ensureLessonPlans();ensureClassFields();
+    const dates=lessonWeekDates(),rows=lessonPlanRows();
+    const names=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+    const start=dates[0],end=dates[4];
+    const range=`${start.toLocaleDateString(undefined,{month:'long',day:'numeric'})} – ${end.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'})}`;
+    const head=dates.map((d,i)=>`<th><div class="lessonDayHead"><b>${names[i]}</b><span>${d.toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span></div></th>`).join('');
+    const rowHTML=rows.map((row,rowIndex)=>{
+      const controls=`<span class="lessonRowActions"><button class="lessonRowMove" title="Move up" aria-label="Move ${esc(row.name)} up" onclick="window.moveLessonPlanRow('${row.id}',-1)" ${rowIndex===0?'disabled':''}>↑</button><button class="lessonRowMove" title="Move down" aria-label="Move ${esc(row.name)} down" onclick="window.moveLessonPlanRow('${row.id}',1)" ${rowIndex===rows.length-1?'disabled':''}>↓</button>${row.type==='custom'?`<button class="lessonRemoveRow" title="Delete row" onclick="window.deleteLessonPlanRow('${row.id}')">×</button>`:''}</span>`;
+      const title=`<th class="lessonRowName"><div class="lessonRowTitle"><b>${esc(row.name)}</b>${row.type==='sync'?'<span class="lessonLinkedBadge">linked</span>':''}${controls}</div></th>`;
+      const cells=dates.map((d,i)=>{
+        const date=isoDate(d),weekday=i+1;
+        let available=false,state='none';
+        try{available=lessonRowAvailableOnDate(row,date,weekday)}catch(e){available=row.type==='custom'?(row.days||[]).includes(weekday):(row.classIds||[]).some(id=>classMeetsOnWeekday((data.classes||[]).find(c=>c.id===id),weekday));}
+        if(!available)return `<td class="lessonCell lessonUnavailable"><span>—</span></td>`;
+        try{state=lessonSubState(row,date,weekday)}catch(e){state='none'}
+        const entry=lessonPlanEntry(row.id,date);
+        const cls=state==='all'?' lessonSubDay':state==='partial'?' lessonPartialDay':'';
+        return `<td class="lessonCell${cls}"><textarea class="lessonPlanText" aria-label="${esc(row.name)} ${date}" placeholder="Type lesson plan..." oninput="window.updateLessonPlan('${row.id}','${date}','text',this.value)">${esc(entry.text)}</textarea><div class="lessonStatusBar"><label class="lessonStatus"><input type="checkbox" ${entry.planned?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','planned',this.checked)">Planned</label><label class="lessonStatus"><input type="checkbox" ${entry.created?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','created',this.checked)">Created</label><label class="lessonStatus"><input type="checkbox" ${entry.posted?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','posted',this.checked)">Posted</label></div></td>`;
+      }).join('');
+      return `<tr>${title}${cells}</tr>`;
+    }).join('');
+    return `<header><div><h2>Lesson Plans</h2><p>Plan your week at a glance.</p></div><button onclick="window.openLessonPlanManager()">⚙️ Customize</button></header><section class="card lessonPlanControls"><button onclick="window.changeLessonWeek(-1)">← Previous Week</button><div><b>${range}</b></div><button onclick="window.changeLessonWeek(1)">Next Week →</button><button onclick="window.goToLessonWeekToday()">Today</button></section><section class="lessonPlanCard"><div class="lessonTableWrap"><table class="lessonTable"><thead><tr><th class="lessonCorner">Planning Row</th>${head}</tr></thead><tbody>${rowHTML||'<tr><td colspan="6" class="small">No lesson-plan rows yet. Use Customize to add classes or rows.</td></tr>'}</tbody></table></div></section>`;
+  }catch(err){
+    console.error('Lesson Plans error:',err);
+    return `<header><div><h2>Lesson Plans</h2><p>Something went wrong while loading this page.</p></div></header><section class="card"><p><b>The rest of your dashboard is safe.</b></p><p class="small">${esc(err?.message||String(err))}</p><button onclick="window.openLessonPlanManager()">Open Lesson Plan Customize</button></section>`;
+  }
+}
+window.updateLessonPlan=(rowId,date,field,value)=>{
+  ensureLessonPlans();
+  data.lessonPlans.entries[rowId]=data.lessonPlans.entries[rowId]||{};
+  data.lessonPlans.entries[rowId][date]=data.lessonPlans.entries[rowId][date]||{};
+  data.lessonPlans.entries[rowId][date][field]=String(value??'');
+  save();
+};
 </script>
 </body>
 </html>
