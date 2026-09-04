@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Teacher Dashboard V2.3.14</title><meta name="theme-color" content="#2d3b59">
+<title>Teacher Dashboard V2.3.15</title><meta name="theme-color" content="#2d3b59">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Teacher Dashboard">
@@ -584,7 +584,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.3.14";
+const APP_VERSION="2.3.15";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -2718,10 +2718,11 @@ function startBrowserTitleTimer(){
 }
 window.addEventListener("focus",updateBrowserTabTitle);
 document.addEventListener("visibilitychange",updateBrowserTabTitle);
+window.addEventListener("pageshow",updateBrowserTabTitle);
 
 function bind(){
   document.querySelectorAll("[data-timer]").forEach(el=>{const tick=()=>{const sec=Math.floor((Date.now()-new Date(el.dataset.timer))/1000);el.textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`};tick();setInterval(tick,1000);});
-  const tickClassLeft=()=>{const block=currentScheduleBlock(),times=scheduleBlockTimes(block),ms=timeLeftInBlock();document.querySelectorAll('[data-tool-live="classleft"]').forEach(el=>el.textContent=ms===null?"—":Math.max(0,Math.ceil(ms/60000))+" min");document.querySelectorAll('[data-sidebar-block]').forEach(el=>el.textContent=block?.label||"");document.querySelectorAll('[data-sidebar-range]').forEach(el=>el.textContent=times?`${times.startText} – ${times.endText}`:"No active period");document.querySelectorAll('[data-tool-block]').forEach(el=>el.textContent=block?.label||"No active period");document.querySelectorAll('[data-tool-range]').forEach(el=>el.textContent=times?`${times.startText} – ${times.endText}`:"");};tickClassLeft();setInterval(tickClassLeft,1000);
+  const tickClassLeft=()=>{const block=currentScheduleBlock(),times=scheduleBlockTimes(block),ms=timeLeftInBlock();document.querySelectorAll('[data-tool-live="classleft"]').forEach(el=>el.textContent=ms===null?"—":Math.max(0,Math.ceil(ms/60000)));document.querySelectorAll('[data-sidebar-block]').forEach(el=>el.textContent=block?.label||"");document.querySelectorAll('[data-sidebar-range]').forEach(el=>el.textContent=times?`${times.startText} – ${times.endText}`:"No active period");document.querySelectorAll('[data-tool-block]').forEach(el=>el.textContent=block?.label||"No active period");document.querySelectorAll('[data-tool-range]').forEach(el=>el.textContent=times?`${times.startText} – ${times.endText}`:"");};tickClassLeft();setInterval(tickClassLeft,1000);
   if(page==="live"){const tickTools=()=>{document.querySelectorAll('[data-tool-live="stopwatch"]').forEach(el=>el.textContent=formatClock(stopwatchMs()));document.querySelectorAll('[data-tool-live="countdown"]').forEach(el=>el.textContent=formatClock(countdownMs()));};tickTools();setInterval(tickTools,1000);}
 }
 
