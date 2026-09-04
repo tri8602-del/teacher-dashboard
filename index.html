@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Teacher Dashboard V2.3.6</title><meta name="theme-color" content="#2d3b59">
+<title>Teacher Dashboard V2.3.7</title><meta name="theme-color" content="#2d3b59">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Teacher Dashboard">
@@ -342,6 +342,21 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 .lessonCell.lessonSubDay:before{bottom:25px!important}
 @media(max-width:1050px){.lessonTable .lessonCorner,.lessonRowName{width:175px!important;min-width:175px!important}.lessonStatus{font-size:8px!important}.lessonCell{height:78px!important}.lessonCell textarea{height:78px!important;min-height:78px!important}}
 
+
+/* V2.3.7 compact planner/dashboard improvements */
+.sidebarTimeCard{margin:10px 8px 12px;padding:10px 12px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:#fff;text-align:center}
+.sidebarTimeCard .sidebarTimeValue{font-size:1.35rem;font-weight:800;line-height:1.1}
+.sidebarTimeCard .sidebarTimeLabel{font-size:.82rem;opacity:.92;margin-top:2px}
+.sidebarTimeCard .periodTimeRange{font-size:.72rem;opacity:.8;margin-top:4px}
+.lessonTodoCard{margin:0 0 10px;padding:9px 12px}
+.lessonTodoHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:5px}
+.lessonTodoHead h3{margin:0;font-size:1rem}
+.lessonTodoList{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.lessonTodoItem{display:flex;align-items:center;gap:5px;font-size:.8rem;white-space:nowrap}
+.lessonTodoItem b{font-size:.8rem}
+.lessonTodoItem label{display:inline-flex;align-items:center;gap:2px;opacity:.78;font-size:.74rem}
+.lessonTodoItem input{accent-color:#6d8aa5;transform:scale(.85);margin:0}
+@media(max-width:800px){.sidebarTimeCard{margin:8px}.lessonTodoList{display:block}.lessonTodoItem{margin:5px 0;white-space:normal}}
 </style>
 
 <style>
@@ -408,7 +423,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.3.6";
+const APP_VERSION="2.3.7";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -818,13 +833,22 @@ window.updateEnrollmentPeriod=(classId,periodId,field,value)=>{const c=data.clas
 window.addEnrollmentPeriod=(classId,studentId)=>{const c=data.classes.find(x=>x.id===classId);if(!c)return;c.enrollmentPeriods=c.enrollmentPeriods||[];c.enrollmentPeriods.push({id:"ep_"+Math.random().toString(36).slice(2),studentId,start:"",end:schoolEndDate()||""});save();render();};
 window.removeEnrollmentPeriod=(classId,periodId)=>{const c=data.classes.find(x=>x.id===classId);if(!c)return;c.enrollmentPeriods=(c.enrollmentPeriods||[]).filter(p=>p.id!==periodId);save();render();};
 
+function sidebarTimeHTML(){
+  try{
+    const block=currentScheduleBlock();
+    const left=timeLeftInBlock();
+    const times=scheduleBlockTimes(block);
+    const period=block?.label||"No class";
+    return `<div class="sidebarTimeCard" aria-live="polite"><div class="sidebarTimeValue"><span data-tool-live="classleft">${left===null?"—":Math.max(0,Math.ceil(left/60000))}</span> min</div><div class="sidebarTimeLabel">${esc(period)} remaining</div>${times?`<div class="periodTimeRange">${esc(times.startText)} – ${esc(times.endText)}</div>`:""}</div>`;
+  }catch(e){return '';}
+}
 function render(){
   ensureClassroomTools(); ensureGroups(); ensureForms(); ensureLessonPlans();
   if(!currentUser){$("#root").innerHTML=loginHTML();return}
   const userLabel=currentUser.displayName||currentUser.email||"Google user";
   $("#root").innerHTML=`<div class="app"><aside>
     <h1 class="brand"><span class="brandEmoji">${appLogoHTML()}</span><span>Teacher<br>Dashboard</span></h1>
-    ${nav()}
+    ${nav()}${sidebarTimeHTML()}
     <div class="status">☁️ ${esc(cloudStatus)}</div>
     <div class="userCard"><div class="sidebarUser">${avatarHTML("sidebarAvatar")}<div><b>Signed in as</b><span class="userName">${esc(userLabel)}</span></div></div><button onclick="window.signOut()">Sign out</button></div>
   </aside><main>${toastHTML()}${pageHTML()}<footer class="appFooter">© 2026 Lindsay Shay &nbsp;•&nbsp; Version ${APP_VERSION}</footer></main></div>${selected?modalHTML():""}`;
@@ -833,7 +857,7 @@ function render(){
   if(page==="lessonplans")requestAnimationFrame(()=>document.querySelectorAll('.lessonCell textarea').forEach(ta=>window.autoResizeLessonTextarea?.(ta)));
 }
 function loginHTML(){return `<div class="loginScreen"><section class="loginCard"><div class="loginLogo">${appLogoHTML()}</div><h1>Teacher Dashboard</h1><p>Sign in with Google to securely access your own Teacher Dashboard.</p><button class="googleBtn primary" onclick="window.signIn()" ${authBusy?"disabled":""}>${authBusy?"Signing in...":"G  Sign in with Google"}</button>${loginError?`<div class="loginError">${esc(loginError)}</div>`:""}<p class="small" style="margin-top:20px">Each Google account has its own private dashboard and browser backup.</p></section></div>`}
-function nav(){return [["live","🏠","Live Class"],["students","👥","Students & Classes"],["lessonplans","🗓️","Lesson Plans"],["groups","👥","Groups"],["forms","📋","Forms & Records"],["calendar","🗓️","Calendar"],["buttons","⚡","Quick Buttons"],["grades","📚","Grades"],["reports","📊","Reports"],["pvaas","📈","PVAAS Reporting"],["settings","⚙️","Settings"]].map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
+function nav(){return [["live","🏠","Live Class"],["students","👥","Students, Classes & Groups"],["lessonplans","🗓️","Lesson Plans"],["forms","📋","Forms & Records"],["calendar","🗓️","Calendar"],["buttons","⚡","Quick Buttons"],["grades","📚","Grades"],["reports","📊","Reports"],["pvaas","📈","PVAAS Reporting"],["settings","⚙️","Settings"]].map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
 function classPeriodNumber(label){const m=String(label||"").match(/^(\d+)(?:st|nd|rd|th)?\s+Period\b/i);return m?Number(m[1]):null}
 function timeToMinutes(value,previous=-1){
   const m=String(value||"").trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);if(!m)return null;
@@ -1000,6 +1024,21 @@ function lessonRowMeetsOnDay(row,weekday){
 }
 function lessonRowScheduleLabel(row,weekday){return row.period?`Period ${row.period}`:'';}
 function lessonPlanEntry(rowId,date){ensureLessonPlans();const e=data.lessonPlans.entries?.[rowId]?.[date]||{};return {text:e.text||'',planned:!!e.planned,created:!!e.created,posted:!!e.posted};}
+function lessonTodoHTML(rows,dates){
+  const items=[];
+  rows.forEach(row=>dates.forEach(d=>{
+    const date=isoDate(d), e=lessonPlanEntry(row.id,date);
+    if(!String(e.text||'').trim())return;
+    if(e.planned&&e.created&&e.posted)return;
+    items.push({row,date,e,day:d.toLocaleDateString(undefined,{weekday:'short'})});
+  }));
+  if(!items.length)return `<section class="card lessonTodoCard"><div class="lessonTodoHead"><h3>✓ Still Needs to Be Done</h3><span class="small">You're all caught up for this week.</span></div></section>`;
+  return `<section class="card lessonTodoCard"><div class="lessonTodoHead"><h3>☐ Still Needs to Be Done</h3><span class="small">${items.length} lesson${items.length===1?"":"s"}</span></div><div class="lessonTodoList">${items.map(x=>`<div class="lessonTodoItem"><b>${esc(x.day)} · ${esc(x.row.name)}</b>${!x.e.planned?`<label><input type="checkbox" onchange="window.todoLessonStatus('${x.row.id}','${x.date}','planned',this.checked)">Planned</label>`:''}${!x.e.created?`<label><input type="checkbox" onchange="window.todoLessonStatus('${x.row.id}','${x.date}','created',this.checked)">Created</label>`:''}${!x.e.posted?`<label><input type="checkbox" onchange="window.todoLessonStatus('${x.row.id}','${x.date}','posted',this.checked)">Posted</label>`:''}</div>`).join("")}</div></section>`;
+}
+window.todoLessonStatus=(rowId,date,field,value)=>{
+  window.updateLessonStatus(rowId,date,field,value);
+  render();
+};
 function lessonplans(){
   try{
     ensureLessonPlans();
@@ -1031,7 +1070,7 @@ function lessonplans(){
       return `<tr>${title}${cells}</tr>`;
     }).join('');
 
-    return `<header class="lessonCompactHeader"><h2>Lesson Plans</h2><div class="lessonPlanControls"><button onclick="window.changeLessonWeek(-1)">← Previous</button><div><b>${range}</b></div><button onclick="window.changeLessonWeek(1)">Next →</button><button onclick="window.goToLessonWeekToday()">Today</button></div><button onclick="window.openLessonPlanManager()">⚙️ Customize</button></header><section class="lessonPlanCard"><div class="lessonTableWrap"><table class="lessonTable"><thead><tr><th class="lessonCorner">Class</th>${head}</tr></thead><tbody>${rowHTML||'<tr><td colspan="6" class="small">No lesson-plan rows yet. Use Customize to add classes or rows.</td></tr>'}</tbody></table></div></section>`;
+    return `<header class="lessonCompactHeader"><h2>Lesson Plans</h2><div class="lessonPlanControls"><button onclick="window.changeLessonWeek(-1)">← Previous</button><div><b>${range}</b></div><button onclick="window.changeLessonWeek(1)">Next →</button><button onclick="window.goToLessonWeekToday()">Today</button></div><button onclick="window.openLessonPlanManager()">⚙️ Customize</button></header>${lessonTodoHTML(rows,dates)}<section class="lessonPlanCard"><div class="lessonTableWrap"><table class="lessonTable"><thead><tr><th class="lessonCorner">Class</th>${head}</tr></thead><tbody>${rowHTML||'<tr><td colspan="6" class="small">No lesson-plan rows yet. Use Customize to add classes or rows.</td></tr>'}</tbody></table></div></section>`;
   }catch(err){
     console.error('Lesson Plans error:',err);
     return `<header><div><h2>Lesson Plans</h2><p>Something went wrong while loading this page.</p></div></header><section class="card"><p><b>The rest of your dashboard is safe.</b></p><p class="small">${esc(err?.message||String(err))}</p><button onclick="window.openLessonPlanManager()">Open Lesson Plan Customize</button></section>`;
@@ -1133,9 +1172,7 @@ function classroomToolsHTML(cls,block){
   if(t.randomNumber!==null&&t.randomNumber!==undefined)activeExtras.push(`<div class="card activeToolCard"><button class="toolClose" onclick="window.closeActiveTool('number')">×</button><b>🎲 Number</b><div class="compactUtilityValue">${t.randomNumber}</div><div class="activeToolControls"><button onclick="window.generateRandomNumber()">Again</button><button onclick="window.openClassroomDisplay('number')">↗</button></div></div>`);
   if(t.randomStudentId)activeExtras.push(`<div class="card activeToolCard"><button class="toolClose" onclick="window.closeActiveTool('student')">×</button><b>🎯 Student</b><div class="compactUtilityValue">${picked?esc(studentDisplayName(picked)):"—"}</div><div class="activeToolControls"><button onclick="window.pickRandomStudent()">Again</button><button onclick="window.openClassroomDisplay('student')">↗</button></div></div>`);
   if((t.groups||[]).length)activeExtras.push(`<div class="card activeToolCard"><button class="toolClose" onclick="window.closeActiveTool('groups')">×</button><b>👥 Groups</b><div class="compactUtilityValue">${t.groups.length} groups</div><div class="activeToolControls"><button onclick="window.generateGroups()">Regenerate</button><button onclick="window.openClassroomDisplay('groups')">↗</button></div></div>`);
-  const blockTimes=scheduleBlockTimes(block);
-  return `<div class="card timeRemainingCard"><div><b>⏳</b> <span data-tool-live="classleft">${left===null?"—":Math.max(0,Math.ceil(left/60000))}</span> minutes remaining</div>${blockTimes?`<div class="periodTimeRange">${esc(blockTimes.startText)} – ${esc(blockTimes.endText)}</div>`:""}</div>
-    ${activeExtras.join("")}
+  return `${activeExtras.join("")}
     <div class="card utilityCard"><button type="button" onclick="window.toggleUtilityMenu()">🧰 Additional Tools</button>
       <div id="utilityMenu" class="utilityMenu" hidden>
         <div class="toolBlock"><h4>⏱ Timer</h4><div class="toolControls"><button onclick="window.toggleStopwatch()">${t.stopwatch.running?"Pause":"Start"}</button><button onclick="window.resetStopwatch()">Reset</button><button onclick="window.openClassroomDisplay('stopwatch')">↗ Display</button></div><div class="toolResult" data-tool-live="stopwatch">${formatClock(stopwatchMs())}</div></div>
@@ -1257,6 +1294,14 @@ window.toggleStudentsList=()=>{
   if(btn)btn.textContent=el.classList.contains("open")?"▼ Collapse":"▶ Expand";
 };
 
+function mergedGroupsSectionHTML(){
+  ensureGroups(); normalizeStudents();
+  const cards=(data.groups||[]).map(g=>{
+    const members=sortedStudents(data.students.filter(st=>g.studentIds.includes(st.id)));
+    return `<div class="card groupCard"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><b>${esc(g.name)}</b>${g.description?`<div class="small">${esc(g.description)}</div>`:""}<div class="small">${members.length} student${members.length===1?"":"s"}</div></div><span><button onclick="window.openGroupModal('${g.id}')">Edit</button> <button onclick="window.deleteGroup('${g.id}')">Delete</button></span></div><div class="groupMembers">${members.map(st=>`<span class="groupMemberTag">${esc(studentDisplayName(st))}</span>`).join("")||'<span class="small">No students added yet.</span>'}</div></div>`;
+  }).join("");
+  return `<section class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><h3 style="margin:0">Groups</h3><div class="small">Groups that exist independently from classes.</div></div><button class="primary" onclick="window.openGroupModal()">＋ Add Group</button></div><div style="margin-top:10px">${cards||'<p class="small">No groups yet. Create Debate Club, Academic League, or any other student group.</p>'}</div></section>`;
+}
 function students(){
   ensureClassFields(); normalizeStudents();
   const studentRows=sortedStudents(data.students).map(st=>`
@@ -1264,7 +1309,7 @@ function students(){
       <span>${esc(st.name)}</span>
       <span style="white-space:nowrap"><button onclick="window.openStudentModal('${st.id}')">Edit</button> <button onclick="window.deleteStudent('${st.id}')">Delete</button></span>
     </div>`).join("")||"<p>No students yet.</p>";
-  return `<header><h2>Students & Classes</h2></header>
+  return `<header><h2>Students, Classes & Groups</h2></header>
   <div class="split">
     <section class="card">
       <h3>Students</h3>
@@ -1276,7 +1321,7 @@ function students(){
       ${studentRows}
     </section>
     <section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3>Classes</h3><button class="primary" onclick="window.openClassModal()">＋ Add Class</button></div>${data.classes.length?data.classes.map(c=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><b>${esc(c.name)}</b>${classMeta(c)}</div><div><button onclick="window.openClassModal('${c.id}')">Edit</button> <button onclick="window.deleteClass('${c.id}')">Delete</button></div></div><details><summary class="small">Students (${c.studentIds.length})</summary><div style="margin-top:8px">${sortedStudents(data.students).map(st=>`<label class="small"><input type="checkbox" ${c.studentIds.includes(st.id)?"checked":""} onchange="window.roster('${c.id}','${st.id}',this.checked)"> ${esc(st.name)}</label><br>`).join("")||"<span class='small'>Add students first.</span>"}</div></details></div>`).join(""):`<div class="classEmpty">No classes yet. Add your first class to get started.</div>`}</section>
-  </div>`;
+  </div>${mergedGroupsSectionHTML()}`;
 }
 
 function isoAddDays(date,n){const d=new Date(date+"T12:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
