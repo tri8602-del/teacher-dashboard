@@ -608,6 +608,40 @@ main:has(.lessonPlanCard){overflow:visible!important;}
   .lessonTodoList{grid-template-columns:1fr;}
 }
 </style>
+
+<style id="v2319-mobile-status-controls">
+/* Version 2.3.19 — actually compact mobile/iPad lesson status controls. */
+@media (hover:none) and (pointer:coarse), (max-width:900px){
+  .lessonStatusBar{
+    left:4px!important;right:4px!important;bottom:2px!important;top:auto!important;
+    display:flex!important;align-items:center!important;justify-content:flex-start!important;
+    flex-wrap:nowrap!important;gap:5px!important;
+  }
+  .lessonStatus{
+    display:inline-flex!important;align-items:center!important;justify-content:center!important;
+    gap:2px!important;padding:0!important;margin:0!important;
+    font-size:7px!important;line-height:1!important;
+    white-space:nowrap!important;color:#7c8997!important;
+    background:transparent!important;border:0!important;
+    min-width:0!important;border-radius:0!important;
+  }
+  .lessonStatus input{
+    appearance:none!important;-webkit-appearance:none!important;
+    width:7px!important;height:7px!important;min-width:7px!important;min-height:7px!important;
+    margin:0!important;padding:0!important;border:1px solid #aab4bf!important;
+    border-radius:1px!important;background:#fff!important;box-sizing:border-box!important;
+    position:relative!important;flex:0 0 7px!important;
+  }
+  .lessonStatus input:checked{background:#6b9fb2!important;border-color:#6b9fb2!important;}
+  .lessonStatus input:checked::after{
+    content:'✓';position:absolute;left:0;top:-3px;
+    font-size:6px;line-height:7px;font-weight:800;color:#fff;
+  }
+  .lessonStatusLong{display:none!important;}
+  .lessonStatusShort{display:inline!important;font-weight:600!important;}
+  .lessonStatusAll .lessonStatusShort{font-weight:800!important;}
+}
+</style>
 </head>
 <body>
 <div id="root"></div>
@@ -1405,7 +1439,7 @@ function lessonplans(){
         const hasText=!!String(entry.text||'').trim();
         const cls=state==='all'?' lessonSubDay':state==='partial'?' lessonPartialDay':'';
         const completionClass=hasText?(all?' lessonComplete':' lessonIncomplete'):'';
-        return `<td class="lessonCell${cls}${completionClass}"><textarea placeholder="Type lesson plan..." onfocus="window.lessonPlanTextareaFocus(this)" oninput="window.lessonPlanTextareaInput(this,'${row.id}','${date}')" onblur="window.lessonPlanTextareaBlur(this)">${esc(entry.text)}</textarea><div class="lessonStatusBar"><label class="lessonStatus lessonStatusAll"><input type="checkbox" ${all?'checked':''} onchange="window.updateLessonStatusAll('${row.id}','${date}',this.checked)"><span class="lessonStatusLong">All</span><span class="lessonStatusShort">All</span></label><label class="lessonStatus"><input type="checkbox" ${entry.planned?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','planned',this.checked)"><span class="lessonStatusLong">Planned</span><span class="lessonStatusShort">P</span></label><label class="lessonStatus"><input type="checkbox" ${entry.created?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','created',this.checked)"><span class="lessonStatusLong">Created</span><span class="lessonStatusShort">C</span></label><label class="lessonStatus"><input type="checkbox" ${entry.posted?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','posted',this.checked)"><span class="lessonStatusLong">Posted</span><span class="lessonStatusShort">P</span></label></div></td>`;
+        return `<td class="lessonCell${cls}${completionClass}"><textarea placeholder="Type lesson plan..." onfocus="window.lessonPlanTextareaFocus(this)" oninput="window.lessonPlanTextareaInput(this,'${row.id}','${date}')" onblur="window.lessonPlanTextareaBlur(this)">${esc(entry.text)}</textarea><div class="lessonStatusBar"><label class="lessonStatus lessonStatusAll"><input type="checkbox" ${all?'checked':''} onchange="window.updateLessonStatusAll('${row.id}','${date}',this.checked)"><span class="lessonStatusLong">All</span><span class="lessonStatusShort">A</span></label><label class="lessonStatus"><input type="checkbox" ${entry.planned?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','planned',this.checked)"><span class="lessonStatusLong">Planned</span><span class="lessonStatusShort">P</span></label><label class="lessonStatus"><input type="checkbox" ${entry.created?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','created',this.checked)"><span class="lessonStatusLong">Created</span><span class="lessonStatusShort">C</span></label><label class="lessonStatus"><input type="checkbox" ${entry.posted?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','posted',this.checked)"><span class="lessonStatusLong">Posted</span><span class="lessonStatusShort">P</span></label></div></td>`;
       }).join('');
       return `<tr>${title}${cells}</tr>`;
     }).join('');
