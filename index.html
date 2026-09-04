@@ -581,7 +581,7 @@ main:has(.lessonPlanCard){overflow:visible!important;}
 </style>
 
 <style id="v2317-lesson-plan-density">
-/* Version 2.3.17 — compact status controls and denser Still Needs list */
+/* Version 2.3.18 — compact status controls and denser Still Needs list */
 .lessonTodoList{
   display:grid!important;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -634,7 +634,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.3.17";
+const APP_VERSION="2.3.18";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -2781,7 +2781,43 @@ main:has(.lessonPlanCard){overflow:visible!important;}
 .currentLessonStatus{margin-top:6px;font-size:11px;color:#7d8996;}
 @media(max-width:1000px){.lessonRowName,.lessonTable .lessonCorner{width:118px!important;min-width:118px!important;max-width:118px!important;}.lessonStatus{font-size:7px!important}.lessonCell textarea{font-size:13px!important}}
 </style>
-</head><body><div id="display"></div><script>const mode=${JSON.stringify(mode)};function update(){const s=window.opener&&window.opener.getClassroomDisplayState?window.opener.getClassroomDisplayState():null;if(!s)return;const cards={classleft:['Time Remaining',s.timeLeft,s.timeBlock,s.timeRange],stopwatch:['Timer',s.stopwatch],countdown:['Countdown',s.countdown],number:['Random Number',s.randomNumber],student:['Random Student',s.randomStudent]};let html='<div class="wrap">';if(mode==='all')html+='<h3>'+s.className+'</h3>';if(mode==='groups'){html+='<div class="groups"><h1>Groups</h1>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>';}else if(mode!=='all'&&cards[mode]){const x=cards[mode];if(mode==='classleft'){html+='<div class="single classleftDisplay"><div class="label">TIME REMAINING</div><div class="value">'+x[1]+'</div><div class="displayBlock">'+x[2]+'</div><div class="displayRange">'+x[3]+'</div></div>';}else{html+='<div class="single '+(mode==='student'?'student':'')+'"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>';}}else{html+='<div class="grid">'+Object.values(cards).map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>').join('')+'</div>'+(s.groups.length?'<div class="groups"><h3>Groups</h3>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>':'');}document.getElementById('display').innerHTML=html+'</div>';}update();setInterval(update,500);<\/script></body></html>`);w.document.close();
+</head><body><div id="display"></div><script>const mode=${JSON.stringify(mode)};function update(){const s=window.opener&&window.opener.getClassroomDisplayState?window.opener.getClassroomDisplayState():null;if(!s)return;const cards={classleft:['Time Remaining',s.timeLeft,s.timeBlock,s.timeRange],stopwatch:['Timer',s.stopwatch],countdown:['Countdown',s.countdown],number:['Random Number',s.randomNumber],student:['Random Student',s.randomStudent]};let html='<div class="wrap">';if(mode==='all')html+='<h3>'+s.className+'</h3>';if(mode==='groups'){html+='<div class="groups"><h1>Groups</h1>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>';}else if(mode!=='all'&&cards[mode]){const x=cards[mode];if(mode==='classleft'){html+='<div class="single classleftDisplay"><div class="label">TIME REMAINING</div><div class="value">'+x[1]+'</div><div class="displayBlock">'+x[2]+'</div><div class="displayRange">'+x[3]+'</div></div>';}else{html+='<div class="single '+(mode==='student'?'student':'')+'"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>';}}else{html+='<div class="grid">'+Object.values(cards).map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>').join('')+'</div>'+(s.groups.length?'<div class="groups"><h3>Groups</h3>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>':'');}document.getElementById('display').innerHTML=html+'</div>';}update();setInterval(update,500);<\/script>
+<style id="v2318-ipad-status-controls">
+/* Version 2.3.18 — truly compact lesson-status controls on touch/smaller screens */
+@media (hover:none) and (pointer:coarse), (max-width:1200px){
+  #content .lessonStatusBar{
+    left:5px!important;right:5px!important;bottom:3px!important;top:auto!important;
+    display:flex!important;align-items:center!important;justify-content:flex-start!important;
+    flex-wrap:nowrap!important;gap:3px!important;
+  }
+  #content .lessonStatus{
+    display:inline-flex!important;align-items:center!important;justify-content:center!important;
+    gap:2px!important;padding:2px 2px!important;margin:0!important;
+    font-size:7px!important;line-height:1!important;letter-spacing:0!important;
+    white-space:nowrap!important;color:#7c8997!important;background:transparent!important;
+    border:0!important;min-width:0!important;border-radius:0!important;
+  }
+  #content .lessonStatus input{
+    appearance:none!important;-webkit-appearance:none!important;
+    width:9px!important;height:9px!important;min-width:9px!important;min-height:9px!important;
+    margin:0!important;padding:0!important;border:1px solid #aab4bf!important;
+    border-radius:2px!important;background:#fff!important;box-sizing:border-box!important;
+    position:relative!important;flex:0 0 9px!important;
+  }
+  #content .lessonStatus input:checked{
+    background:#6b9fb2!important;border-color:#6b9fb2!important;
+  }
+  #content .lessonStatus input:checked::after{
+    content:'✓';position:absolute;left:1px;top:-3px;
+    font-size:8px;line-height:9px;font-weight:800;color:#fff;
+  }
+  #content .lessonStatusLong{display:none!important;}
+  #content .lessonStatusShort{display:inline!important;}
+  #content .lessonStatusAll .lessonStatusShort{font-weight:700!important;}
+}
+</style>
+
+</body></html>`);w.document.close();
 }
 window.getClassroomDisplayState=()=>{
   ensureClassroomTools();const cls=currentClass(),picked=data.classroomTools.randomStudentId?data.students.find(s=>s.id===data.classroomTools.randomStudentId):null;
@@ -3197,5 +3233,41 @@ window.saveLessonPlanManager=()=>{ensureLessonPlans();const visible=new Set([...
 
 
 </script>
+
+<style id="v2318-ipad-status-controls">
+/* Version 2.3.18 — truly compact lesson-status controls on touch/smaller screens */
+@media (hover:none) and (pointer:coarse), (max-width:1200px){
+  #content .lessonStatusBar{
+    left:5px!important;right:5px!important;bottom:3px!important;top:auto!important;
+    display:flex!important;align-items:center!important;justify-content:flex-start!important;
+    flex-wrap:nowrap!important;gap:3px!important;
+  }
+  #content .lessonStatus{
+    display:inline-flex!important;align-items:center!important;justify-content:center!important;
+    gap:2px!important;padding:2px 2px!important;margin:0!important;
+    font-size:7px!important;line-height:1!important;letter-spacing:0!important;
+    white-space:nowrap!important;color:#7c8997!important;background:transparent!important;
+    border:0!important;min-width:0!important;border-radius:0!important;
+  }
+  #content .lessonStatus input{
+    appearance:none!important;-webkit-appearance:none!important;
+    width:9px!important;height:9px!important;min-width:9px!important;min-height:9px!important;
+    margin:0!important;padding:0!important;border:1px solid #aab4bf!important;
+    border-radius:2px!important;background:#fff!important;box-sizing:border-box!important;
+    position:relative!important;flex:0 0 9px!important;
+  }
+  #content .lessonStatus input:checked{
+    background:#6b9fb2!important;border-color:#6b9fb2!important;
+  }
+  #content .lessonStatus input:checked::after{
+    content:'✓';position:absolute;left:1px;top:-3px;
+    font-size:8px;line-height:9px;font-weight:800;color:#fff;
+  }
+  #content .lessonStatusLong{display:none!important;}
+  #content .lessonStatusShort{display:inline!important;}
+  #content .lessonStatusAll .lessonStatusShort{font-weight:700!important;}
+}
+</style>
+
 </body>
 </html>
