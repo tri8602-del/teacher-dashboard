@@ -558,6 +558,27 @@ main:has(.lessonPlanCard){overflow:visible!important;}
 @media(max-width:600px){.announcementOptionsGrid{grid-template-columns:1fr}.announcementListItem{grid-template-columns:5px minmax(0,1fr)}.announcementActions{grid-column:2;justify-content:flex-start;padding-top:0}.announcementListTop{align-items:flex-start}.announcementBadge{margin-left:auto}}
 </style>
 
+
+<style id="v2316-lessonplan-polish">
+/* Version 2.3.16 — lesson-plan workflow polish */
+.lessonCell.lessonIncomplete textarea{color:#8a5a00!important;}
+.lessonCell.lessonComplete textarea{color:#28744a!important;}
+.lessonCell.lessonComplete{background:#f3faf5!important;}
+.lessonStatusShort{display:none;}
+.lessonTodoList{display:block!important;}
+.lessonTodoGroup{margin:6px 0 0;padding:0 0 0 18px;}
+.lessonTodoGroupTitle{font-size:13px;margin:0 0 2px;font-weight:700;color:#334155;}
+.lessonTodoGroup ul{margin:0 0 7px;padding-left:18px;}
+.lessonTodoGroup li{font-size:12px;line-height:1.35;margin:2px 0;color:#1f2937;}
+.lessonTodoCount{font-size:11px;color:var(--muted);white-space:nowrap;}
+@media(max-width:700px){
+  .lessonStatus{font-size:9px!important;gap:2px!important;padding:1px 2px!important;}
+  .lessonStatus input{width:11px!important;height:11px!important;}
+  .lessonStatusLong{display:none;}
+  .lessonStatusShort{display:inline;}
+  .lessonStatusBar{left:4px!important;right:4px!important;gap:2px!important;}
+}
+</style>
 </head>
 <body>
 <div id="root"></div>
@@ -1268,16 +1289,69 @@ function lessonPlanTodoHTML(rows,dates){
     const entry=lessonPlanEntry(row.id,date),text=(entry.text||'').trim();
     if(!text)continue;
     const missing=['planned','created','posted'].filter(k=>!entry[k]);
-    if(missing.length)items.push({row,date,text,missing,day:d.toLocaleDateString(undefined,{weekday:'short',month:'numeric',day:'numeric'})});
+    if(missing.length)items.push({
+      row,date,text,missing,
+      day:d.toLocaleDateString(undefined,{weekday:'short',month:'numeric',day:'numeric'})
+    });
   }
   if(!items.length)return `<section class="card lessonTodoCard"><div class="lessonTodoHeader"><h3>✓ Still Needs to Be Done</h3><span class="lessonTodoCount">All caught up</span></div><div class="lessonTodoDone">Every entered lesson plan for this week is fully checked off.</div></section>`;
-  return `<section class="card lessonTodoCard"><div class="lessonTodoHeader"><h3>☐ Still Needs to Be Done</h3><span class="lessonTodoCount">${items.length} lesson${items.length===1?'':'s'} with unfinished steps</span></div><div class="lessonTodoList">${items.map(item=>`<div class="lessonTodoItem"><span class="lessonTodoMeta">${esc(item.row.name)} · ${esc(item.day)}</span><span class="lessonTodoText" title="${esc(item.text)}">${esc(item.text)}</span><span class="lessonTodoChecks">${item.missing.map(field=>`<label><input type="checkbox" onchange="window.updateLessonTodoStatus('${item.row.id}','${item.date}','${field}',this.checked)"> ${field[0].toUpperCase()+field.slice(1)}</label>`).join('')}</span></div>`).join('')}</div></section>`;
+
+  const grouped=new Map();
+  items.forEach(item=>{
+    const key=item.row.id;
+    if(!grouped.has(key))grouped.set(key,{name:item.row.name,items:[]});
+    grouped.get(key).items.push(item);
+  });
+  const groups=[...grouped.values()];
+  const lessonCount=items.length;
+  return `<section class="card lessonTodoCard">
+    <div class="lessonTodoHeader">
+      <h3>☐ Still Needs to Be Done</h3>
+      <span class="lessonTodoCount">${lessonCount} lesson${lessonCount===1?'':'s'} still need${lessonCount===1?'s':''} attention</span>
+    </div>
+    <div class="lessonTodoList">
+      ${groups.map(group=>`<div class="lessonTodoGroup">
+        <div class="lessonTodoGroupTitle">${esc(group.name)}</div>
+        <ul>${group.items.map(item=>`<li><b>${esc(item.day)}:</b> ${esc(item.text)}</li>`).join('')}</ul>
+      </div>`).join('')}
+    </div>
+  </section>`;
+}
+
+function maybeAutoAdvanceLessonWeek(){
+  const currentStart=isoDate(lessonWeekStart());
+  const selected=window.lessonPlanWeekStart?isoDate(lessonWeekStart(window.lessonPlanWeekStart)):currentStart;
+
+  // Only auto-advance the normal/current week. If the teacher deliberately
+  // navigated to another week, don't fight that choice.
+  if(selected!==currentStart)return;
+
+  const now=new Date();
+  const friday=new Date(lessonWeekStart());friday.setDate(friday.getDate()+4);friday.setHours(0,0,0,0);
+  const fridayISO=isoDate(friday);
+  const info=getDateInfo(fridayISO);
+  if(info.type!=='instructional')return;
+
+  const schedule=bellScheduleById(info.schedule||'regular');
+  const ends=(schedule?.periods||[]).map(row=>timeToMinutes(row[2])).filter(v=>v!==null);
+  if(!ends.length)return;
+
+  const lastEnd=Math.max(...ends);
+  const day=now.getDay();
+  const todayMinutes=now.getHours()*60+now.getMinutes();
+  const shouldAdvance=day===6 || day===0 || (day===5 && todayMinutes>=lastEnd);
+  if(shouldAdvance){
+    const next=new Date(friday);
+    next.setDate(next.getDate()+3);
+    window.lessonPlanWeekStart=isoDate(next);
+  }
 }
 
 function lessonplans(){
   try{
     ensureLessonPlans();
     ensureClassFields();
+    maybeAutoAdvanceLessonWeek();
     const dates=lessonWeekDates();
     const rows=lessonPlanRows();
     const names=['Monday','Tuesday','Wednesday','Thursday','Friday'];
@@ -1299,8 +1373,10 @@ function lessonplans(){
         try{ state=lessonSubState(row,date,weekday); }catch(e){ state='none'; }
         const entry=lessonPlanEntry(row.id,date);
         const all=entry.planned&&entry.created&&entry.posted;
+        const hasText=!!String(entry.text||'').trim();
         const cls=state==='all'?' lessonSubDay':state==='partial'?' lessonPartialDay':'';
-        return `<td class="lessonCell${cls}"><textarea placeholder="Type lesson plan..." onfocus="window.lessonPlanTextareaFocus(this)" oninput="window.lessonPlanTextareaInput(this,'${row.id}','${date}')" onblur="window.lessonPlanTextareaBlur(this)">${esc(entry.text)}</textarea><div class="lessonStatusBar"><label class="lessonStatus lessonStatusAll"><input type="checkbox" ${all?'checked':''} onchange="window.updateLessonStatusAll('${row.id}','${date}',this.checked)">All</label><label class="lessonStatus"><input type="checkbox" ${entry.planned?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','planned',this.checked)">Planned</label><label class="lessonStatus"><input type="checkbox" ${entry.created?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','created',this.checked)">Created</label><label class="lessonStatus"><input type="checkbox" ${entry.posted?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','posted',this.checked)">Posted</label></div></td>`;
+        const completionClass=hasText?(all?' lessonComplete':' lessonIncomplete'):'';
+        return `<td class="lessonCell${cls}${completionClass}"><textarea placeholder="Type lesson plan..." onfocus="window.lessonPlanTextareaFocus(this)" oninput="window.lessonPlanTextareaInput(this,'${row.id}','${date}')" onblur="window.lessonPlanTextareaBlur(this)">${esc(entry.text)}</textarea><div class="lessonStatusBar"><label class="lessonStatus lessonStatusAll"><input type="checkbox" ${all?'checked':''} onchange="window.updateLessonStatusAll('${row.id}','${date}',this.checked)"><span class="lessonStatusLong">All</span><span class="lessonStatusShort">A</span></label><label class="lessonStatus"><input type="checkbox" ${entry.planned?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','planned',this.checked)"><span class="lessonStatusLong">Planned</span><span class="lessonStatusShort">P</span></label><label class="lessonStatus"><input type="checkbox" ${entry.created?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','created',this.checked)"><span class="lessonStatusLong">Created</span><span class="lessonStatusShort">C</span></label><label class="lessonStatus"><input type="checkbox" ${entry.posted?'checked':''} onchange="window.updateLessonStatus('${row.id}','${date}','posted',this.checked)"><span class="lessonStatusLong">Posted</span><span class="lessonStatusShort">P</span></label></div></td>`;
       }).join('');
       return `<tr>${title}${cells}</tr>`;
     }).join('');
@@ -1342,7 +1418,7 @@ window.updateLessonStatusAll=(rowId,date,checked)=>{
   ensureLessonPlans();
   data.lessonPlans.entries[rowId]=data.lessonPlans.entries[rowId]||{};
   const e=data.lessonPlans.entries[rowId][date]=data.lessonPlans.entries[rowId][date]||{text:"",planned:false,created:false,posted:false};
-  e.planned=!!checked; e.created=!!checked; e.posted=!!checked;
+  e.planned=!!checked; e.created=!!checked; e.posted=!!checked; e.all=!!checked;
   save();render();
 };
 window.flushLessonPlanLive=()=>{
@@ -3073,7 +3149,14 @@ function lessonSubAffectsRow(row,date){return lessonSubState(row,date,1)!=="none
 function lessonDayList(days){const names=['Mon','Tue','Wed','Thu','Fri'];return (days||[]).map(d=>names[d-1]).join(', ');}
 
 window.updateLessonPlan=(rowId,date,field,value)=>{ensureLessonPlans();data.lessonPlans.entries[rowId]=data.lessonPlans.entries[rowId]||{};data.lessonPlans.entries[rowId][date]=data.lessonPlans.entries[rowId][date]||{};data.lessonPlans.entries[rowId][date][field]=String(value||'');save();};
-window.updateLessonStatus=(rowId,date,field,value)=>{ensureLessonPlans();data.lessonPlans.entries[rowId]=data.lessonPlans.entries[rowId]||{};const e=data.lessonPlans.entries[rowId][date]=data.lessonPlans.entries[rowId][date]||{};e[field]=!!value;save();};
+window.updateLessonStatus=(rowId,date,field,value)=>{
+  ensureLessonPlans();
+  data.lessonPlans.entries[rowId]=data.lessonPlans.entries[rowId]||{};
+  const e=data.lessonPlans.entries[rowId][date]=data.lessonPlans.entries[rowId][date]||{text:"",planned:false,created:false,posted:false};
+  e[field]=!!value;
+  e.all=!!(e.planned&&e.created&&e.posted);
+  save();render();
+};
 window.updateLessonTodoStatus=(rowId,date,field,value)=>{ensureLessonPlans();data.lessonPlans.entries[rowId]=data.lessonPlans.entries[rowId]||{};const e=data.lessonPlans.entries[rowId][date]=data.lessonPlans.entries[rowId][date]||{};e[field]=!!value;save();render();};
 window.updateLessonAll=(rowId,date,value)=>{ensureLessonPlans();data.lessonPlans.entries[rowId]=data.lessonPlans.entries[rowId]||{};const e=data.lessonPlans.entries[rowId][date]=data.lessonPlans.entries[rowId][date]||{};e.planned=e.created=e.posted=!!value;save();render();};
 window.deleteLessonPlanRow=rowId=>{if(!confirm('Delete this planning row? Your lesson text will remain saved unless you add a new row with the same ID.'))return;const id=String(rowId).replace(/^row:/,'');data.lessonPlanCustomRows=(data.lessonPlanCustomRows||[]).filter(r=>r.id!==id);save();render();};
