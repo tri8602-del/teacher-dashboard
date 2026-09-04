@@ -508,6 +508,44 @@ main:has(.lessonPlanCard){overflow:visible!important;}
 
 .lessonTodoCard{padding:10px 12px;margin-bottom:10px}.lessonTodoHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}.lessonTodoHeader h3{margin:0;font-size:15px}.lessonTodoCount{font-size:11px;color:var(--muted);white-space:nowrap}.lessonTodoList{display:flex;flex-wrap:wrap;gap:6px 10px}.lessonTodoItem{display:flex;align-items:center;gap:6px;border:1px solid #e4e8f0;border-radius:8px;padding:5px 7px;background:#fbfcfe;min-width:0;max-width:100%}.lessonTodoMeta{font-size:11px;color:var(--muted);white-space:nowrap}.lessonTodoText{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}.lessonTodoChecks{display:flex;gap:5px;align-items:center}.lessonTodoChecks label{font-size:11px;color:#7a8495;white-space:nowrap}.lessonTodoChecks input{accent-color:#8fa0b5}.lessonTodoDone{font-size:12px;color:var(--muted)}
 </style>
+
+<style id="v2312-announcements">
+/* Version 2.3.12 — global announcements */
+.announcementComposer{margin-bottom:18px}
+.announcementComposerHead,.announcementListHead{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:14px}
+.announcementComposerHead h3,.announcementListHead h3{margin:0}
+.announcementComposerHead p{margin:4px 0 0}
+.announcementMessageLabel{display:block;font-weight:700}
+#announcementText{display:block;width:100%;min-height:92px;margin-top:6px;resize:vertical}
+.announcementSection{margin:16px 0;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fbfcfe}
+.announcementClassActions{display:flex;gap:8px;margin:8px 0}
+.announcementClassActions button{font-size:12px;padding:6px 10px}
+.announcementClassChecks{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px 14px}
+.announcementClassChecks label,.announcementEnabled{font-size:14px}
+.announcementOptionsGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}
+.announcementOptionsGrid label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:650}
+.announcementOptionsGrid input,.announcementOptionsGrid select{width:100%}
+#announcementColor{height:42px;padding:4px}
+#announcementOffsetWrap .small{font-weight:400}
+.announcementEnabled{display:inline-flex;gap:7px;align-items:center;margin:4px 0 14px}
+.announcementList{display:grid;gap:10px}
+.announcementListItem{position:relative;display:grid;grid-template-columns:5px minmax(0,1fr) auto;gap:12px;align-items:stretch;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.announcementColorBar{background:var(--announcement-color,#385b9d)}
+.announcementListContent{padding:11px 0}
+.announcementListTop{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:4px}
+.announcementBadge{font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:3px 7px;border-radius:999px;background:#eef2f7;color:#475569;white-space:nowrap}
+.announcementActions{display:flex;gap:7px;align-items:center;padding:10px 12px}
+.announcementActions button{padding:7px 10px}
+.announcementListItem.isDisabled{opacity:.58}
+.classReminder{border-left:5px solid var(--announcement-color,#385b9d)}
+.classReminder.announcementPriority-high{box-shadow:0 0 0 1px color-mix(in srgb,var(--announcement-color,#385b9d) 30%,transparent)}
+.classReminder.announcementPriority-urgent{box-shadow:0 0 0 2px color-mix(in srgb,var(--announcement-color,#385b9d) 45%,transparent)}
+@keyframes announcementPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.58;transform:scale(.992)}}
+.classReminder.announcementFlash{animation:announcementPulse 1s ease-in-out infinite}
+@media(max-width:900px){.announcementOptionsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.announcementOptionsGrid{grid-template-columns:1fr}.announcementListItem{grid-template-columns:5px minmax(0,1fr)}.announcementActions{grid-column:2;justify-content:flex-start;padding-top:0}.announcementListTop{align-items:flex-start}.announcementBadge{margin-left:auto}}
+</style>
+
 </head>
 <body>
 <div id="root"></div>
@@ -534,7 +572,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.3.11";
+const APP_VERSION="2.3.12";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -667,7 +705,42 @@ function ensureClassFields(){
   });
 }
 
+
+function ensureAnnouncements(){
+  data.announcements=Array.isArray(data.announcements)?data.announcements:[];
+  // One-time migration so existing class reminders are not lost.
+  if(!data.legacyAnnouncementsMigrated){
+    const migrated=[];
+    data.classes.forEach(c=>(c.reminders||[]).forEach(r=>migrated.push({
+      id:`legacy_${c.id}_${r.id||uid()}`,
+      text:r.text||"",
+      classIds:[c.id],
+      timing:r.phase==="end"?"beforeEnd":"start",
+      offset:r.phase==="end"?Math.max(1,Number(r.duration)||5):0,
+      duration:Math.max(1,Number(r.duration)||5),
+      display:"static",
+      priority:"normal",
+      color:"#385b9d",
+      enabled:r.enabled!==false
+    })));
+    data.announcements.push(...migrated);
+    data.legacyAnnouncementsMigrated=true;
+  }
+  data.announcements=data.announcements.map((a,i)=>({
+    id:a.id||`announcement_${Date.now()}_${i}`,
+    text:String(a.text||"").trim(),
+    classIds:Array.isArray(a.classIds)?[...new Set(a.classIds)]:[],
+    timing:["start","beforeEnd","afterStart"].includes(a.timing)?a.timing:"start",
+    offset:Math.max(0,Number(a.offset)||0),
+    duration:Math.max(1,Number(a.duration)||5),
+    display:a.display==="flash"?"flash":"static",
+    priority:["low","normal","high","urgent"].includes(a.priority)?a.priority:"normal",
+    color:String(a.color||"#385b9d"),
+    enabled:a.enabled!==false
+  })).filter(a=>a.text);
+}
 function ensureClassroomTools(){
+  ensureAnnouncements();
   data.classroomTools=data.classroomTools||{};
   const t=data.classroomTools;
   t.stopwatch=t.stopwatch||{running:false,elapsedMs:0,startedAt:null};
@@ -1003,39 +1076,57 @@ function scheduleBlockTimes(block=currentScheduleBlock()){
   const start=timeToMinutes(row[1]),end=timeToMinutes(row[2],start);
   return {start,end,label:row[0],startText:row[1],endText:row[2]};
 }
-function reminderDismissKey(cls,block,reminder){
-  return `${todayISO()}|${block?.label||""}|${cls?.id||""}|${reminder?.id||""}`;
+
+function announcementDismissKey(cls,block,announcement){
+  return `${todayISO()}|${block?.label||""}|${cls?.id||""}|${announcement?.id||""}`;
 }
-function activeClassReminders(cls,block=currentScheduleBlock()){
+function activeAnnouncements(cls,block=currentScheduleBlock()){
   if(!cls||!block)return [];
   ensureClassroomTools();
   const times=scheduleBlockTimes(block);if(!times)return [];
   const now=new Date(),nowMin=now.getHours()*60+now.getMinutes()+now.getSeconds()/60;
-  return (cls.reminders||[]).filter(r=>{
-    if(!r.enabled)return false;
-    const duration=Math.max(1,Number(r.duration)||5);
-    const active=r.phase==="end"
-      ? nowMin>=times.end-duration && nowMin<times.end
-      : nowMin>=times.start && nowMin<times.start+duration;
-    return active&&!data.reminderDismissals[reminderDismissKey(cls,block,r)];
+  return (data.announcements||[]).filter(a=>{
+    if(!a.enabled || !(a.classIds||[]).includes(cls.id))return false;
+    const duration=Math.max(1,Number(a.duration)||5);
+    let begins=false;
+    if(a.timing==="beforeEnd"){
+      const offset=Math.max(0,Number(a.offset)||5);
+      begins=nowMin>=times.end-offset-duration && nowMin<times.end-offset;
+    }else{
+      const offset=a.timing==="afterStart"?Math.max(0,Number(a.offset)||0):0;
+      begins=nowMin>=times.start+offset && nowMin<times.start+offset+duration;
+    }
+    return begins&&!data.reminderDismissals[announcementDismissKey(cls,block,a)];
   });
 }
-function reminderHTML(cls,block){
-  const reminders=activeClassReminders(cls,block);
-  if(!reminders.length)return "";
-  return `<section class="classReminderStack">${reminders.map(r=>`<div class="classReminder" data-reminder-id="${esc(r.id)}"><div><div class="classReminderLabel">${r.phase==="end"?"Last ${r.duration} minutes":"First ${r.duration} minutes"}</div><div class="classReminderText">${esc(r.text)}</div></div><button onclick="window.dismissClassReminder('${cls.id}','${block?.label||""}','${r.id}')">Dismiss ×</button></div>`).join("")}</section>`;
+function announcementTimingLabel(a){
+  if(a.timing==="beforeEnd"){
+    const n=Math.max(0,Number(a.offset)||5);
+    return n===5?"5 minutes before the end":`${n} minute${n===1?"":"s"} before the end`;
+  }
+  if(a.timing==="afterStart"){
+    const n=Math.max(0,Number(a.offset)||0);
+    return n?`${n} minute${n===1?"":"s"} after class begins`:"At the beginning of class";
+  }
+  return "At the beginning of class";
 }
-window.dismissClassReminder=(classId,blockLabel,reminderId)=>{
+function reminderHTML(cls,block){
+  const announcements=activeAnnouncements(cls,block);
+  if(!announcements.length)return "";
+  return `<section class="classReminderStack">${announcements.map(a=>`<div class="classReminder announcementPriority-${esc(a.priority)} ${a.display==="flash"?"announcementFlash":""}" style="--announcement-color:${esc(a.color)}" data-announcement-id="${esc(a.id)}"><div><div class="classReminderLabel">${esc(announcementTimingLabel(a))} · ${esc(a.priority)} priority</div><div class="classReminderText">${esc(a.text)}</div></div><button onclick="window.dismissAnnouncement('${cls.id}','${block?.label||""}','${a.id}')">Dismiss ×</button></div>`).join("")}</section>`;
+}
+window.dismissAnnouncement=(classId,blockLabel,announcementId)=>{
   ensureClassroomTools();
-  const cls=data.classes.find(c=>c.id===classId);
-  const reminder=(cls?.reminders||[]).find(r=>r.id===reminderId);
-  if(!cls||!reminder)return;
-  const key=`${todayISO()}|${blockLabel||""}|${classId}|${reminderId}`;
+  const announcement=(data.announcements||[]).find(a=>a.id===announcementId);
+  if(!announcement)return;
+  const key=`${todayISO()}|${blockLabel||""}|${classId}|${announcementId}`;
   data.reminderDismissals[key]=true;save();
-  const el=document.querySelector(`[data-reminder-id="${CSS.escape(reminderId)}"]`);
+  const el=document.querySelector(`[data-announcement-id="${CSS.escape(announcementId)}"]`);
   if(el)el.remove();
   if(!document.querySelector(".classReminder"))document.querySelector(".classReminderStack")?.remove();
 };
+// Backward-compatible alias for any old rendered controls.
+window.dismissClassReminder=window.dismissAnnouncement;
 function currentClass(){
   ensureClassFields();const block=currentScheduleBlock();
   if(!block?.period)return null;
@@ -1403,24 +1494,119 @@ window.toggleStudentsList=()=>{
   if(btn)btn.textContent=el.classList.contains("open")?"▼ Collapse":"▶ Expand";
 };
 
-function remindersPage(){
+function announcementFormHTML(a={}){
   ensureClassFields();
-  const classes=[...data.classes];
-  const reminderCount=classes.reduce((sum,c)=>sum+(c.reminders||[]).length,0);
-  return `<header><div><h2>Reminders & Announcements</h2><p>Create class-specific reminders that appear automatically at the beginning or end of class.</p></div></header>
-  <section class="card reminderIntro">
-    <b>How it works</b>
-    <p class="small" style="margin:6px 0 0">Each reminder belongs to a class. Choose whether it appears for the first few minutes or the last few minutes. When it appears on Live Class, you can dismiss it for the rest of that class period.</p>
-  </section>
-  ${classes.length?`<div class="reminderPageGrid">${classes.map(c=>{
-    const reminders=(c.reminders||[]);
-    return `<section class="card reminderClassCard">
-      <div class="reminderClassHead"><div><h3>${esc(c.name)}</h3><div class="small">${reminders.length} reminder${reminders.length===1?"":"s"}</div></div><button onclick="window.openClassModal('${c.id}')">Edit Reminders</button></div>
-      ${reminders.length?`<div class="reminderList">${reminders.map(r=>`<div class="reminderListItem ${r.enabled===false?"isDisabled":""}"><div><b>${esc(r.text)}</b><div class="small">${r.phase==="end"?`Last ${r.duration} minute${r.duration===1?"":"s"}`:`First ${r.duration} minute${r.duration===1?"":"s"}`} · ${r.enabled===false?"Disabled":"Enabled"}</div></div></div>`).join("")}</div>`:`<p class="small" style="margin:12px 0 0">No reminders yet.</p>`}
-    </section>`;
-  }).join("")}</div>`:`<section class="card"><p>No classes yet. Add a class in Students & Classes first.</p></section>`}
-  <section class="card reminderTip"><b>${reminderCount} total reminder${reminderCount===1?"":"s"}</b><p class="small" style="margin:4px 0 0">To add a new one, click <b>Edit Reminders</b> on the class where you want it to appear.</p></section>`;
+  const item={
+    id:a.id||"",
+    text:a.text||"",
+    classIds:Array.isArray(a.classIds)?a.classIds:[],
+    timing:a.timing||"start",
+    offset:a.offset??0,
+    duration:a.duration??5,
+    display:a.display||"static",
+    priority:a.priority||"normal",
+    color:a.color||"#385b9d",
+    enabled:a.enabled!==false
+  };
+  const classes=data.classes;
+  return `<section class="card announcementComposer">
+    <div class="announcementComposerHead"><div><h3>${item.id?"Edit Announcement":"Create Announcement"}</h3><p class="small">Choose the classes, timing, appearance, and message.</p></div>${item.id?`<button onclick="window.cancelAnnouncementEdit()">Cancel</button>`:""}</div>
+    <input type="hidden" id="announcementId" value="${esc(item.id)}">
+    <label class="announcementMessageLabel">Message<textarea id="announcementText" placeholder="e.g., Take attendance before we get started.">${esc(item.text)}</textarea></label>
+
+    <div class="announcementSection">
+      <b>Show for these classes</b>
+      ${classes.length?`<div class="announcementClassActions"><button type="button" onclick="window.toggleAllAnnouncementClasses(true)">Select all</button><button type="button" onclick="window.toggleAllAnnouncementClasses(false)">Clear</button></div><div class="announcementClassChecks">${classes.map(c=>`<label><input type="checkbox" name="announcementClass" value="${esc(c.id)}" ${item.classIds.includes(c.id)?"checked":""}> ${esc(c.name)}</label>`).join("")}</div>`:`<p class="small">Add classes first in Students & Classes.</p>`}
+    </div>
+
+    <div class="announcementOptionsGrid">
+      <label>When should it appear?
+        <select id="announcementTiming" onchange="window.updateAnnouncementTimingFields()">
+          <option value="start" ${item.timing==="start"?"selected":""}>At the beginning of class</option>
+          <option value="beforeEnd" ${(item.timing==="beforeEnd"&&Number(item.offset)===5)?"selected":""}>5 minutes before the end</option>
+          <option value="customAfterStart" ${item.timing==="afterStart"?"selected":""}>Custom time after class begins</option>
+          <option value="customBeforeEnd" ${(item.timing==="beforeEnd"&&Number(item.offset)!==5)?"selected":""}>Custom time before the end</option>
+        </select>
+      </label>
+      <label id="announcementOffsetWrap" ${item.timing==="afterStart"||(item.timing==="beforeEnd"&&Number(item.offset)!==5)?"":"style=\"display:none\""}>Custom timing
+        <input id="announcementOffset" type="number" min="0" value="${Math.max(0,Number(item.offset)||0)}">
+        <span class="small" id="announcementOffsetHelp">${item.timing==="beforeEnd"?"minutes before class ends":"minutes after class begins"}</span>
+      </label>
+      <label>How long should it stay up?
+        <input id="announcementDuration" type="number" min="1" value="${Math.max(1,Number(item.duration)||5)}">
+        <span class="small">minutes</span>
+      </label>
+      <label>Display
+        <select id="announcementDisplay"><option value="static" ${item.display!=="flash"?"selected":""}>Static</option><option value="flash" ${item.display==="flash"?"selected":""}>Flashing</option></select>
+      </label>
+      <label>Priority
+        <select id="announcementPriority"><option value="low" ${item.priority==="low"?"selected":""}>Low</option><option value="normal" ${item.priority==="normal"?"selected":""}>Normal</option><option value="high" ${item.priority==="high"?"selected":""}>High</option><option value="urgent" ${item.priority==="urgent"?"selected":""}>Urgent</option></select>
+      </label>
+      <label>Accent color
+        <input id="announcementColor" type="color" value="${esc(item.color)}">
+      </label>
+    </div>
+    <label class="announcementEnabled"><input id="announcementEnabled" type="checkbox" ${item.enabled?"checked":""}> Enabled</label>
+    <div><button class="primary" onclick="window.saveAnnouncement()">${item.id?"Save Changes":"＋ Create Announcement"}</button></div>
+  </section>`;
 }
+function remindersPage(){
+  ensureClassFields();ensureAnnouncements();
+  const announcements=[...(data.announcements||[])];
+  const editing=window.editingAnnouncementId?announcements.find(a=>a.id===window.editingAnnouncementId):null;
+  return `<header><div><h2>Reminders & Announcements</h2><p>Create announcements for one class or several classes at once.</p></div></header>
+  ${announcementFormHTML(editing||{})}
+  <section class="card announcementListCard"><div class="announcementListHead"><div><h3>Saved Announcements</h3><p class="small">${announcements.length} announcement${announcements.length===1?"":"s"}</p></div></div>
+  ${announcements.length?`<div class="announcementList">${announcements.map(a=>{
+    const classNames=(a.classIds||[]).map(id=>data.classes.find(c=>c.id===id)?.name).filter(Boolean);
+    return `<article class="announcementListItem ${a.enabled?"":"isDisabled"}" style="--announcement-color:${esc(a.color)}">
+      <div class="announcementColorBar"></div>
+      <div class="announcementListContent"><div class="announcementListTop"><b>${esc(a.text)}</b><span class="announcementBadge">${esc(a.priority)}</span></div>
+      <div class="small">${esc(classNames.join(" · ")||"No classes selected")} · ${esc(announcementTimingLabel(a))} · ${a.duration} min · ${a.display==="flash"?"Flashing":"Static"} · ${a.enabled?"Enabled":"Disabled"}</div></div>
+      <div class="announcementActions"><button onclick="window.editAnnouncement('${a.id}')">Edit</button><button onclick="window.deleteAnnouncement('${a.id}')">Delete</button></div>
+    </article>`;
+  }).join("")}</div>`:`<p class="small">No announcements yet. Create your first one above.</p>`}
+  </section>`;
+}
+window.toggleAllAnnouncementClasses=checked=>document.querySelectorAll('input[name="announcementClass"]').forEach(x=>x.checked=checked);
+window.updateAnnouncementTimingFields=()=>{
+  const select=$("#announcementTiming"),wrap=$("#announcementOffsetWrap"),help=$("#announcementOffsetHelp");
+  if(!select||!wrap)return;
+  const custom=select.value==="customAfterStart"||select.value==="customBeforeEnd";
+  wrap.style.display=custom?"":"none";
+  if(help)help.textContent=select.value==="customBeforeEnd"?"minutes before class ends":"minutes after class begins";
+};
+window.editAnnouncement=id=>{window.editingAnnouncementId=id;render();window.scrollTo({top:0,behavior:"smooth"});};
+window.cancelAnnouncementEdit=()=>{window.editingAnnouncementId=null;render();};
+window.saveAnnouncement=()=>{
+  ensureAnnouncements();
+  const text=($("#announcementText")?.value||"").trim();
+  const classIds=[...document.querySelectorAll('input[name="announcementClass"]:checked')].map(x=>x.value);
+  if(!text){alert("Please enter an announcement message.");return;}
+  if(!classIds.length){alert("Choose at least one class.");return;}
+  const timingChoice=$("#announcementTiming")?.value||"start";
+  let timing="start",offset=0;
+  if(timingChoice==="beforeEnd"){timing="beforeEnd";offset=5;}
+  else if(timingChoice==="customAfterStart"){timing="afterStart";offset=Math.max(0,Number($("#announcementOffset")?.value)||0);}
+  else if(timingChoice==="customBeforeEnd"){timing="beforeEnd";offset=Math.max(0,Number($("#announcementOffset")?.value)||0);}
+  const item={
+    id:($("#announcementId")?.value||"")||uid(),text,classIds,timing,offset,
+    duration:Math.max(1,Number($("#announcementDuration")?.value)||5),
+    display:$("#announcementDisplay")?.value==="flash"?"flash":"static",
+    priority:["low","normal","high","urgent"].includes($("#announcementPriority")?.value)?$("#announcementPriority").value:"normal",
+    color:$("#announcementColor")?.value||"#385b9d",
+    enabled:!!$("#announcementEnabled")?.checked
+  };
+  const i=data.announcements.findIndex(a=>a.id===item.id);
+  if(i>=0)data.announcements[i]=item;else data.announcements.push(item);
+  window.editingAnnouncementId=null;save();render();showToast("Announcement saved.");
+};
+window.deleteAnnouncement=id=>{
+  if(!confirm("Delete this announcement?"))return;
+  data.announcements=(data.announcements||[]).filter(a=>a.id!==id);
+  if(window.editingAnnouncementId===id)window.editingAnnouncementId=null;
+  save();render();showToast("Announcement deleted.");
+};
 
 function students(){
   ensureClassFields(); normalizeStudents(); ensureGroups();
@@ -2623,15 +2809,6 @@ window.openClassModal=(id="")=>{
       </section>
 
       <details class="collapsibleFieldset">
-        <summary>Class Reminders</summary>
-        <div class="collapsibleInner">
-          <p class="small">Add reminders that appear on the Live Class dashboard. They automatically show for the first or last few minutes of this class. You can dismiss one for the rest of that class period.</p>
-          <div id="classReminders">${(c.reminders||[]).map((r,i)=>reminderEditor(r,i)).join("")||'<p class="small emptyReminders">No reminders yet.</p>'}</div>
-          <button type="button" onclick="window.addClassReminder()">＋ Add Reminder</button>
-        </div>
-      </details>
-
-      <details class="collapsibleFieldset">
         <summary>Grading</summary>
         <div class="collapsibleInner">
           <div class="checkGrid">
@@ -2674,13 +2851,7 @@ window.saveClass=oldId=>{
   if(rules.every(r=>!r.periods.length)&&!confirm("No periods are selected, so this class will not automatically appear on the Live Class page. Save anyway?"))return;
   const old=data.classes.find(c=>c.id===oldId);
   const studentIds=[...document.querySelectorAll('input[name="classStudent"]:checked')].map(x=>x.value);
-  const reminders=[...document.querySelectorAll("#classReminders .classReminderEditor")].map((el,i)=>({
-    id:el.dataset.reminderId||uid(),
-    text:el.querySelector(".classReminderTextInput")?.value.trim()||"",
-    phase:el.querySelector(".classReminderPhase")?.value==="end"?"end":"start",
-    duration:Math.max(1,Number(el.querySelector(".classReminderDuration")?.value)||5),
-    enabled:!!el.querySelector(".classReminderEnabled")?.checked
-  })).filter(r=>r.text);
+  const reminders=old?.reminders||[];
   const previous=old||{};
   const item={id:oldId||uid(),name,nickname,studentIds,rules,periods:[...new Set(rules.flatMap(r=>r.periods))],days:[...new Set(rules.flatMap(r=>r.days))],terms,
   graded:!!$("#classGraded")?.checked,giveMidterm:!!$("#classMidterm")?.checked,giveFinal:!!$("#classFinal")?.checked,
