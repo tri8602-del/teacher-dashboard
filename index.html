@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Teacher Dashboard V2.3.0</title><meta name="theme-color" content="#2d3b59">
+<title>Teacher Dashboard V2.3.6</title><meta name="theme-color" content="#2d3b59">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Teacher Dashboard">
@@ -408,7 +408,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.3.5";
+const APP_VERSION="2.3.6";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -531,6 +531,13 @@ function ensureClassFields(){
     c.pvaasReported=!!c.pvaasReported;
     c.enrollmentPeriods=Array.isArray(c.enrollmentPeriods)?c.enrollmentPeriods:[];
     c.nickname=String(c.nickname||'').trim();
+    c.reminders=Array.isArray(c.reminders)?c.reminders.map((r,i)=>({
+      id:r.id||`reminder_${Date.now()}_${i}`,
+      text:String(r.text||"").trim(),
+      phase:r.phase==="end"?"end":"start",
+      duration:Math.max(1,Number(r.duration)||5),
+      enabled:r.enabled!==false
+    })).filter(r=>r.text):[];
   });
 }
 
@@ -542,6 +549,7 @@ function ensureClassroomTools(){
   t.randomNumber=t.randomNumber||null;
   t.randomStudentId=t.randomStudentId||null;
   t.groups=Array.isArray(t.groups)?t.groups:[];
+  data.reminderDismissals=data.reminderDismissals&&typeof data.reminderDismissals==="object"?data.reminderDismissals:{};
   data.groupRestrictions=Array.isArray(data.groupRestrictions)?data.groupRestrictions:[];
   data.students.forEach(s=>s.doNotSeatWith=Array.isArray(s.doNotSeatWith)?s.doNotSeatWith:[]);
 }
@@ -857,6 +865,46 @@ function classHasRuleNow(c,weekday,period){
   const rules=(c.rules&&c.rules.length)?c.rules:[{periods:c.periods||[],days:c.days||[1,2,3,4,5]}];
   return rules.some(r=>(r.days||[]).includes(weekday)&&(r.periods||[]).includes(period));
 }
+function scheduleBlockTimes(block=currentScheduleBlock()){
+  if(!block)return null;
+  const row=(block.schedule?.periods||[]).find(r=>r[0]===block.label);
+  if(!row)return null;
+  const start=timeToMinutes(row[1]),end=timeToMinutes(row[2],start);
+  return {start,end,label:row[0],startText:row[1],endText:row[2]};
+}
+function reminderDismissKey(cls,block,reminder){
+  return `${todayISO()}|${block?.label||""}|${cls?.id||""}|${reminder?.id||""}`;
+}
+function activeClassReminders(cls,block=currentScheduleBlock()){
+  if(!cls||!block)return [];
+  ensureClassroomTools();
+  const times=scheduleBlockTimes(block);if(!times)return [];
+  const now=new Date(),nowMin=now.getHours()*60+now.getMinutes()+now.getSeconds()/60;
+  return (cls.reminders||[]).filter(r=>{
+    if(!r.enabled)return false;
+    const duration=Math.max(1,Number(r.duration)||5);
+    const active=r.phase==="end"
+      ? nowMin>=times.end-duration && nowMin<times.end
+      : nowMin>=times.start && nowMin<times.start+duration;
+    return active&&!data.reminderDismissals[reminderDismissKey(cls,block,r)];
+  });
+}
+function reminderHTML(cls,block){
+  const reminders=activeClassReminders(cls,block);
+  if(!reminders.length)return "";
+  return `<section class="classReminderStack">${reminders.map(r=>`<div class="classReminder" data-reminder-id="${esc(r.id)}"><div><div class="classReminderLabel">${r.phase==="end"?"Last ${r.duration} minutes":"First ${r.duration} minutes"}</div><div class="classReminderText">${esc(r.text)}</div></div><button onclick="window.dismissClassReminder('${cls.id}','${block?.label||""}','${r.id}')">Dismiss ×</button></div>`).join("")}</section>`;
+}
+window.dismissClassReminder=(classId,blockLabel,reminderId)=>{
+  ensureClassroomTools();
+  const cls=data.classes.find(c=>c.id===classId);
+  const reminder=(cls?.reminders||[]).find(r=>r.id===reminderId);
+  if(!cls||!reminder)return;
+  const key=`${todayISO()}|${blockLabel||""}|${classId}|${reminderId}`;
+  data.reminderDismissals[key]=true;save();
+  const el=document.querySelector(`[data-reminder-id="${CSS.escape(reminderId)}"]`);
+  if(el)el.remove();
+  if(!document.querySelector(".classReminder"))document.querySelector(".classReminderStack")?.remove();
+};
 function currentClass(){
   ensureClassFields();const block=currentScheduleBlock();
   if(!block?.period)return null;
@@ -1085,7 +1133,8 @@ function classroomToolsHTML(cls,block){
   if(t.randomNumber!==null&&t.randomNumber!==undefined)activeExtras.push(`<div class="card activeToolCard"><button class="toolClose" onclick="window.closeActiveTool('number')">×</button><b>🎲 Number</b><div class="compactUtilityValue">${t.randomNumber}</div><div class="activeToolControls"><button onclick="window.generateRandomNumber()">Again</button><button onclick="window.openClassroomDisplay('number')">↗</button></div></div>`);
   if(t.randomStudentId)activeExtras.push(`<div class="card activeToolCard"><button class="toolClose" onclick="window.closeActiveTool('student')">×</button><b>🎯 Student</b><div class="compactUtilityValue">${picked?esc(studentDisplayName(picked)):"—"}</div><div class="activeToolControls"><button onclick="window.pickRandomStudent()">Again</button><button onclick="window.openClassroomDisplay('student')">↗</button></div></div>`);
   if((t.groups||[]).length)activeExtras.push(`<div class="card activeToolCard"><button class="toolClose" onclick="window.closeActiveTool('groups')">×</button><b>👥 Groups</b><div class="compactUtilityValue">${t.groups.length} groups</div><div class="activeToolControls"><button onclick="window.generateGroups()">Regenerate</button><button onclick="window.openClassroomDisplay('groups')">↗</button></div></div>`);
-  return `<div class="card"><b>⏳</b> <span data-tool-live="classleft">${left===null?"—":Math.max(0,Math.ceil(left/60000))}</span> minutes remaining</div>
+  const blockTimes=scheduleBlockTimes(block);
+  return `<div class="card timeRemainingCard"><div><b>⏳</b> <span data-tool-live="classleft">${left===null?"—":Math.max(0,Math.ceil(left/60000))}</span> minutes remaining</div>${blockTimes?`<div class="periodTimeRange">${esc(blockTimes.startText)} – ${esc(blockTimes.endText)}</div>`:""}</div>
     ${activeExtras.join("")}
     <div class="card utilityCard"><button type="button" onclick="window.toggleUtilityMenu()">🧰 Additional Tools</button>
       <div id="utilityMenu" class="utilityMenu" hidden>
@@ -1129,10 +1178,11 @@ function live(){
   const dailyNotes=todaysNotes.length?`<section class="card todayNotes"><h3>📌 Today's Notes</h3><ul>${todaysNotes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul></section>`:"";
   const dateLine=new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
   const tools=classroomToolsHTML(cls,block);
+  const reminders=reminderHTML(cls,block);
   if(!cls)return `<header><div><h2>No class right now</h2><p>${dateLine}${block?` · ${esc(block.label)}`:""}</p></div><div class="headerRight">${toggle}<div class="headerUtilities"><div class="card">🚪 ${active.length} currently out</div>${tools}</div></div></header>${dailyNotes}${alert}<section class="card noActiveClass"><b>${block?`No class is assigned to ${esc(block.label)}.`:"There is no active class during this time."}</b><p class="small">Add a class and choose its period(s), meeting days, and term in Students & Classes.</p></section>`;
   const roster=sortedStudents(data.students.filter(st=>cls.studentIds.includes(st.id)));
-  if(liveView==="matrix")return `<header><div><h2>${esc(cls.name)}</h2><p>${dateLine}${block?` · ${esc(block.label)}`:""}</p></div><div class="headerRight">${toggle}<div class="headerUtilities"><div class="card">🚪 ${active.length} currently out</div>${tools}</div></div></header>${dailyNotes}${alert}${currentLessonPlanHTML(cls)}<div class="matrixWrap"><table class="matrix"><thead><tr><th class="stickyName">Student</th>${data.buttons.map(b=>`<th title="${esc(b.label)}">${b.icon}<br><span>${b.label==="Excessive Talking"?"Excessive<br>Talking":esc(b.label)}</span></th>`).join("")}<th>📝<br><span>Note</span></th></tr></thead><tbody>${roster.map(st=>{const out=active.some(e=>e.studentId===st.id);return `<tr class="${out?"studentOut":""}"><td class="stickyName"><b>${esc(studentDisplayName(st))}</b>${out?"<br><small>Currently out</small>":""}</td>${data.buttons.map(b=>`<td><button class="matrixBtn" title="${esc(b.label)}" onclick="window.record('${st.id}','${b.id}')">${b.icon}</button></td>`).join("")}<td><button onclick="window.note('${st.id}',null)">📝</button></td></tr>`}).join("")}</tbody></table></div>`;
-  return `<header><div><h2>${esc(cls.name)}</h2><p>${dateLine}${block?` · ${esc(block.label)}`:""}</p></div><div class="headerRight">${toggle}<div class="headerUtilities"><div class="card">🚪 ${active.length} currently out</div>${tools}</div></div></header>${dailyNotes}${alert}${currentLessonPlanHTML(cls)}<div class="roster">${roster.map(st=>`<article class="student"><h3>${esc(studentDisplayName(st))}</h3><div class="quick">${data.buttons.map(b=>`<button onclick="window.record('${st.id}','${b.id}')">${b.icon}<span>${esc(b.label)}</span></button>`).join("")}</div><button class="noteBtn" onclick="window.note('${st.id}',null)">📝 Add Note</button></article>`).join("")}</div>`;
+  if(liveView==="matrix")return `<header><div><h2>${esc(cls.name)}</h2><p>${dateLine}${block?` · ${esc(block.label)}`:""}</p></div><div class="headerRight">${toggle}<div class="headerUtilities"><div class="card">🚪 ${active.length} currently out</div>${tools}</div></div></header>${dailyNotes}${alert}${reminders}${currentLessonPlanHTML(cls)}<div class="matrixWrap"><table class="matrix"><thead><tr><th class="stickyName">Student</th>${data.buttons.map(b=>`<th title="${esc(b.label)}">${b.icon}<br><span>${b.label==="Excessive Talking"?"Excessive<br>Talking":esc(b.label)}</span></th>`).join("")}<th>📝<br><span>Note</span></th></tr></thead><tbody>${roster.map(st=>{const out=active.some(e=>e.studentId===st.id);return `<tr class="${out?"studentOut":""}"><td class="stickyName"><b>${esc(studentDisplayName(st))}</b>${out?"<br><small>Currently out</small>":""}</td>${data.buttons.map(b=>`<td><button class="matrixBtn" title="${esc(b.label)}" onclick="window.record('${st.id}','${b.id}')">${b.icon}</button></td>`).join("")}<td><button onclick="window.note('${st.id}',null)">📝</button></td></tr>`}).join("")}</tbody></table></div>`;
+  return `<header><div><h2>${esc(cls.name)}</h2><p>${dateLine}${block?` · ${esc(block.label)}`:""}</p></div><div class="headerRight">${toggle}<div class="headerUtilities"><div class="card">🚪 ${active.length} currently out</div>${tools}</div></div></header>${dailyNotes}${alert}${reminders}${currentLessonPlanHTML(cls)}<div class="roster">${roster.map(st=>`<article class="student"><h3>${esc(studentDisplayName(st))}</h3><div class="quick">${data.buttons.map(b=>`<button onclick="window.record('${st.id}','${b.id}')">${b.icon}<span>${esc(b.label)}</span></button>`).join("")}</div><button class="noteBtn" onclick="window.note('${st.id}',null)">📝 Add Note</button></article>`).join("")}</div>`;
 }
 const DAY_NAMES=[[1,"Mon"],[2,"Tue"],[3,"Wed"],[4,"Thu"],[5,"Fri"]];
 const TERM_OPTIONS=[["fullYear","Full Year"],["q1","Quarter 1"],["q2","Quarter 2"],["q3","Quarter 3"],["q4","Quarter 4"],["t1","Trimester 1"],["t2","Trimester 2"],["t3","Trimester 3"],["s1","Semester 1"],["s2","Semester 2"]];
@@ -2153,6 +2203,21 @@ main:has(.lessonPlanCard){overflow:hidden!important;}
 */
 
 
+/* ===== Version 2.3.6 — class reminders ===== */
+.timeRemainingCard{line-height:1.05!important;}
+.periodTimeRange{font-size:9px;color:var(--muted);margin-top:3px;text-align:center;}
+.classReminderStack{display:grid;gap:8px;margin:0 0 12px;}
+.classReminder{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 14px;border:2px solid #e7a8a8;border-radius:12px;background:#fff7f7;animation:reminderPulse 1.2s ease-in-out infinite;}
+.classReminderLabel{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#a15c5c;font-weight:800;margin-bottom:3px;}
+.classReminderText{font-size:20px;font-weight:800;color:#6e3030;line-height:1.15;}
+.classReminder button{white-space:nowrap;}
+@keyframes reminderPulse{0%,100%{box-shadow:0 0 0 0 rgba(193,86,86,.08)}50%{box-shadow:0 0 0 6px rgba(193,86,86,.12)}}
+.classReminderEditor{margin:8px 0;padding:10px!important;}
+.classReminderEditorHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.reminderControls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px;}
+.reminderControls label{font-size:12px;display:flex;align-items:center;gap:5px;}
+.classReminderDuration{width:64px;}
+
 /* ===== Version 2.3.5 — calmer planner + current lesson ===== */
 main:has(.lessonPlanCard){overflow:visible!important;}
 .lessonTableWrap{height:auto!important;max-height:none!important;overflow:visible!important;overscroll-behavior:auto!important;}
@@ -2334,10 +2399,31 @@ function ruleEditor(r,index){
     <span class="sectionLabel">Meeting Days</span><div class="checkGrid dayGrid">${d}</div>
   </div>`;
 }
+function reminderEditor(r,index){
+  return `<div class="card classReminderEditor" data-reminder-id="${esc(r.id||uid())}">
+    <div class="classReminderEditorHead"><b>Reminder ${index+1}</b><button type="button" onclick="this.closest('.classReminderEditor').remove();window.refreshReminderLabels()">Remove</button></div>
+    <label>Announcement<br><input class="classReminderTextInput" value="${esc(r.text||"")}" placeholder="e.g., Take attendance" style="width:100%"></label>
+    <div class="reminderControls">
+      <label>Show <select class="classReminderPhase"><option value="start" ${r.phase!=="end"?"selected":""}>at the beginning</option><option value="end" ${r.phase==="end"?"selected":""}>during the last</option></select></label>
+      <label>For <input class="classReminderDuration" type="number" min="1" value="${Math.max(1,Number(r.duration)||5)}"> minutes</label>
+      <label><input class="classReminderEnabled" type="checkbox" ${r.enabled!==false?"checked":""}> Enabled</label>
+    </div>
+  </div>`;
+}
+window.refreshReminderLabels=()=>{
+  document.querySelectorAll("#classReminders .classReminderEditor").forEach((el,i)=>{
+    const b=el.querySelector(".classReminderEditorHead b");if(b)b.textContent=`Reminder ${i+1}`;
+  });
+};
+window.addClassReminder=()=>{
+  const box=document.querySelector("#classReminders");if(!box)return;
+  box.querySelector(".emptyReminders")?.remove();
+  box.insertAdjacentHTML("beforeend",reminderEditor({id:uid(),text:"",phase:"start",duration:5,enabled:true},box.querySelectorAll(".classReminderEditor").length));
+};
 window.openClassModal=(id="")=>{
   ensureClassFields();document.querySelector("#classModal")?.remove();
   const existing=id?data.classes.find(c=>c.id===id):null;
-  const c=existing?structuredClone(existing):{id:"",name:"",studentIds:[],rules:[{id:uid(),periods:[],days:[1,2,3,4,5]}],terms:["fullYear"],graded:false,giveMidterm:true,giveFinal:true,usesRecommendations:false};
+  const c=existing?structuredClone(existing):{id:"",name:"",nickname:"",studentIds:[],rules:[{id:uid(),periods:[],days:[1,2,3,4,5]}],terms:["fullYear"],reminders:[],graded:false,giveMidterm:true,giveFinal:true,usesRecommendations:false};
   const rules=(c.rules&&c.rules.length)?c.rules:[{id:uid(),periods:c.periods||[],days:c.days||[1,2,3,4,5]}];
   const selectedTerm=(c.terms&&c.terms[0])||"fullYear";
   const termOptions=TERM_OPTIONS.map(([v,label])=>`<option value="${v}" ${v===selectedTerm?"selected":""}>${label}</option>`).join("");
@@ -2368,6 +2454,15 @@ window.openClassModal=(id="")=>{
         <div id="classRules">${rules.map(ruleEditor).join("")}</div>
         <button type="button" onclick="window.addClassRule()">＋ Add Scheduling Rule</button>
       </section>
+
+      <details class="collapsibleFieldset">
+        <summary>Class Reminders</summary>
+        <div class="collapsibleInner">
+          <p class="small">Add reminders that appear on the Live Class dashboard. They automatically show for the first or last few minutes of this class. You can dismiss one for the rest of that class period.</p>
+          <div id="classReminders">${(c.reminders||[]).map((r,i)=>reminderEditor(r,i)).join("")||'<p class="small emptyReminders">No reminders yet.</p>'}</div>
+          <button type="button" onclick="window.addClassReminder()">＋ Add Reminder</button>
+        </div>
+      </details>
 
       <details class="collapsibleFieldset">
         <summary>Grading</summary>
@@ -2412,10 +2507,18 @@ window.saveClass=oldId=>{
   if(rules.every(r=>!r.periods.length)&&!confirm("No periods are selected, so this class will not automatically appear on the Live Class page. Save anyway?"))return;
   const old=data.classes.find(c=>c.id===oldId);
   const studentIds=[...document.querySelectorAll('input[name="classStudent"]:checked')].map(x=>x.value);
+  const reminders=[...document.querySelectorAll("#classReminders .classReminderEditor")].map((el,i)=>({
+    id:el.dataset.reminderId||uid(),
+    text:el.querySelector(".classReminderTextInput")?.value.trim()||"",
+    phase:el.querySelector(".classReminderPhase")?.value==="end"?"end":"start",
+    duration:Math.max(1,Number(el.querySelector(".classReminderDuration")?.value)||5),
+    enabled:!!el.querySelector(".classReminderEnabled")?.checked
+  })).filter(r=>r.text);
   const previous=old||{};
   const item={id:oldId||uid(),name,nickname,studentIds,rules,periods:[...new Set(rules.flatMap(r=>r.periods))],days:[...new Set(rules.flatMap(r=>r.days))],terms,
   graded:!!$("#classGraded")?.checked,giveMidterm:!!$("#classMidterm")?.checked,giveFinal:!!$("#classFinal")?.checked,
   usesRecommendations:!!$("#classRecommendations")?.checked,recommendationRules:previous.recommendationRules||[],grades:previous.grades||{},
+  reminders,
   pvaasReported:!!$("#classPvaas")?.checked,enrollmentPeriods:previous.enrollmentPeriods||[],rosterHistory:previous.rosterHistory||[]};
   if(oldId){const i=data.classes.findIndex(c=>c.id===oldId);if(i>=0)data.classes[i]=item;}else data.classes.push(item);
   save();window.closeClassModal();render();
