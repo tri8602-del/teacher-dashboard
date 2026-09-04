@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Teacher Dashboard V2.3.13</title><meta name="theme-color" content="#2d3b59">
+<title>Teacher Dashboard V2.3.14</title><meta name="theme-color" content="#2d3b59">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Teacher Dashboard">
@@ -406,7 +406,7 @@ aside{
 .sidebarEditorActions{display:flex;gap:4px}
 .sidebarEditorActions button{padding:4px 7px;font-size:13px;min-width:30px}
 .sidebarEditorRow.isFixed{background:#f4f6fa}
-.sidebarEditorRow.isHidden{opacity:.62}
+.sidebarEditorRow.isHidden{opacity:.62}.sidebarEditorRow{transition:opacity .12s,transform .12s,box-shadow .12s}.sidebarEditorRow[draggable="true"]{cursor:grab}.sidebarEditorRow.isDragging{opacity:.45}.sidebarEditorRow.isDragOver{box-shadow:0 -3px 0 var(--accent,#5267a8);transform:translateY(2px)}.sidebarEditorGrip{cursor:grab}
 @media(max-width:650px){.sidebarEditorRow{grid-template-columns:28px 1fr auto}.sidebarEditorActions button{padding:4px 6px}}
 
 /* ===== Live Class dashboard cards ===== */
@@ -584,7 +584,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.3.13";
+const APP_VERSION="2.3.14";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -2394,7 +2394,7 @@ function sidebarSettingsHTML(){
   return data.sidebarOrder.map((id,index)=>{
     const item=SIDEBAR_ITEMS.find(x=>x[0]===id);if(!item)return "";
     const fixed=id==="live"||id==="settings";
-    return `<div class="sidebarEditorRow ${hidden.has(id)?"isHidden":""} ${fixed?"isFixed":""}"><div class="sidebarEditorGrip">☰</div><label class="sidebarEditorLabel"><input type="checkbox" ${hidden.has(id)?"":"checked"} ${fixed?"disabled checked":""} onchange="window.toggleSidebarItem('${id}',this.checked)"><span>${item[1]} ${item[2]}</span></label><div class="sidebarEditorActions"><button type="button" title="Move up" ${index===0?"disabled":""} onclick="window.moveSidebarItem('${id}',-1)">↑</button><button type="button" title="Move down" ${index===data.sidebarOrder.length-1?"disabled":""} onclick="window.moveSidebarItem('${id}',1)">↓</button></div></div>`;
+    return `<div class="sidebarEditorRow ${hidden.has(id)?"isHidden":""} ${fixed?"isFixed":""}" draggable="true" data-sidebar-drag-id="${id}" ondragstart="window.sidebarDragStart(event,'${id}')" ondragover="window.sidebarDragOver(event)" ondrop="window.sidebarDrop(event,'${id}')" ondragend="window.sidebarDragEnd(event)"><div class="sidebarEditorGrip" title="Drag to reorder">☰</div><label class="sidebarEditorLabel"><input type="checkbox" ${hidden.has(id)?"":"checked"} ${fixed?"disabled checked":""} onchange="window.toggleSidebarItem('${id}',this.checked)"><span>${item[1]} ${item[2]}</span></label><div class="sidebarEditorActions"><button type="button" title="Move up" ${index===0?"disabled":""} onclick="window.moveSidebarItem('${id}',-1)">↑</button><button type="button" title="Move down" ${index===data.sidebarOrder.length-1?"disabled":""} onclick="window.moveSidebarItem('${id}',1)">↓</button></div></div>`;
   }).join("");
 }
 
@@ -2473,6 +2473,12 @@ window.moveSidebarItem=(id,direction)=>{
   [order[i],order[target]]=[order[target],order[i]];
   data.sidebarOrder=order;save();render();
 };
+window.sidebarDragId=null;
+window.sidebarDragStart=(event,id)=>{window.sidebarDragId=id;event.dataTransfer.effectAllowed="move";event.dataTransfer.setData("text/plain",id);event.currentTarget.classList.add("isDragging");};
+window.sidebarDragOver=(event)=>{event.preventDefault();event.dataTransfer.dropEffect="move";const row=event.currentTarget;row.classList.add("isDragOver");};
+window.sidebarDrop=(event,targetId)=>{event.preventDefault();const sourceId=window.sidebarDragId||event.dataTransfer.getData("text/plain");document.querySelectorAll(".sidebarEditorRow").forEach(r=>r.classList.remove("isDragOver","isDragging"));if(!sourceId||sourceId===targetId)return;ensureSidebarSettings();const order=[...data.sidebarOrder],from=order.indexOf(sourceId),to=order.indexOf(targetId);if(from<0||to<0)return;order.splice(from,1);order.splice(to,0,sourceId);data.sidebarOrder=order;save();render();};
+window.sidebarDragEnd=(event)=>{window.sidebarDragId=null;document.querySelectorAll(".sidebarEditorRow").forEach(r=>r.classList.remove("isDragOver","isDragging"));};
+
 window.resetSidebarLayout=()=>{
   data.sidebarOrder=SIDEBAR_ITEMS.map(x=>x[0]);
   data.sidebarHidden=[];
@@ -2699,7 +2705,7 @@ function updateBrowserTabTitle(){
     const block=currentScheduleBlock(),ms=timeLeftInBlock();
     if(block&&ms!==null){
       const mins=Math.max(0,Math.ceil(ms/60000));
-      document.title=`⏱ ${mins} min · ${block.label}`;
+      document.title=`⏱ ${mins} min · ${block.label} | Teacher Dashboard`;
     }else{
       document.title=`Teacher Dashboard V${APP_VERSION}`;
     }
@@ -2707,10 +2713,11 @@ function updateBrowserTabTitle(){
 }
 let browserTitleTimer=null;
 function startBrowserTitleTimer(){
-  if(browserTitleTimer)return;
+  if(!browserTitleTimer)browserTitleTimer=setInterval(updateBrowserTabTitle,1000);
   updateBrowserTabTitle();
-  browserTitleTimer=setInterval(updateBrowserTabTitle,1000);
 }
+window.addEventListener("focus",updateBrowserTabTitle);
+document.addEventListener("visibilitychange",updateBrowserTabTitle);
 
 function bind(){
   document.querySelectorAll("[data-timer]").forEach(el=>{const tick=()=>{const sec=Math.floor((Date.now()-new Date(el.dataset.timer))/1000);el.textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`};tick();setInterval(tick,1000);});
