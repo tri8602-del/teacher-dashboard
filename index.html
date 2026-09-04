@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Teacher Dashboard V2.3.10</title><meta name="theme-color" content="#2d3b59">
+<title>Teacher Dashboard V2.3.11</title><meta name="theme-color" content="#2d3b59">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Teacher Dashboard">
@@ -455,6 +455,17 @@ aside{
   .dashboardTopCards{grid-template-columns:1fr;}
 }
 
+
+/* ===== Version 2.3.11 — reminders page ===== */
+.reminderPageGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;}
+.reminderClassCard{margin-bottom:0!important;}
+.reminderClassHead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+.reminderClassHead h3{margin-bottom:4px!important;}
+.reminderList{margin-top:12px;display:grid;gap:8px;}
+.reminderListItem{padding:9px 10px;border:1px solid #e5e8ee;border-radius:9px;background:#fafbfe;}
+.reminderListItem.isDisabled{opacity:.55;}
+.reminderIntro,.reminderTip{margin-bottom:14px!important;}
+
 </style>
 
 <style>
@@ -523,7 +534,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.3.10";
+const APP_VERSION="2.3.11";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -554,8 +565,8 @@ const defaultButtons=[
 ];
 
 const seed={
- classes:[{id:"c1",name:"Honors Precalculus",studentIds:["s1","s2","s3"],periods:[1],days:[1,2,3,4,5],terms:["fullYear"]}],
- students:[{id:"s1",name:"Abby Smith"},{id:"s2",name:"Ben Jones"},{id:"s3",name:"Chris Brown"}],
+ classes:[{id:"c1",name:"SAMPLE CLASS",studentIds:["s1","s2","s3"],periods:[1],days:[1,2,3,4,5],terms:["fullYear"]}],
+ students:[{id:"s1",name:"Sample Student A"},{id:"s2",name:"Sample Student B"},{id:"s3",name:"Sample Student C"}],
  groups:[],
  forms:[],
  lessonPlans:{entries:{}},
@@ -953,7 +964,7 @@ function render(){
   if(page==="lessonplans")requestAnimationFrame(()=>document.querySelectorAll('.lessonCell textarea').forEach(ta=>window.autoResizeLessonTextarea?.(ta)));
 }
 function loginHTML(){return `<div class="loginScreen"><section class="loginCard"><div class="loginLogo">${appLogoHTML()}</div><h1>Teacher Dashboard</h1><p>Sign in with Google to securely access your own Teacher Dashboard.</p><button class="googleBtn primary" onclick="window.signIn()" ${authBusy?"disabled":""}>${authBusy?"Signing in...":"G  Sign in with Google"}</button>${loginError?`<div class="loginError">${esc(loginError)}</div>`:""}<p class="small" style="margin-top:20px">Each Google account has its own private dashboard and browser backup.</p></section></div>`}
-function nav(){return [["live","🏠","Live Class"],["students","👥","Students & Classes"],["lessonplans","🗓️","Lesson Plans"],["forms","📋","Forms & Records"],["calendar","🗓️","Calendar"],["buttons","⚡","Quick Buttons"],["grades","📚","Grades"],["reports","📊","Reports"],["pvaas","📈","PVAAS Reporting"],["settings","⚙️","Settings"]].map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
+function nav(){return [["live","🏠","Live Class"],["reminders","📣","Reminders & Announcements"],["students","👥","Students & Classes"],["lessonplans","🗓️","Lesson Plans"],["forms","📋","Forms & Records"],["calendar","🗓️","Calendar"],["buttons","⚡","Quick Buttons"],["grades","📚","Grades"],["reports","📊","Reports"],["pvaas","📈","PVAAS Reporting"],["settings","⚙️","Settings"]].map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
 function classPeriodNumber(label){const m=String(label||"").match(/^(\d+)(?:st|nd|rd|th)?\s+Period\b/i);return m?Number(m[1]):null}
 function timeToMinutes(value,previous=-1){
   const m=String(value||"").trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);if(!m)return null;
@@ -1253,7 +1264,7 @@ window.saveLessonPlanManager=()=>{
   data.lessonPlanSyncGroups=groups;save();window.closeLessonPlanManager();render();
 };
 
-function pageHTML(){return ({live,students,lessonplans,groups,forms,calendar,buttons:quickButtons,grades,reports,pvaas,settings})[page]()}
+function pageHTML(){return ({live,reminders:remindersPage,students,lessonplans,groups,forms,calendar,buttons:quickButtons,grades,reports,pvaas,settings})[page]()}
 
 function classroomToolsHTML(cls,block){
   ensureClassroomTools();
@@ -1391,6 +1402,25 @@ window.toggleStudentsList=()=>{
   el.classList.toggle("open");
   if(btn)btn.textContent=el.classList.contains("open")?"▼ Collapse":"▶ Expand";
 };
+
+function remindersPage(){
+  ensureClassFields();
+  const classes=[...data.classes];
+  const reminderCount=classes.reduce((sum,c)=>sum+(c.reminders||[]).length,0);
+  return `<header><div><h2>Reminders & Announcements</h2><p>Create class-specific reminders that appear automatically at the beginning or end of class.</p></div></header>
+  <section class="card reminderIntro">
+    <b>How it works</b>
+    <p class="small" style="margin:6px 0 0">Each reminder belongs to a class. Choose whether it appears for the first few minutes or the last few minutes. When it appears on Live Class, you can dismiss it for the rest of that class period.</p>
+  </section>
+  ${classes.length?`<div class="reminderPageGrid">${classes.map(c=>{
+    const reminders=(c.reminders||[]);
+    return `<section class="card reminderClassCard">
+      <div class="reminderClassHead"><div><h3>${esc(c.name)}</h3><div class="small">${reminders.length} reminder${reminders.length===1?"":"s"}</div></div><button onclick="window.openClassModal('${c.id}')">Edit Reminders</button></div>
+      ${reminders.length?`<div class="reminderList">${reminders.map(r=>`<div class="reminderListItem ${r.enabled===false?"isDisabled":""}"><div><b>${esc(r.text)}</b><div class="small">${r.phase==="end"?`Last ${r.duration} minute${r.duration===1?"":"s"}`:`First ${r.duration} minute${r.duration===1?"":"s"}`} · ${r.enabled===false?"Disabled":"Enabled"}</div></div></div>`).join("")}</div>`:`<p class="small" style="margin:12px 0 0">No reminders yet.</p>`}
+    </section>`;
+  }).join("")}</div>`:`<section class="card"><p>No classes yet. Add a class in Students & Classes first.</p></section>`}
+  <section class="card reminderTip"><b>${reminderCount} total reminder${reminderCount===1?"":"s"}</b><p class="small" style="margin:4px 0 0">To add a new one, click <b>Edit Reminders</b> on the class where you want it to appear.</p></section>`;
+}
 
 function students(){
   ensureClassFields(); normalizeStudents(); ensureGroups();
