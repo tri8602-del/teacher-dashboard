@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Teacher Dashboard V2.3.11</title><meta name="theme-color" content="#2d3b59">
+<title>Teacher Dashboard V2.3.13</title><meta name="theme-color" content="#2d3b59">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Teacher Dashboard">
@@ -397,6 +397,18 @@ aside{
 }
 
 
+/* ===== V2.3.13 Sidebar customization ===== */
+.sidebarEditorList{display:flex;flex-direction:column;gap:8px;margin:10px 0 14px}
+.sidebarEditorRow{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:9px;border:1px solid var(--line);border-radius:10px;padding:8px 9px;background:#fbfcfe}
+.sidebarEditorGrip{font-size:18px;color:#8b96a6;text-align:center;user-select:none}
+.sidebarEditorLabel{display:flex;align-items:center;gap:8px;font-weight:650}
+.sidebarEditorLabel input{width:17px;height:17px;margin:0}
+.sidebarEditorActions{display:flex;gap:4px}
+.sidebarEditorActions button{padding:4px 7px;font-size:13px;min-width:30px}
+.sidebarEditorRow.isFixed{background:#f4f6fa}
+.sidebarEditorRow.isHidden{opacity:.62}
+@media(max-width:650px){.sidebarEditorRow{grid-template-columns:28px 1fr auto}.sidebarEditorActions button{padding:4px 6px}}
+
 /* ===== Live Class dashboard cards ===== */
 .dashboardTopCards{
   display:grid;
@@ -572,7 +584,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.3.12";
+const APP_VERSION="2.3.13";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -739,6 +751,31 @@ function ensureAnnouncements(){
     enabled:a.enabled!==false
   })).filter(a=>a.text);
 }
+const SIDEBAR_ITEMS=[
+  ["live","🏠","Live Class"],
+  ["reminders","📣","Reminders & Announcements"],
+  ["students","👥","Students & Classes"],
+  ["lessonplans","🗓️","Lesson Plans"],
+  ["forms","📋","Forms & Records"],
+  ["calendar","🗓️","Calendar"],
+  ["buttons","⚡","Quick Buttons"],
+  ["grades","📚","Grades"],
+  ["reports","📊","Reports"],
+  ["pvaas","📈","PVAAS Reporting"],
+  ["settings","⚙️","Settings"]
+];
+function ensureSidebarSettings(){
+  const valid=SIDEBAR_ITEMS.map(x=>x[0]);
+  const saved=Array.isArray(data.sidebarOrder)?data.sidebarOrder:[];
+  const order=[...saved.filter(id=>valid.includes(id))];
+  valid.forEach(id=>{if(!order.includes(id))order.push(id);});
+  data.sidebarOrder=order;
+  const hidden=Array.isArray(data.sidebarHidden)?data.sidebarHidden:[];
+  data.sidebarHidden=[...new Set(hidden.filter(id=>valid.includes(id)&&id!=="live"&&id!=="settings"))];
+  // Live Class and Settings are always available so the teacher can never strand themselves.
+  data.sidebarHidden=data.sidebarHidden.filter(id=>id!=="live"&&id!=="settings");
+}
+
 function ensureClassroomTools(){
   ensureAnnouncements();
   data.classroomTools=data.classroomTools||{};
@@ -1022,7 +1059,7 @@ function sidebarTimeRemainingHTML(){
 }
 
 function render(){
-  ensureClassroomTools(); ensureGroups(); ensureForms(); ensureLessonPlans();
+  ensureSidebarSettings(); ensureClassroomTools(); ensureGroups(); ensureForms(); ensureLessonPlans();
   if(!currentUser){$("#root").innerHTML=loginHTML();return}
   const userLabel=currentUser.displayName||currentUser.email||"Google user";
   $("#root").innerHTML=`<div class="app"><aside>
@@ -1037,7 +1074,7 @@ function render(){
   if(page==="lessonplans")requestAnimationFrame(()=>document.querySelectorAll('.lessonCell textarea').forEach(ta=>window.autoResizeLessonTextarea?.(ta)));
 }
 function loginHTML(){return `<div class="loginScreen"><section class="loginCard"><div class="loginLogo">${appLogoHTML()}</div><h1>Teacher Dashboard</h1><p>Sign in with Google to securely access your own Teacher Dashboard.</p><button class="googleBtn primary" onclick="window.signIn()" ${authBusy?"disabled":""}>${authBusy?"Signing in...":"G  Sign in with Google"}</button>${loginError?`<div class="loginError">${esc(loginError)}</div>`:""}<p class="small" style="margin-top:20px">Each Google account has its own private dashboard and browser backup.</p></section></div>`}
-function nav(){return [["live","🏠","Live Class"],["reminders","📣","Reminders & Announcements"],["students","👥","Students & Classes"],["lessonplans","🗓️","Lesson Plans"],["forms","📋","Forms & Records"],["calendar","🗓️","Calendar"],["buttons","⚡","Quick Buttons"],["grades","📚","Grades"],["reports","📊","Reports"],["pvaas","📈","PVAAS Reporting"],["settings","⚙️","Settings"]].map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
+function nav(){ensureSidebarSettings();const hidden=new Set(data.sidebarHidden||[]);return data.sidebarOrder.map(id=>SIDEBAR_ITEMS.find(x=>x[0]===id)).filter(Boolean).filter(x=>!hidden.has(x[0])).map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
 function classPeriodNumber(label){const m=String(label||"").match(/^(\d+)(?:st|nd|rd|th)?\s+Period\b/i);return m?Number(m[1]):null}
 function timeToMinutes(value,previous=-1){
   const m=String(value||"").trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);if(!m)return null;
@@ -1374,6 +1411,7 @@ function classroomToolsHTML(cls,block){
   return `${activeExtras.join("")}
     <div class="card utilityCard"><button type="button" onclick="window.toggleUtilityMenu()">🧰 Additional Tools</button>
       <div id="utilityMenu" class="utilityMenu" hidden>
+        <div class="toolBlock"><h4>⏱ Time Remaining</h4><div class="toolResult" style="font-size:18px"><b><span data-tool-live="classleft">${left===null?"—":Math.max(0,Math.ceil(left/60000))+" min"}</span></b></div><div class="small"><span data-tool-block>${block?esc(block.label):"No active period"}</span>${block?` · <span data-tool-range>${esc(scheduleBlockTimes(block)?.startText||"")} – ${esc(scheduleBlockTimes(block)?.endText||"")}</span>`:""}</div><div class="toolControls" style="margin-top:7px"><button onclick="window.openClassroomDisplay('classleft')">↗ Display</button></div></div>
         <div class="toolBlock"><h4>⏱ Timer</h4><div class="toolControls"><button onclick="window.toggleStopwatch()">${t.stopwatch.running?"Pause":"Start"}</button><button onclick="window.resetStopwatch()">Reset</button><button onclick="window.openClassroomDisplay('stopwatch')">↗ Display</button></div><div class="toolResult" data-tool-live="stopwatch">${formatClock(stopwatchMs())}</div></div>
         <div class="toolBlock"><h4>⏲ Countdown</h4><div class="toolControls"><input id="countdownMinutes" type="number" min="1" placeholder="min"><button onclick="window.setCountdown()">Set</button><button onclick="window.toggleCountdown()">${t.countdown.running?"Pause":"Start"}</button><button onclick="window.resetCountdown()">Reset</button><button onclick="window.openClassroomDisplay('countdown')">↗ Display</button></div><div class="toolResult" data-tool-live="countdown">${formatClock(countdownMs())}</div></div>
         <div class="toolBlock"><h4>🎲 Random Number</h4><div class="toolControls"><input id="rngMin" type="number" value="1"><span>to</span><input id="rngMax" type="number" value="10"><button onclick="window.generateRandomNumber()">Generate</button><button onclick="window.openClassroomDisplay('number')">↗ Display</button></div><div class="toolResult">${rng}</div></div>
@@ -2350,12 +2388,23 @@ window.setReportStudent=v=>{window.reportStudent=v;render();}
 window.setReportClass=v=>{window.reportClassId=v;render();}
 window.setTimeReportRange=v=>{window.timeReportRange=v;render();}
 
+function sidebarSettingsHTML(){
+  ensureSidebarSettings();
+  const hidden=new Set(data.sidebarHidden||[]);
+  return data.sidebarOrder.map((id,index)=>{
+    const item=SIDEBAR_ITEMS.find(x=>x[0]===id);if(!item)return "";
+    const fixed=id==="live"||id==="settings";
+    return `<div class="sidebarEditorRow ${hidden.has(id)?"isHidden":""} ${fixed?"isFixed":""}"><div class="sidebarEditorGrip">☰</div><label class="sidebarEditorLabel"><input type="checkbox" ${hidden.has(id)?"":"checked"} ${fixed?"disabled checked":""} onchange="window.toggleSidebarItem('${id}',this.checked)"><span>${item[1]} ${item[2]}</span></label><div class="sidebarEditorActions"><button type="button" title="Move up" ${index===0?"disabled":""} onclick="window.moveSidebarItem('${id}',-1)">↑</button><button type="button" title="Move down" ${index===data.sidebarOrder.length-1?"disabled":""} onclick="window.moveSidebarItem('${id}',1)">↓</button></div></div>`;
+  }).join("");
+}
+
 function settings(){
   const userLabel=currentUser?.displayName||currentUser?.email||"Google user";
   return `<header><h2>Settings</h2></header>
   <section class="card"><h3>Account</h3><div class="accountRow">${avatarHTML()}<div><b>${esc(userLabel)}</b><div class="small">${esc(currentUser?.email||"")}</div></div></div>
   <div class="avatarActions"><button type="button" onclick="document.getElementById('avatarFile').click()">📷 Upload a picture</button>${data.profileAvatar?`<button type="button" onclick="window.useGooglePhoto()">Use Google picture</button>`:""}</div>
   <input id="avatarFile" type="file" accept="image/*" style="display:none" onchange="window.uploadAvatar(this)"><button style="margin-top:12px" onclick="window.signOut()">Sign out</button></section>
+  <section class="card"><h3>Sidebar Layout</h3><p class="small">Choose which sections appear in your sidebar and arrange them in the order you prefer. Changes are saved to your dashboard.</p><div class="sidebarEditorList">${sidebarSettingsHTML()}</div><button type="button" onclick="window.resetSidebarLayout()">Reset to Default</button></section>
   <section class="card"><h3>Data Storage</h3><p><b>☁️ ${esc(cloudStatus)}</b></p><div class="syncTime"><b>Last sync:</b> ${esc(formatSync(lastSyncAt))}</div><p class="small">Your dashboard is stored separately for each signed-in Google account.</p></section>
   <section class="card"><h3>Keystone Tracking</h3><label>Total counted school days<br><input type="number" value="${data.totalSchoolDays}" onchange="window.setTotalDays(this.value)"></label></section>
   <section class="card"><h3>Local Data Backup</h3><p class="small">Download a backup before major updates. You can also import it later.</p><button onclick="window.exportData()">Download backup</button> <button onclick="document.getElementById('importFile').click()">Import backup</button><input id="importFile" type="file" accept=".json,application/json" style="display:none" onchange="window.importData(this)"></section>
@@ -2408,10 +2457,32 @@ window.saveRestrictions=()=>{
   document.querySelectorAll('input[name="restriction"]:checked').forEach(x=>{const [a,b]=x.value.split("|");data.groupRestrictions.push({a,b});});
   save();document.querySelector("#restrictionModal")?.remove();render();
 }
+window.toggleSidebarItem=(id,checked)=>{
+  ensureSidebarSettings();
+  if(id==="live"||id==="settings")return;
+  const hidden=new Set(data.sidebarHidden||[]);
+  if(checked)hidden.delete(id);else hidden.add(id);
+  data.sidebarHidden=[...hidden];
+  if(hidden.has(page))page="live";
+  save();render();
+};
+window.moveSidebarItem=(id,direction)=>{
+  ensureSidebarSettings();
+  const order=[...data.sidebarOrder],i=order.indexOf(id),target=i+Number(direction||0);
+  if(i<0||target<0||target>=order.length)return;
+  [order[i],order[target]]=[order[target],order[i]];
+  data.sidebarOrder=order;save();render();
+};
+window.resetSidebarLayout=()=>{
+  data.sidebarOrder=SIDEBAR_ITEMS.map(x=>x[0]);
+  data.sidebarHidden=[];
+  save();render();
+};
+
 window.openClassroomDisplay=(mode="all")=>{
   const w=window.open("","teacherDashboardDisplay_"+mode,"width=1100,height=750");
   if(!w){alert("Your browser blocked the display window. Please allow pop-ups for this site.");return;}
-  w.document.write(`<!doctype html><html><head><title>Teacher Dashboard Display</title><style>body{margin:0;font-family:system-ui,sans-serif;background:#f4f6fb;color:#25324a}.wrap{padding:20px;text-align:center}.grid{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:1250px;margin:10px auto}.card{background:white;border-radius:12px;padding:10px 14px;min-width:150px;box-shadow:0 5px 16px #26345418}.label{font-size:12px;color:#667085}.value{font-size:26px;font-weight:800;margin-top:2px}.single{min-height:88vh;display:flex;flex-direction:column;justify-content:center;align-items:center}.single .label{font-size:28px}.single .value{font-size:min(24vw,220px)}.single.student .value{font-size:min(12vw,110px)}.groups{text-align:left;max-width:900px;margin:20px auto}.group{background:white;border-radius:14px;padding:16px;margin:10px 0;font-size:22px}</style>
+  w.document.write(`<!doctype html><html><head><title>Teacher Dashboard Display</title><style>body{margin:0;font-family:system-ui,sans-serif;background:#f4f6fb;color:#25324a}.wrap{padding:20px;text-align:center}.grid{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:1250px;margin:10px auto}.card{background:white;border-radius:12px;padding:10px 14px;min-width:150px;box-shadow:0 5px 16px #26345418}.label{font-size:12px;color:#667085}.value{font-size:26px;font-weight:800;margin-top:2px}.single{min-height:88vh;display:flex;flex-direction:column;justify-content:center;align-items:center}.single .label{font-size:28px}.single .value{font-size:min(24vw,220px)}.single.student .value{font-size:min(12vw,110px)}.classleftDisplay .label{font-size:28px}.classleftDisplay .value{font-size:min(24vw,220px)}.classleftDisplay .displayBlock{font-size:clamp(22px,3vw,42px);font-weight:700;margin-top:8px}.classleftDisplay .displayRange{font-size:clamp(14px,1.8vw,24px);color:#667085;margin-top:5px}.groups{text-align:left;max-width:900px;margin:20px auto}.group{background:white;border-radius:14px;padding:16px;margin:10px 0;font-size:22px}</style>
 <style>
 /* Version 2.1.1 — Lesson Planning */
 .lessonPlanControls{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:10px 14px!important}.lessonPlanControls>div{text-align:center;min-width:230px}.lessonPlanControls>div b{display:block}.lessonPlanControls .small{display:block;margin-top:2px}
@@ -2599,11 +2670,11 @@ main:has(.lessonPlanCard){overflow:visible!important;}
 .currentLessonStatus{margin-top:6px;font-size:11px;color:#7d8996;}
 @media(max-width:1000px){.lessonRowName,.lessonTable .lessonCorner{width:118px!important;min-width:118px!important;max-width:118px!important;}.lessonStatus{font-size:7px!important}.lessonCell textarea{font-size:13px!important}}
 </style>
-</head><body><div id="display"></div><script>const mode=${JSON.stringify(mode)};function update(){const s=window.opener&&window.opener.getClassroomDisplayState?window.opener.getClassroomDisplayState():null;if(!s)return;const cards={classleft:['Time Left',s.timeLeft],stopwatch:['Timer',s.stopwatch],countdown:['Countdown',s.countdown],number:['Random Number',s.randomNumber],student:['Random Student',s.randomStudent]};let html='<div class="wrap">';if(mode==='all')html+='<h3>'+s.className+'</h3>';if(mode==='groups'){html+='<div class="groups"><h1>Groups</h1>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>';}else if(mode!=='all'&&cards[mode]){const x=cards[mode];html+='<div class="single '+(mode==='student'?'student':'')+'"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>';}else{html+='<div class="grid">'+Object.values(cards).map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>').join('')+'</div>'+(s.groups.length?'<div class="groups"><h3>Groups</h3>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>':'');}document.getElementById('display').innerHTML=html+'</div>';}update();setInterval(update,500);<\/script></body></html>`);w.document.close();
+</head><body><div id="display"></div><script>const mode=${JSON.stringify(mode)};function update(){const s=window.opener&&window.opener.getClassroomDisplayState?window.opener.getClassroomDisplayState():null;if(!s)return;const cards={classleft:['Time Remaining',s.timeLeft,s.timeBlock,s.timeRange],stopwatch:['Timer',s.stopwatch],countdown:['Countdown',s.countdown],number:['Random Number',s.randomNumber],student:['Random Student',s.randomStudent]};let html='<div class="wrap">';if(mode==='all')html+='<h3>'+s.className+'</h3>';if(mode==='groups'){html+='<div class="groups"><h1>Groups</h1>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>';}else if(mode!=='all'&&cards[mode]){const x=cards[mode];if(mode==='classleft'){html+='<div class="single classleftDisplay"><div class="label">TIME REMAINING</div><div class="value">'+x[1]+'</div><div class="displayBlock">'+x[2]+'</div><div class="displayRange">'+x[3]+'</div></div>';}else{html+='<div class="single '+(mode==='student'?'student':'')+'"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>';}}else{html+='<div class="grid">'+Object.values(cards).map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>').join('')+'</div>'+(s.groups.length?'<div class="groups"><h3>Groups</h3>'+s.groups.map((g,i)=>'<div class="group"><b>Group '+(i+1)+'</b><br>'+g.join(' · ')+'</div>').join('')+'</div>':'');}document.getElementById('display').innerHTML=html+'</div>';}update();setInterval(update,500);<\/script></body></html>`);w.document.close();
 }
 window.getClassroomDisplayState=()=>{
   ensureClassroomTools();const cls=currentClass(),picked=data.classroomTools.randomStudentId?data.students.find(s=>s.id===data.classroomTools.randomStudentId):null;
-  return {className:cls?.name||"Teacher Dashboard",timeLeft:(()=>{const x=timeLeftInBlock();return x===null?"—":Math.max(0,Math.ceil(x/60000))+" min"})(),stopwatch:formatClock(stopwatchMs()),countdown:formatClock(countdownMs()),randomNumber:data.classroomTools.randomNumber??"—",randomStudent:picked?studentDisplayName(picked):"—",groups:(data.classroomTools.groups||[]).map(g=>g.map(id=>studentDisplayName(data.students.find(s=>s.id===id)||{})))};
+  return {className:cls?.name||"Teacher Dashboard",timeLeft:(()=>{const x=timeLeftInBlock();return x===null?"—":Math.max(0,Math.ceil(x/60000))+" min"})(),timeBlock:currentScheduleBlock()?.label||"No active period",timeRange:(()=>{const x=scheduleBlockTimes(currentScheduleBlock());return x?`${x.startText} – ${x.endText}`:""})(),stopwatch:formatClock(stopwatchMs()),countdown:formatClock(countdownMs()),randomNumber:data.classroomTools.randomNumber??"—",randomStudent:picked?studentDisplayName(picked):"—",groups:(data.classroomTools.groups||[]).map(g=>g.map(id=>studentDisplayName(data.students.find(s=>s.id===id)||{})))};
 }
 let liveMinuteTimer=null;
 function scheduleLiveMinuteRefresh(){
@@ -2612,6 +2683,7 @@ function scheduleLiveMinuteRefresh(){
   liveMinuteTimer=setTimeout(()=>{if(page==="live")render();scheduleLiveMinuteRefresh();},Math.max(25,delay));
 }
 scheduleLiveMinuteRefresh();
+startBrowserTitleTimer();
 
 document.addEventListener("keydown",e=>{
   if(e.key!=="Enter"||e.shiftKey||e.ctrlKey||e.altKey)return;
@@ -2622,9 +2694,27 @@ document.addEventListener("keydown",e=>{
   if(primary){e.preventDefault();primary.click();}
 });
 
+function updateBrowserTabTitle(){
+  try{
+    const block=currentScheduleBlock(),ms=timeLeftInBlock();
+    if(block&&ms!==null){
+      const mins=Math.max(0,Math.ceil(ms/60000));
+      document.title=`⏱ ${mins} min · ${block.label}`;
+    }else{
+      document.title=`Teacher Dashboard V${APP_VERSION}`;
+    }
+  }catch(e){document.title=`Teacher Dashboard V${APP_VERSION}`;}
+}
+let browserTitleTimer=null;
+function startBrowserTitleTimer(){
+  if(browserTitleTimer)return;
+  updateBrowserTabTitle();
+  browserTitleTimer=setInterval(updateBrowserTabTitle,1000);
+}
+
 function bind(){
   document.querySelectorAll("[data-timer]").forEach(el=>{const tick=()=>{const sec=Math.floor((Date.now()-new Date(el.dataset.timer))/1000);el.textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`};tick();setInterval(tick,1000);});
-  const tickClassLeft=()=>{const block=currentScheduleBlock(),times=scheduleBlockTimes(block),ms=timeLeftInBlock();document.querySelectorAll('[data-tool-live="classleft"]').forEach(el=>el.textContent=ms===null?"—":Math.max(0,Math.ceil(ms/60000)));document.querySelectorAll('[data-sidebar-block]').forEach(el=>el.textContent=block?.label||"");document.querySelectorAll('[data-sidebar-range]').forEach(el=>el.textContent=times?`${times.startText} – ${times.endText}`:"No active period");};tickClassLeft();setInterval(tickClassLeft,1000);
+  const tickClassLeft=()=>{const block=currentScheduleBlock(),times=scheduleBlockTimes(block),ms=timeLeftInBlock();document.querySelectorAll('[data-tool-live="classleft"]').forEach(el=>el.textContent=ms===null?"—":Math.max(0,Math.ceil(ms/60000))+" min");document.querySelectorAll('[data-sidebar-block]').forEach(el=>el.textContent=block?.label||"");document.querySelectorAll('[data-sidebar-range]').forEach(el=>el.textContent=times?`${times.startText} – ${times.endText}`:"No active period");document.querySelectorAll('[data-tool-block]').forEach(el=>el.textContent=block?.label||"No active period");document.querySelectorAll('[data-tool-range]').forEach(el=>el.textContent=times?`${times.startText} – ${times.endText}`:"");};tickClassLeft();setInterval(tickClassLeft,1000);
   if(page==="live"){const tickTools=()=>{document.querySelectorAll('[data-tool-live="stopwatch"]').forEach(el=>el.textContent=formatClock(stopwatchMs()));document.querySelectorAll('[data-tool-live="countdown"]').forEach(el=>el.textContent=formatClock(countdownMs()));};tickTools();setInterval(tickTools,1000);}
 }
 
