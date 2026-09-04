@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Teacher Dashboard V2.3.9</title><meta name="theme-color" content="#2d3b59">
+<title>Teacher Dashboard V2.3.10</title><meta name="theme-color" content="#2d3b59">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Teacher Dashboard">
@@ -396,6 +396,65 @@ aside{
   aside .sidebarTimeCard{display:none!important}
 }
 
+
+/* ===== Live Class dashboard cards ===== */
+.dashboardTopCards{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+  align-items:stretch;
+  margin-bottom:14px;
+}
+.dashboardTopCards .card{
+  margin-bottom:0!important;
+  min-width:0;
+}
+.dashboardTopCards h3{
+  margin:0 0 8px!important;
+  font-size:16px;
+}
+.todayNotes ul{
+  margin:6px 0 0!important;
+  padding-left:20px!important;
+}
+.todayNotes li{
+  margin:3px 0!important;
+}
+.currentLessonCard{
+  border-left:4px solid #8fa6ba!important;
+}
+.currentLessonHeading,.currentLessonClass,.currentLessonStatus{
+  display:none!important;
+}
+.currentLessonText{
+  margin-top:0!important;
+  font-size:16px!important;
+  line-height:1.4!important;
+}
+.studentsOutCard{
+  border-left:4px solid #dba83d!important;
+}
+.studentOutItem{
+  font-size:14px;
+  line-height:1.35;
+}
+.studentOutActions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-top:7px;
+}
+.studentOutActions button{
+  padding:5px 7px;
+  font-size:11px;
+}
+@media(max-width:1050px){
+  .dashboardTopCards{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media(max-width:700px){
+  .dashboardTopCards{grid-template-columns:1fr;}
+}
+
 </style>
 
 <style>
@@ -464,7 +523,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.3.9";
+const APP_VERSION="2.3.10";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -1239,25 +1298,26 @@ function currentLessonPlanHTML(cls){
     const row=(lessonPlanRows()||[]).find(r=>Array.isArray(r.classIds)&&r.classIds.includes(cls.id));
     if(!row)return '';
     const entry=lessonPlanEntry(row.id,today);
-    const text=(entry.text||'').trim();
-    const status=[];
-    if(entry.planned)status.push('Planned'); if(entry.created)status.push('Created'); if(entry.posted)status.push('Posted');
-    return `<section class="card currentLessonCard"><div class="currentLessonHeading"><span>📚 Current Lesson Plan</span><button onclick="page='lessonplans';render()">Open Planner →</button></div><div class="currentLessonClass">${esc(row.name||cls.name)}</div><div class="currentLessonText">${text?esc(text).replace(/\n/g,'<br>'):'<span class="small">No lesson plan entered for today yet.</span>'}</div>${status.length?`<div class="currentLessonStatus">${status.map(x=>`✓ ${x}`).join(' · ')}</div>`:''}</section>`;
+    const planText=(entry.text||'').trim();
+    return `<section class="card currentLessonCard"><h3>📚 Current Lesson Plan</h3><div class="currentLessonText">${planText?esc(planText).replace(/\n/g,'<br>'):'<span class="small">No lesson plan entered for today yet.</span>'}</div></section>`;
   }catch(e){console.error('Current lesson card error:',e);return '';}
 }
 function live(){
   const cls=currentClass(),active=activeEvents(),block=currentScheduleBlock();
   const toggle=`<div class="viewToggle"><button class="${liveView==="cards"?"activeView":""}" onclick="window.setLiveView('cards')">▦ Cards</button><button class="${liveView==="matrix"?"activeView":""}" onclick="window.setLiveView('matrix')">▤ Matrix</button></div>`;
-  const alert=active.length?`<div class="alert"><b>Students currently out:</b>${active.map(e=>{const st=data.students.find(x=>x.id===e.studentId);return `<div style="padding:8px 0">${esc(studentDisplayName(st||{}))} — ${e.icon} ${esc(e.label)} <span data-timer="${e.start}"></span> <button onclick="window.returnEvent('${e.id}','returned')">↩ Return</button> <button onclick="window.returnEvent('${e.id}','did-not-return')">⚠ Did Not Return</button> <button onclick="window.openEventModal('${e.id}')">Edit</button> <button onclick="window.note('${e.studentId}','${e.id}')">Comment</button></div>`}).join("")}</div>`:"";
+  const alert=active.length?`<section class="card studentsOutCard"><h3>🚪 Students currently out</h3>${active.map(e=>{const st=data.students.find(x=>x.id===e.studentId);return `<div class="studentOutItem">${esc(studentDisplayName(st||{}))} — ${e.icon} ${esc(e.label)} <span data-timer="${e.start}"></span><div class="studentOutActions"><button onclick="window.returnEvent('${e.id}','returned')">↩ Return</button> <button onclick="window.returnEvent('${e.id}','did-not-return')">⚠ Did Not Return</button> <button onclick="window.openEventModal('${e.id}')">Edit</button> <button onclick="window.note('${e.studentId}','${e.id}')">Comment</button></div></div>`}).join("")}</section>`:"";
   const todaysNotes=calendarNotesFor(todayISO());
   const dailyNotes=todaysNotes.length?`<section class="card todayNotes"><h3>📌 Today's Notes</h3><ul>${todaysNotes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul></section>`:"";
   const dateLine=new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
   const tools=classroomToolsHTML(cls,block);
   const reminders=reminderHTML(cls,block);
-  if(!cls)return `<header><div><h2>No class right now</h2><p>${dateLine}${block?` · ${esc(block.label)}`:""}</p></div><div class="headerRight">${toggle}<div class="headerUtilities"><div class="card">🚪 ${active.length} currently out</div>${tools}</div></div></header>${dailyNotes}${alert}<section class="card noActiveClass"><b>${block?`No class is assigned to ${esc(block.label)}.`:"There is no active class during this time."}</b><p class="small">Add a class and choose its period(s), meeting days, and term in Students & Classes.</p></section>`;
+  const topDashboardCards=(dailyNotes||alert||currentLessonPlanHTML(cls))
+    ? `<div class="dashboardTopCards">${dailyNotes}${currentLessonPlanHTML(cls)}${alert}</div>`
+    : "";
+  if(!cls)return `<header><div><h2>No class right now</h2><p>${dateLine}${block?` · ${esc(block.label)}`:""}</p></div><div class="headerRight">${toggle}<div class="headerUtilities"><div class="card">🚪 ${active.length} currently out</div>${tools}</div></div></header>${topDashboardCards}<section class="card noActiveClass"><b>${block?`No class is assigned to ${esc(block.label)}.`:"There is no active class during this time."}</b><p class="small">Add a class and choose its period(s), meeting days, and term in Students & Classes.</p></section>`;
   const roster=sortedStudents(data.students.filter(st=>cls.studentIds.includes(st.id)));
-  if(liveView==="matrix")return `<header><div><h2>${esc(cls.name)}</h2><p>${dateLine}${block?` · ${esc(block.label)}`:""}</p></div><div class="headerRight">${toggle}<div class="headerUtilities"><div class="card">🚪 ${active.length} currently out</div>${tools}</div></div></header>${dailyNotes}${alert}${reminders}${currentLessonPlanHTML(cls)}<div class="matrixWrap"><table class="matrix"><thead><tr><th class="stickyName">Student</th>${data.buttons.map(b=>`<th title="${esc(b.label)}">${b.icon}<br><span>${b.label==="Excessive Talking"?"Excessive<br>Talking":esc(b.label)}</span></th>`).join("")}<th>📝<br><span>Note</span></th></tr></thead><tbody>${roster.map(st=>{const out=active.some(e=>e.studentId===st.id);return `<tr class="${out?"studentOut":""}"><td class="stickyName"><b>${esc(studentDisplayName(st))}</b>${out?"<br><small>Currently out</small>":""}</td>${data.buttons.map(b=>`<td><button class="matrixBtn" title="${esc(b.label)}" onclick="window.record('${st.id}','${b.id}')">${b.icon}</button></td>`).join("")}<td><button onclick="window.note('${st.id}',null)">📝</button></td></tr>`}).join("")}</tbody></table></div>`;
-  return `<header><div><h2>${esc(cls.name)}</h2><p>${dateLine}${block?` · ${esc(block.label)}`:""}</p></div><div class="headerRight">${toggle}<div class="headerUtilities"><div class="card">🚪 ${active.length} currently out</div>${tools}</div></div></header>${dailyNotes}${alert}${reminders}${currentLessonPlanHTML(cls)}<div class="roster">${roster.map(st=>`<article class="student"><h3>${esc(studentDisplayName(st))}</h3><div class="quick">${data.buttons.map(b=>`<button onclick="window.record('${st.id}','${b.id}')">${b.icon}<span>${esc(b.label)}</span></button>`).join("")}</div><button class="noteBtn" onclick="window.note('${st.id}',null)">📝 Add Note</button></article>`).join("")}</div>`;
+  if(liveView==="matrix")return `<header><div><h2>${esc(cls.name)}</h2><p>${dateLine}${block?` · ${esc(block.label)}`:""}</p></div><div class="headerRight">${toggle}<div class="headerUtilities"><div class="card">🚪 ${active.length} currently out</div>${tools}</div></div></header>${topDashboardCards}${reminders}<div class="matrixWrap"><table class="matrix"><thead><tr><th class="stickyName">Student</th>${data.buttons.map(b=>`<th title="${esc(b.label)}">${b.icon}<br><span>${b.label==="Excessive Talking"?"Excessive<br>Talking":esc(b.label)}</span></th>`).join("")}<th>📝<br><span>Note</span></th></tr></thead><tbody>${roster.map(st=>{const out=active.some(e=>e.studentId===st.id);return `<tr class="${out?"studentOut":""}"><td class="stickyName"><b>${esc(studentDisplayName(st))}</b>${out?"<br><small>Currently out</small>":""}</td>${data.buttons.map(b=>`<td><button class="matrixBtn" title="${esc(b.label)}" onclick="window.record('${st.id}','${b.id}')">${b.icon}</button></td>`).join("")}<td><button onclick="window.note('${st.id}',null)">📝</button></td></tr>`}).join("")}</tbody></table></div>`;
+  return `<header><div><h2>${esc(cls.name)}</h2><p>${dateLine}${block?` · ${esc(block.label)}`:""}</p></div><div class="headerRight">${toggle}<div class="headerUtilities"><div class="card">🚪 ${active.length} currently out</div>${tools}</div></div></header>${topDashboardCards}${reminders}<div class="roster">${roster.map(st=>`<article class="student"><h3>${esc(studentDisplayName(st))}</h3><div class="quick">${data.buttons.map(b=>`<button onclick="window.record('${st.id}','${b.id}')">${b.icon}<span>${esc(b.label)}</span></button>`).join("")}</div><button class="noteBtn" onclick="window.note('${st.id}',null)">📝 Add Note</button></article>`).join("")}</div>`;
 }
 const DAY_NAMES=[[1,"Mon"],[2,"Tue"],[3,"Wed"],[4,"Thu"],[5,"Fri"]];
 const TERM_OPTIONS=[["fullYear","Full Year"],["q1","Quarter 1"],["q2","Quarter 2"],["q3","Quarter 3"],["q4","Quarter 4"],["t1","Trimester 1"],["t2","Trimester 2"],["t3","Trimester 3"],["s1","Semester 1"],["s2","Semester 2"]];
