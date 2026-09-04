@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Teacher Dashboard V2.3.7</title><meta name="theme-color" content="#2d3b59">
+<title>Teacher Dashboard V2.3.9</title><meta name="theme-color" content="#2d3b59">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Teacher Dashboard">
@@ -26,10 +26,12 @@ aside{width:235px;background:var(--nav);color:#fff;padding:18px;position:sticky;
 .brand{display:flex;align-items:flex-start;gap:8px;font-size:22px;margin:0 0 22px}.brandEmoji{width:42px;height:42px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 42px}.brandEmoji img{width:100%;height:100%;object-fit:contain;display:block}.loginLogo{width:82px;height:82px;object-fit:contain;display:flex;align-items:center;justify-content:center;margin:0 auto 8px}.loginLogo img{width:100%;height:100%;object-fit:contain}
 .nav{width:100%;padding:11px;border:0;border-radius:8px;background:transparent;color:#e3e8f6;text-align:left;font-size:14px;margin:2px 0}
 .nav:hover,.nav.active{background:var(--nav2)}
-.status{position:absolute;bottom:94px;font-size:12px;color:#cbd4e9;max-width:195px}
+.status{position:absolute;bottom:120px;font-size:12px;color:#cbd4e9;max-width:195px}
 .userCard{position:absolute;left:18px;right:18px;bottom:18px;padding-top:14px;border-top:1px solid #44557c;font-size:12px}
 .userCard .userName{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:6px 0;color:#fff}
 .sidebarUser{display:flex;align-items:center;gap:9px}.sidebarAvatar{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#fff2;border:1px solid #ffffff44}
+.sidebarTimeCard{margin:14px 0 10px;padding:12px 10px;border:1px solid #ffffff24;border-radius:10px;background:#ffffff0d;color:#fff;text-align:center}.sidebarTimeCard .sidebarTimeLabel{font-size:11px;color:#cbd4e9;margin-bottom:2px}.sidebarTimeCard .sidebarTimeValue{font-size:22px;font-weight:800;line-height:1.1}.sidebarTimeCard .sidebarTimeBlock{font-size:12px;margin-top:4px;color:#eef2ff}.sidebarTimeCard .sidebarTimeRange{font-size:10px;color:#b9c4dc;margin-top:3px}.sidebarTimeCard.isIdle .sidebarTimeValue{font-size:16px}.sidebarTimeCard.isIdle .sidebarTimeBlock{display:none}
+
 main{flex:1;padding:26px;max-width:1500px;margin:0 auto;width:100%;align-self:flex-start}
 header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px}
 h2,h3,h4{margin-top:0} header p{margin:4px 0;color:var(--muted)}
@@ -343,20 +345,57 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px so
 @media(max-width:1050px){.lessonTable .lessonCorner,.lessonRowName{width:175px!important;min-width:175px!important}.lessonStatus{font-size:8px!important}.lessonCell{height:78px!important}.lessonCell textarea{height:78px!important;min-height:78px!important}}
 
 
-/* V2.3.7 compact planner/dashboard improvements */
-.sidebarTimeCard{margin:10px 8px 12px;padding:10px 12px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:#fff;text-align:center}
-.sidebarTimeCard .sidebarTimeValue{font-size:1.35rem;font-weight:800;line-height:1.1}
-.sidebarTimeCard .sidebarTimeLabel{font-size:.82rem;opacity:.92;margin-top:2px}
-.sidebarTimeCard .periodTimeRange{font-size:.72rem;opacity:.8;margin-top:4px}
-.lessonTodoCard{margin:0 0 10px;padding:9px 12px}
-.lessonTodoHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:5px}
-.lessonTodoHead h3{margin:0;font-size:1rem}
-.lessonTodoList{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
-.lessonTodoItem{display:flex;align-items:center;gap:5px;font-size:.8rem;white-space:nowrap}
-.lessonTodoItem b{font-size:.8rem}
-.lessonTodoItem label{display:inline-flex;align-items:center;gap:2px;opacity:.78;font-size:.74rem}
-.lessonTodoItem input{accent-color:#6d8aa5;transform:scale(.85);margin:0}
-@media(max-width:800px){.sidebarTimeCard{margin:8px}.lessonTodoList{display:block}.lessonTodoItem{margin:5px 0;white-space:normal}}
+/* ===== Sidebar cleanup ===== */
+aside{
+  box-sizing:border-box!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+}
+.sidebarTimeCard{
+  order:1;
+  margin:8px 0 12px!important;
+  padding:10px 10px!important;
+  flex:0 0 auto!important;
+}
+.sidebarTimeLabel{font-size:10px!important;letter-spacing:.06em!important}
+.sidebarTimeValue{font-size:24px!important}
+.sidebarTimeBlock{font-size:11px!important}
+.sidebarTimeRange{font-size:10px!important}
+.sidebarNav{
+  order:2;
+  display:block;
+  flex:0 0 auto;
+}
+.nav{
+  padding:9px 11px!important;
+  margin:1px 0!important;
+  line-height:1.2!important;
+}
+.status{
+  position:static!important;
+  order:3;
+  margin-top:auto!important;
+  padding-top:12px!important;
+  flex:0 0 auto!important;
+}
+.userCard{
+  position:static!important;
+  order:4;
+  left:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  margin-top:8px!important;
+  padding-top:10px!important;
+  flex:0 0 auto!important;
+}
+.userCard button{padding:8px 10px!important}
+@media(max-width:750px){
+  aside{display:block!important;overflow:visible!important}
+  aside .sidebarTimeCard{display:none!important}
+}
+
 </style>
 
 <style>
@@ -396,6 +435,8 @@ main:has(.lessonPlanCard){overflow:visible!important;}
 .lessonDayHead{font-size:14px!important;}
 @media(max-width:1000px){.lessonTable .lessonCorner,.lessonRowName{width:96px!important;min-width:96px!important;max-width:96px!important}.lessonRowTitle b{font-size:11px!important}}
 
+
+.lessonTodoCard{padding:10px 12px;margin-bottom:10px}.lessonTodoHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}.lessonTodoHeader h3{margin:0;font-size:15px}.lessonTodoCount{font-size:11px;color:var(--muted);white-space:nowrap}.lessonTodoList{display:flex;flex-wrap:wrap;gap:6px 10px}.lessonTodoItem{display:flex;align-items:center;gap:6px;border:1px solid #e4e8f0;border-radius:8px;padding:5px 7px;background:#fbfcfe;min-width:0;max-width:100%}.lessonTodoMeta{font-size:11px;color:var(--muted);white-space:nowrap}.lessonTodoText{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}.lessonTodoChecks{display:flex;gap:5px;align-items:center}.lessonTodoChecks label{font-size:11px;color:#7a8495;white-space:nowrap}.lessonTodoChecks input{accent-color:#8fa0b5}.lessonTodoDone{font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -423,7 +464,7 @@ provider.setCustomParameters({prompt:"select_account"});
 
 const $=s=>document.querySelector(s);
 const uid=()=>crypto.randomUUID?.()||Math.random().toString(36).slice(2);
-const APP_VERSION="2.3.7";
+const APP_VERSION="2.3.9";
 const LOCAL_PREFIX="teacherDashboardV1:user:";
 const CLOUD_SUBCOLLECTION="dashboards";
 const CLOUD_DOCUMENT="main";
@@ -833,22 +874,18 @@ window.updateEnrollmentPeriod=(classId,periodId,field,value)=>{const c=data.clas
 window.addEnrollmentPeriod=(classId,studentId)=>{const c=data.classes.find(x=>x.id===classId);if(!c)return;c.enrollmentPeriods=c.enrollmentPeriods||[];c.enrollmentPeriods.push({id:"ep_"+Math.random().toString(36).slice(2),studentId,start:"",end:schoolEndDate()||""});save();render();};
 window.removeEnrollmentPeriod=(classId,periodId)=>{const c=data.classes.find(x=>x.id===classId);if(!c)return;c.enrollmentPeriods=(c.enrollmentPeriods||[]).filter(p=>p.id!==periodId);save();render();};
 
-function sidebarTimeHTML(){
-  try{
-    const block=currentScheduleBlock();
-    const left=timeLeftInBlock();
-    const times=scheduleBlockTimes(block);
-    const period=block?.label||"No class";
-    return `<div class="sidebarTimeCard" aria-live="polite"><div class="sidebarTimeValue"><span data-tool-live="classleft">${left===null?"—":Math.max(0,Math.ceil(left/60000))}</span> min</div><div class="sidebarTimeLabel">${esc(period)} remaining</div>${times?`<div class="periodTimeRange">${esc(times.startText)} – ${esc(times.endText)}</div>`:""}</div>`;
-  }catch(e){return '';}
+function sidebarTimeRemainingHTML(){
+  try{const block=currentScheduleBlock(),times=scheduleBlockTimes(block),left=timeLeftInBlock();if(!block||left===null)return `<section class="sidebarTimeCard isIdle"><div class="sidebarTimeLabel">TIME REMAINING</div><div class="sidebarTimeValue" data-tool-live="classleft">—</div><div class="sidebarTimeBlock"></div><div class="sidebarTimeRange">No active period</div></section>`;return `<section class="sidebarTimeCard"><div class="sidebarTimeLabel">TIME REMAINING</div><div class="sidebarTimeValue"><span data-tool-live="classleft">${Math.max(0,Math.ceil(left/60000))}</span> min</div><div class="sidebarTimeBlock" data-sidebar-block>${esc(block.label)}</div><div class="sidebarTimeRange" data-sidebar-range>${esc(times?.startText||'')} – ${esc(times?.endText||'')}</div></section>`;}catch(e){return '';}
 }
+
 function render(){
   ensureClassroomTools(); ensureGroups(); ensureForms(); ensureLessonPlans();
   if(!currentUser){$("#root").innerHTML=loginHTML();return}
   const userLabel=currentUser.displayName||currentUser.email||"Google user";
   $("#root").innerHTML=`<div class="app"><aside>
     <h1 class="brand"><span class="brandEmoji">${appLogoHTML()}</span><span>Teacher<br>Dashboard</span></h1>
-    ${nav()}${sidebarTimeHTML()}
+    ${sidebarTimeRemainingHTML()}
+    <nav class="sidebarNav">${nav()}</nav>
     <div class="status">☁️ ${esc(cloudStatus)}</div>
     <div class="userCard"><div class="sidebarUser">${avatarHTML("sidebarAvatar")}<div><b>Signed in as</b><span class="userName">${esc(userLabel)}</span></div></div><button onclick="window.signOut()">Sign out</button></div>
   </aside><main>${toastHTML()}${pageHTML()}<footer class="appFooter">© 2026 Lindsay Shay &nbsp;•&nbsp; Version ${APP_VERSION}</footer></main></div>${selected?modalHTML():""}`;
@@ -857,7 +894,7 @@ function render(){
   if(page==="lessonplans")requestAnimationFrame(()=>document.querySelectorAll('.lessonCell textarea').forEach(ta=>window.autoResizeLessonTextarea?.(ta)));
 }
 function loginHTML(){return `<div class="loginScreen"><section class="loginCard"><div class="loginLogo">${appLogoHTML()}</div><h1>Teacher Dashboard</h1><p>Sign in with Google to securely access your own Teacher Dashboard.</p><button class="googleBtn primary" onclick="window.signIn()" ${authBusy?"disabled":""}>${authBusy?"Signing in...":"G  Sign in with Google"}</button>${loginError?`<div class="loginError">${esc(loginError)}</div>`:""}<p class="small" style="margin-top:20px">Each Google account has its own private dashboard and browser backup.</p></section></div>`}
-function nav(){return [["live","🏠","Live Class"],["students","👥","Students, Classes & Groups"],["lessonplans","🗓️","Lesson Plans"],["forms","📋","Forms & Records"],["calendar","🗓️","Calendar"],["buttons","⚡","Quick Buttons"],["grades","📚","Grades"],["reports","📊","Reports"],["pvaas","📈","PVAAS Reporting"],["settings","⚙️","Settings"]].map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
+function nav(){return [["live","🏠","Live Class"],["students","👥","Students & Classes"],["lessonplans","🗓️","Lesson Plans"],["forms","📋","Forms & Records"],["calendar","🗓️","Calendar"],["buttons","⚡","Quick Buttons"],["grades","📚","Grades"],["reports","📊","Reports"],["pvaas","📈","PVAAS Reporting"],["settings","⚙️","Settings"]].map(x=>`<button class="nav ${page===x[0]?"active":""}" data-page="${x[0]}">${x[1]} ${x[2]}</button>`).join("")}
 function classPeriodNumber(label){const m=String(label||"").match(/^(\d+)(?:st|nd|rd|th)?\s+Period\b/i);return m?Number(m[1]):null}
 function timeToMinutes(value,previous=-1){
   const m=String(value||"").trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);if(!m)return null;
@@ -1024,21 +1061,21 @@ function lessonRowMeetsOnDay(row,weekday){
 }
 function lessonRowScheduleLabel(row,weekday){return row.period?`Period ${row.period}`:'';}
 function lessonPlanEntry(rowId,date){ensureLessonPlans();const e=data.lessonPlans.entries?.[rowId]?.[date]||{};return {text:e.text||'',planned:!!e.planned,created:!!e.created,posted:!!e.posted};}
-function lessonTodoHTML(rows,dates){
+function lessonPlanTodoHTML(rows,dates){
   const items=[];
-  rows.forEach(row=>dates.forEach(d=>{
-    const date=isoDate(d), e=lessonPlanEntry(row.id,date);
-    if(!String(e.text||'').trim())return;
-    if(e.planned&&e.created&&e.posted)return;
-    items.push({row,date,e,day:d.toLocaleDateString(undefined,{weekday:'short'})});
-  }));
-  if(!items.length)return `<section class="card lessonTodoCard"><div class="lessonTodoHead"><h3>✓ Still Needs to Be Done</h3><span class="small">You're all caught up for this week.</span></div></section>`;
-  return `<section class="card lessonTodoCard"><div class="lessonTodoHead"><h3>☐ Still Needs to Be Done</h3><span class="small">${items.length} lesson${items.length===1?"":"s"}</span></div><div class="lessonTodoList">${items.map(x=>`<div class="lessonTodoItem"><b>${esc(x.day)} · ${esc(x.row.name)}</b>${!x.e.planned?`<label><input type="checkbox" onchange="window.todoLessonStatus('${x.row.id}','${x.date}','planned',this.checked)">Planned</label>`:''}${!x.e.created?`<label><input type="checkbox" onchange="window.todoLessonStatus('${x.row.id}','${x.date}','created',this.checked)">Created</label>`:''}${!x.e.posted?`<label><input type="checkbox" onchange="window.todoLessonStatus('${x.row.id}','${x.date}','posted',this.checked)">Posted</label>`:''}</div>`).join("")}</div></section>`;
+  for(const row of rows||[])for(let i=0;i<(dates||[]).length;i++){
+    const d=dates[i],date=isoDate(d),weekday=i+1;let available=false;
+    try{available=lessonRowAvailableOnDate(row,date,weekday)}catch(e){available=true}
+    if(!available)continue;
+    const entry=lessonPlanEntry(row.id,date),text=(entry.text||'').trim();
+    if(!text)continue;
+    const missing=['planned','created','posted'].filter(k=>!entry[k]);
+    if(missing.length)items.push({row,date,text,missing,day:d.toLocaleDateString(undefined,{weekday:'short',month:'numeric',day:'numeric'})});
+  }
+  if(!items.length)return `<section class="card lessonTodoCard"><div class="lessonTodoHeader"><h3>✓ Still Needs to Be Done</h3><span class="lessonTodoCount">All caught up</span></div><div class="lessonTodoDone">Every entered lesson plan for this week is fully checked off.</div></section>`;
+  return `<section class="card lessonTodoCard"><div class="lessonTodoHeader"><h3>☐ Still Needs to Be Done</h3><span class="lessonTodoCount">${items.length} lesson${items.length===1?'':'s'} with unfinished steps</span></div><div class="lessonTodoList">${items.map(item=>`<div class="lessonTodoItem"><span class="lessonTodoMeta">${esc(item.row.name)} · ${esc(item.day)}</span><span class="lessonTodoText" title="${esc(item.text)}">${esc(item.text)}</span><span class="lessonTodoChecks">${item.missing.map(field=>`<label><input type="checkbox" onchange="window.updateLessonTodoStatus('${item.row.id}','${item.date}','${field}',this.checked)"> ${field[0].toUpperCase()+field.slice(1)}</label>`).join('')}</span></div>`).join('')}</div></section>`;
 }
-window.todoLessonStatus=(rowId,date,field,value)=>{
-  window.updateLessonStatus(rowId,date,field,value);
-  render();
-};
+
 function lessonplans(){
   try{
     ensureLessonPlans();
@@ -1070,7 +1107,8 @@ function lessonplans(){
       return `<tr>${title}${cells}</tr>`;
     }).join('');
 
-    return `<header class="lessonCompactHeader"><h2>Lesson Plans</h2><div class="lessonPlanControls"><button onclick="window.changeLessonWeek(-1)">← Previous</button><div><b>${range}</b></div><button onclick="window.changeLessonWeek(1)">Next →</button><button onclick="window.goToLessonWeekToday()">Today</button></div><button onclick="window.openLessonPlanManager()">⚙️ Customize</button></header>${lessonTodoHTML(rows,dates)}<section class="lessonPlanCard"><div class="lessonTableWrap"><table class="lessonTable"><thead><tr><th class="lessonCorner">Class</th>${head}</tr></thead><tbody>${rowHTML||'<tr><td colspan="6" class="small">No lesson-plan rows yet. Use Customize to add classes or rows.</td></tr>'}</tbody></table></div></section>`;
+    const todoCard=lessonPlanTodoHTML(rows,dates);
+    return `<header class="lessonCompactHeader"><h2>Lesson Plans</h2><div class="lessonPlanControls"><button onclick="window.changeLessonWeek(-1)">← Previous</button><div><b>${range}</b></div><button onclick="window.changeLessonWeek(1)">Next →</button><button onclick="window.goToLessonWeekToday()">Today</button></div><button onclick="window.openLessonPlanManager()">⚙️ Customize</button></header>${todoCard}<section class="lessonPlanCard"><div class="lessonTableWrap"><table class="lessonTable"><thead><tr><th class="lessonCorner">Class</th>${head}</tr></thead><tbody>${rowHTML||'<tr><td colspan="6" class="small">No lesson-plan rows yet. Use Customize to add classes or rows.</td></tr>'}</tbody></table></div></section>`;
   }catch(err){
     console.error('Lesson Plans error:',err);
     return `<header><div><h2>Lesson Plans</h2><p>Something went wrong while loading this page.</p></div></header><section class="card"><p><b>The rest of your dashboard is safe.</b></p><p class="small">${esc(err?.message||String(err))}</p><button onclick="window.openLessonPlanManager()">Open Lesson Plan Customize</button></section>`;
@@ -1294,22 +1332,14 @@ window.toggleStudentsList=()=>{
   if(btn)btn.textContent=el.classList.contains("open")?"▼ Collapse":"▶ Expand";
 };
 
-function mergedGroupsSectionHTML(){
-  ensureGroups(); normalizeStudents();
-  const cards=(data.groups||[]).map(g=>{
-    const members=sortedStudents(data.students.filter(st=>g.studentIds.includes(st.id)));
-    return `<div class="card groupCard"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><b>${esc(g.name)}</b>${g.description?`<div class="small">${esc(g.description)}</div>`:""}<div class="small">${members.length} student${members.length===1?"":"s"}</div></div><span><button onclick="window.openGroupModal('${g.id}')">Edit</button> <button onclick="window.deleteGroup('${g.id}')">Delete</button></span></div><div class="groupMembers">${members.map(st=>`<span class="groupMemberTag">${esc(studentDisplayName(st))}</span>`).join("")||'<span class="small">No students added yet.</span>'}</div></div>`;
-  }).join("");
-  return `<section class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><h3 style="margin:0">Groups</h3><div class="small">Groups that exist independently from classes.</div></div><button class="primary" onclick="window.openGroupModal()">＋ Add Group</button></div><div style="margin-top:10px">${cards||'<p class="small">No groups yet. Create Debate Club, Academic League, or any other student group.</p>'}</div></section>`;
-}
 function students(){
-  ensureClassFields(); normalizeStudents();
+  ensureClassFields(); normalizeStudents(); ensureGroups();
   const studentRows=sortedStudents(data.students).map(st=>`
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0">
       <span>${esc(st.name)}</span>
       <span style="white-space:nowrap"><button onclick="window.openStudentModal('${st.id}')">Edit</button> <button onclick="window.deleteStudent('${st.id}')">Delete</button></span>
     </div>`).join("")||"<p>No students yet.</p>";
-  return `<header><h2>Students, Classes & Groups</h2></header>
+  return `<header><h2>Students & Classes</h2></header>
   <div class="split">
     <section class="card">
       <h3>Students</h3>
@@ -1321,7 +1351,8 @@ function students(){
       ${studentRows}
     </section>
     <section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3>Classes</h3><button class="primary" onclick="window.openClassModal()">＋ Add Class</button></div>${data.classes.length?data.classes.map(c=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><b>${esc(c.name)}</b>${classMeta(c)}</div><div><button onclick="window.openClassModal('${c.id}')">Edit</button> <button onclick="window.deleteClass('${c.id}')">Delete</button></div></div><details><summary class="small">Students (${c.studentIds.length})</summary><div style="margin-top:8px">${sortedStudents(data.students).map(st=>`<label class="small"><input type="checkbox" ${c.studentIds.includes(st.id)?"checked":""} onchange="window.roster('${c.id}','${st.id}',this.checked)"> ${esc(st.name)}</label><br>`).join("")||"<span class='small'>Add students first.</span>"}</div></details></div>`).join(""):`<div class="classEmpty">No classes yet. Add your first class to get started.</div>`}</section>
-  </div>${mergedGroupsSectionHTML()}`;
+  </div>
+  <section class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><h3 style="margin-bottom:4px">Groups</h3><p class="small" style="margin:0">Create groups for clubs, teams, activities, or anything else.</p></div><button class="primary" onclick="window.openGroupModal()">＋ Add Group</button></div><div style="margin-top:12px">${data.groups.length?data.groups.map(g=>{const members=sortedStudents(data.students.filter(s=>(g.studentIds||[]).includes(s.id)));return `<section class="groupCard" style="border:1px solid #e6eaf1;border-radius:10px;padding:10px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><b>${esc(g.name)}</b>${g.description?`<div class="small">${esc(g.description)}</div>`:''}<div class="small">${members.length} student${members.length===1?'':'s'}</div></div><span><button onclick="window.openGroupModal('${g.id}')">Edit</button> <button onclick="window.deleteGroup('${g.id}')">Delete</button></span></div></section>`;}).join(''):'<span class="small">No groups yet.</span>'}</div></section>`;
 }
 
 function isoAddDays(date,n){const d=new Date(date+"T12:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
@@ -2317,7 +2348,8 @@ document.addEventListener("keydown",e=>{
 
 function bind(){
   document.querySelectorAll("[data-timer]").forEach(el=>{const tick=()=>{const sec=Math.floor((Date.now()-new Date(el.dataset.timer))/1000);el.textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`};tick();setInterval(tick,1000);});
-  if(page==="live"){const tickTools=()=>{document.querySelectorAll('[data-tool-live="classleft"]').forEach(el=>{const ms=timeLeftInBlock();el.textContent=ms===null?"—":Math.max(0,Math.ceil(ms/60000))+" min";});document.querySelectorAll('[data-tool-live="stopwatch"]').forEach(el=>el.textContent=formatClock(stopwatchMs()));document.querySelectorAll('[data-tool-live="countdown"]').forEach(el=>el.textContent=formatClock(countdownMs()));};tickTools();setInterval(tickTools,1000);}
+  const tickClassLeft=()=>{const block=currentScheduleBlock(),times=scheduleBlockTimes(block),ms=timeLeftInBlock();document.querySelectorAll('[data-tool-live="classleft"]').forEach(el=>el.textContent=ms===null?"—":Math.max(0,Math.ceil(ms/60000)));document.querySelectorAll('[data-sidebar-block]').forEach(el=>el.textContent=block?.label||"");document.querySelectorAll('[data-sidebar-range]').forEach(el=>el.textContent=times?`${times.startText} – ${times.endText}`:"No active period");};tickClassLeft();setInterval(tickClassLeft,1000);
+  if(page==="live"){const tickTools=()=>{document.querySelectorAll('[data-tool-live="stopwatch"]').forEach(el=>el.textContent=formatClock(stopwatchMs()));document.querySelectorAll('[data-tool-live="countdown"]').forEach(el=>el.textContent=formatClock(countdownMs()));};tickTools();setInterval(tickTools,1000);}
 }
 
 window.setLiveView=v=>{liveView=v;localStorage.teacherDashboardLiveView=v;render()}
@@ -2683,6 +2715,7 @@ function lessonDayList(days){const names=['Mon','Tue','Wed','Thu','Fri'];return 
 
 window.updateLessonPlan=(rowId,date,field,value)=>{ensureLessonPlans();data.lessonPlans.entries[rowId]=data.lessonPlans.entries[rowId]||{};data.lessonPlans.entries[rowId][date]=data.lessonPlans.entries[rowId][date]||{};data.lessonPlans.entries[rowId][date][field]=String(value||'');save();};
 window.updateLessonStatus=(rowId,date,field,value)=>{ensureLessonPlans();data.lessonPlans.entries[rowId]=data.lessonPlans.entries[rowId]||{};const e=data.lessonPlans.entries[rowId][date]=data.lessonPlans.entries[rowId][date]||{};e[field]=!!value;save();};
+window.updateLessonTodoStatus=(rowId,date,field,value)=>{ensureLessonPlans();data.lessonPlans.entries[rowId]=data.lessonPlans.entries[rowId]||{};const e=data.lessonPlans.entries[rowId][date]=data.lessonPlans.entries[rowId][date]||{};e[field]=!!value;save();render();};
 window.updateLessonAll=(rowId,date,value)=>{ensureLessonPlans();data.lessonPlans.entries[rowId]=data.lessonPlans.entries[rowId]||{};const e=data.lessonPlans.entries[rowId][date]=data.lessonPlans.entries[rowId][date]||{};e.planned=e.created=e.posted=!!value;save();render();};
 window.deleteLessonPlanRow=rowId=>{if(!confirm('Delete this planning row? Your lesson text will remain saved unless you add a new row with the same ID.'))return;const id=String(rowId).replace(/^row:/,'');data.lessonPlanCustomRows=(data.lessonPlanCustomRows||[]).filter(r=>r.id!==id);save();render();};
 window.openLessonPlanManager=()=>{ensureLessonPlans();ensureClassFields();document.querySelector('#lessonPlanModal')?.remove();const hidden=new Set(data.lessonPlanHiddenClassIds||[]);const vis=data.classes.map(c=>`<label class="lessonVisibilityItem"><input class="lessonPlanClassVisible" type="checkbox" value="${c.id}" ${hidden.has(c.id)?'':'checked'}> <span><b>${esc(c.name)}</b></span></label>`).join('');const groups=(data.lessonPlanSyncGroups||[]).map(g=>`<div class="lessonSyncEditor" data-sync-id="${g.id}"><div class="lessonSyncHead"><input class="lessonSyncName" value="${esc(g.name)}" placeholder="e.g., Algebra"><button type="button" onclick="this.closest('.lessonSyncEditor').remove()">Remove</button></div><div class="lessonClassChecks">${data.classes.map(c=>`<label><input type="checkbox" value="${c.id}" ${(g.classIds||[]).includes(c.id)?'checked':''}> ${esc(c.name)}</label>`).join('')}</div></div>`).join('');const rows=data.lessonPlanCustomRows.map(r=>lessonPlanRowEditor(r)).join('');document.body.insertAdjacentHTML('beforeend',`<div id="lessonPlanModal" class="modalbg"><div class="modal lessonPlanModal"><h3>Customize Lesson Planning</h3><h4>Classes on This Plan</h4><div class="lessonVisibilityList">${vis}</div><hr class="lessonPlanDivider"><h4>Linked Classes</h4><p class="small">Linked classes share one planning row.</p><div id="lessonSyncList">${groups||'<p class="small emptySyncGroups">No linked rows yet.</p>'}</div><button type="button" onclick="window.addLessonSyncGroup()">＋ Add Linked Row</button><hr class="lessonPlanDivider"><h4>Custom Planning Rows</h4><p class="small">For things like a single period, duty, or any row not tied to a class.</p><div id="lessonRowList">${rows||'<p class="small emptyRows">No custom rows yet.</p>'}</div><button type="button" onclick="window.addLessonPlanRow()">＋ Add Planning Row</button><div style="margin-top:16px"><button class="primary" onclick="window.saveLessonPlanManager()">Save</button> <button onclick="window.closeLessonPlanManager()">Cancel</button></div></div></div>`);};;
